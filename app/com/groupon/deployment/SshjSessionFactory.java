@@ -1,0 +1,60 @@
+/**
+ * Copyright 2015 Groupon.com
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.groupon.deployment;
+
+import com.google.common.base.Throwables;
+import com.google.inject.Inject;
+import net.schmizz.sshj.SSHClient;
+import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
+import net.schmizz.sshj.userauth.keyprovider.KeyProvider;
+import play.Configuration;
+
+import java.io.IOException;
+
+/**
+ * A factory for creating ssh sessions.
+ *
+ * @author Brandon Arp (barp at groupon dot com)
+ */
+public class SshjSessionFactory implements SshSessionFactory {
+    /**
+     * Public constructor.
+     *
+     * @param config Artemis configuration
+     */
+    @Inject
+    public SshjSessionFactory(final Configuration config) {
+        _userName = config.getString("ssh.user");
+        _keyPath = config.getString("ssh.keyFile");
+    }
+
+    @Override
+    public SSHClient create(final String host) {
+        try {
+            final SSHClient client = new SSHClient();
+            final KeyProvider keys = client.loadKeys(_keyPath);
+            client.addHostKeyVerifier(new PromiscuousVerifier());
+            client.connect(host);
+            client.authPublickey(_userName, keys);
+            return client;
+        } catch (final IOException e) {
+            throw Throwables.propagate(e);
+        }
+    }
+
+    private final String _userName;
+    private final String _keyPath;
+}

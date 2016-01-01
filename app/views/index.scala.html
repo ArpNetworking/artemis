@@ -1,0 +1,66 @@
+@*
+* Copyright 2015 Groupon.com
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*@
+@(environments: List[models.Environment], bundles: List[models.Bundle], hostclasses: List[models.Hostclass])
+@main("Main", true) {
+    <div class="row">
+        <img class="center" src="assets/images/logo_large.png"/>
+    </div>
+    <br>
+    <div class="row">
+        <div class="col-md-4">
+                <img class="inline" src="assets/images/arrowhead.png"/>
+                <h5 class="inline">Your Environments</h5>
+                <a href="@routes.Environment.newEnvironment()"><span class="btn btn-primary btn-xs">New</span></a>
+            @if(environments.isEmpty) {
+                <p class="italics">None</p>
+            } else {
+                <ul>
+                    @for(env <- environments) {
+                        <li><a href="@routes.Environment.detail(env.getName)">@env.getName</a></li>
+                    }
+                </ul>
+            }
+        </div>
+        <div class="col-md-4">
+                <img class="inline" src="assets/images/arrowhead.png"/>
+                <h5 class="inline">Your Hostclasses</h5>
+                <a href="@routes.Hostclass.newHostclass()"><span class="btn btn-primary btn-xs">New</span></a>
+            @if(hostclasses.isEmpty) {
+                <p class="italics">None</p>
+            } else {
+                <ul>
+                @for(hostclass <- hostclasses) {
+                    <li><a href="@routes.Hostclass.detail(hostclass.getName)">@hostclass.getName</a></li>
+                }
+                </ul>
+            }
+        </div>
+        <div class="col-md-4">
+                <img class="inline" src="assets/images/arrowhead.png"/>
+                <h5 class="inline">Your Bundles</h5>
+                <a href="@routes.Bundle.newBundle()"><span class="btn btn-primary btn-xs">New</span></a>
+            @if(bundles.isEmpty) {
+                <p class="italics">None</p>
+            } else {
+                <ul>
+                @for(bundle <- bundles) {
+                    <li>@bundle.getName</li>
+                }
+                </ul>
+            }
+        </div>
+    </div>
+}

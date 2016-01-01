@@ -1,0 +1,143 @@
+/* Copyright 2015 Groupon.com
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+img.center {
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+}
+
+img.inline {
+    margin: 2px 2px 2px 2px;
+}
+
+.inline {
+    display: inline;
+    vertical-align: middle;
+}
+
+.verticalalign-outer {
+    display: table;
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    z-index: -1;
+}
+
+.verticalalign-middle {
+    display: table-cell;
+    vertical-align: middle;
+}
+
+.verticalalign-inner {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.italics {
+    font-style: italic;
+}
+
+.largetitle {
+    color: rgba(50, 50, 50, .66);
+    text-align: center;
+    font-size: 7em;
+    height: 1em;
+    width: 100%;
+}
+
+.largesubtitle {
+    color: rgba(50, 50, 50, .66);
+    text-align: center;
+    font-style: italic;
+    font-size: 4em;
+    height: 0.7em;
+    width: 100%;
+}
+
+.unpadded {
+    margin: 0px 0px 0px 0px;
+}
+
+.tt-query {
+    -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+    -moz-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+}
+
+.tt-hint {
+    color: #999
+}
+
+.tt-dropdown-menu {
+    width: 300px;
+    margin-top: -8px;
+    padding: 0 0;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    -webkit-border-radius: 8px;
+    -moz-border-radius: 8px;
+    border-radius: 8px;
+    -webkit-box-shadow: 0 5px 10px rgba(0, 0, 0, .2);
+    -moz-box-shadow: 0 5px 10px rgba(0, 0, 0, .2);
+    box-shadow: 0 5px 10px rgba(0, 0, 0, .2);
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.tt-suggestion {
+    padding: 0 3px;
+}
+
+.tt-suggestion.tt-cursor {
+    color: #fff;
+    background-color: #0097cf;
+
+}
+
+textarea.config {
+    font-family: Consolas, Menlo, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono, monospace, serif;
+    resize: both;
+    overflow: auto;
+    white-space: nowrap;
+}
+
+.log {
+    font-family: Consolas, Menlo, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono, monospace, serif;
+    overflow: auto;
+    white-space: nowrap;
+}
+
+
+.tt-suggestion p {
+    margin: 0;
+}
+
+.sublist {
+    margin: 10px 0px 15px 20px;
+}
+
+.sublist form {
+    margin-bottom: 0px;
+}
+.sublist li input[type="submit"] {
+    margin-left: 10px;
+}
+
+.page-header h1 {
+    display: inline-block;
+}

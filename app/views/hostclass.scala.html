@@ -1,0 +1,85 @@
+@*
+* Copyright 2015 Groupon.com
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*@
+@(hostclass: models.Hostclass, hForm: Form[forms.AddHostToHostclass])
+@main(hostclass.getName, true) {
+    <h3>Hostclass: @hostclass.getName</h3>
+    @if(hostclass.getParent != null) {
+        <h5>Child of <a href="@routes.Hostclass.detail(hostclass.getParent.getName)">@hostclass.getParent.getName</a></h5>
+        <br>
+    }
+    <h5>Child hostclasses</h5>
+    @if(hostclass.getChildren.nonEmpty) {
+        <ul class="unpadded">
+            @for(child <- hostclass.getChildren) {
+                <li><a href="@routes.Hostclass.detail(child.getName)">@child.getName</a></li>
+            }
+        </ul>
+    } else {
+        <p class="unpadded italics">None</p>
+    }
+    <div><a href="@routes.Hostclass.newHostclass(hostclass.getName)">Create child hostclass</a></div>
+    <br>
+    <h5>Hosts</h5>
+    @if(hostclass.getHosts.nonEmpty) {
+        <ul class="unpadded">
+        @for(host <- hostclass.getHosts) {
+            <li>@host.getName</li>
+        }
+        </ul>
+    } else {
+        <p class="unpadded italics">None</p>
+    }
+    @helper.form(action = routes.Hostclass.addHost(hostclass.getName)) {
+        <input type="text" id="h_input" name="host">
+        <input type="submit" name="submit" class="btn btn-primary btn-sm" value="Add">
+    }
+    <h5>Environment-Stages</h5>
+    @*
+     *getAncestors(l: List[models.Hostclass], hc: models.Hostclass):List[Hostclass] = {
+     *   if(hc.getParent != null) {
+     *       getAncestors(l ::: List(hc.getParent), hc.getParent)
+     *   } else {
+     *       l
+     *   }
+     *}
+     *@
+    @{
+        def getAncestors(l: List[models.Hostclass], hc: models.Hostclass):List[models.Hostclass] = {
+            if(hc.getParent != null) {
+                l.add(hc.getParent)
+                getAncestors(l, hc.getParent)
+            } else {
+                l
+            }
+        }
+        getAncestors(new ArrayList(), hostclass).map { hc =>
+            <li>@hc.getName</li>
+        }
+    }
+    @if(hostclass.getStages != null && hostclass.getStages.nonEmpty) {
+        <ul class="unpadded">
+        @for(stage <- hostclass.getStages) {
+            <li>
+                <a href="@routes.Environment.detail(stage.getEnvironment.getName)">@stage.getEnvironment.getName</a>
+                :
+                <a href="@routes.Stage.detail(stage.getEnvironment.getName, stage.getName)">@stage.getName</a>
+            </li>
+        }
+        </ul>
+    } else {
+        <p class="unpadded italics">None</p>
+    }
+}

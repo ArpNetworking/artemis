@@ -1,0 +1,107 @@
+@*
+* Copyright 2015 Groupon.com
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*@
+@(environment: models.Environment, newStageForm: Form[forms.NewStage], configForm: Form[forms.ConfigForm], isPost: Boolean)
+@main(environment.getName, true) {
+    <div class="row">
+        <div class="col-md-8">
+            <h3>Environment: @environment.getName</h3>
+            @if(environment.getParent != null) {
+                <h5>Child of <a href="@routes.Environment.detail(environment.getParent.getName)">@environment.getParent.getName</a></h5>
+            }
+            <h5>Owned by @environment.getOwner.getOrgName</h5>
+            <br>
+
+            <div class="config-display-control">
+                <a class="show-config" href="#"><span class="plus">+</span> Show Config </a>
+                <a class="hide-config" href="#"><span class="minus">-</span> Hide Config </a>
+            </div>
+
+            @helper.form(action = routes.Environment.save(environment.getName()),
+                args = 'class -> "hocon-config-form", 'id -> "env-config-form", Symbol("data-is-post") -> isPost.toString()) {
+                @tsinputArea(configForm("config"), '_label -> "Config", 'id -> "config-text", '_class -> "config")
+                <div id="preview-config" class="json-viewer">
+                    Loading...
+                </div>
+                <input type="hidden" name="id" value="@environment.getId()">
+                <input type="hidden" name="version" value="@environment.getVersion()">
+                <input type="submit" name="submit" class="btn btn-primary" value="Save">
+                <button class="btn btn-primary" id="preview-merged-config" data-type="environment" data-id="@environment.getId()" data-config-selector="#config-text">Preview Merged</button>
+                @if(isPost) {
+                    @if(!configForm.hasErrors) {
+                        <div class="alert success">
+                            <a class="icon-close"></a>
+                            <p>Save Successful!</p>
+                        </div>
+                    } else {
+                        <div class="alert error">
+                            <a class="icon-close"></a>
+                            <p>Save Failed!</p>
+                            <ul>
+                                @for(key  <- configForm.errors.values) {
+                                    @for(entry <- key) {
+                                        @for(message <- entry.messages) {
+                                            <li>@message</li>
+                                        }
+                                    }
+                                }
+                            </ul>
+                        </div>
+                        }
+                    }
+                }
+
+            <br/>
+            <h5>Child environments</h5>
+            @if(environment.getChildren.nonEmpty) {
+                <ul class="unpadded">
+                    @for(child <- environment.getChildren) {
+                        <li><a href="@routes.Environment.detail(child.getName)">@child.getName</a></li>
+                    }
+                </ul>
+            } else {
+                <p class="unpadded italics">None</p>
+            }
+            <div><a href="@routes.Environment.newEnvironment(environment.getName)">Create child environment</a></div>
+        </div>
+        <div class="col-md-4">
+            <a href="@routes.Environment.createRelease(environment.getName)"><button class="btn btn-primary">Create New Release</button></a>
+        </div>
+    </div>
+    <br>
+    <h5>Stages</h5>
+    @if(environment.getStages.nonEmpty) {
+        <ul>
+        @for(stage <- environment.getStages) {
+            <li><a href="@routes.Stage.detail(environment.getName, stage.getName)">@stage.getName</a></li>
+        }
+        </ul>
+    } else {
+        <p class="unpadded italics">None</p>
+    }
+    <!-- TODO: Refactor this into a Stage create form -->
+    <h5>Add new stage</h5>
+    <div class="col-md-3">
+        @helper.form(action = routes.Stage.create(environment.getName()), args = 'class -> "new-stage-form") {
+          @tsinputText(newStageForm("name"), '_label -> "Name")
+          <input type="submit" name="submit" class="btn btn-primary" value="Add">
+        }
+    </div>
+}
+<script src="@routes.Assets.at("javascripts/environment.js")" type="text/javascript"></script>
+<script type="text/javascript">
+    $(Environment.init());
+</script>
+

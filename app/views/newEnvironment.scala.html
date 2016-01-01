@@ -1,0 +1,48 @@
+@*
+* Copyright 2015 Groupon.com
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*@
+@import views.html.helper.FieldConstructor
+@(form: Form[forms.NewEnvironment], orgs: List[Owner], envTypes: List[EnvironmentType])
+@implicitField = @{ FieldConstructor(toolstrapFieldConstructor.f) }
+@main("New Environment", true) {
+    <h3>Create a new environment</h3>
+    <div class="col-md-4">
+        @helper.form(action = routes.Environment.create()) {
+            @tsinputText(form("name"), '_label -> "Name")
+            @helper.input(form("owner"), '_label -> "Owner") { (id, name, value, filteredArgs) =>
+                <select class="form-control" name="@name" id="@id">
+                    @for(org <- orgs) {
+                        @defining(if (org.getId.toString.equals(value.orNull)) "selected" else "") { selected =>
+                          <option @selected value="@org.getId">@org.getOrgName</option>
+                        }
+                    }
+                </select>
+            }
+            @helper.input(form("envType"), '_label -> "Environment Type") { (id, name, value, filteredArgs) =>
+                <select class="form-control" name="@name" id="@id">
+                    @for(envType <- envTypes) {
+                        @defining(if (envType.name().equals(value.orNull)) "selected" else "") { selected =>
+                            <option @selected value="@envType.name()">@envType.name()</option>
+                        }
+                    }
+                </select>
+            }
+            @if(form("parent").value != null) {
+                <input type="hidden" name="parent" value="@form("parent").value">
+            }
+            <input type="submit" name="submit" class="btn btn-primary" value="Add">
+        }
+    </div>
+}
