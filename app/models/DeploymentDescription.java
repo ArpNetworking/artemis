@@ -15,8 +15,8 @@
  */
 package models;
 
-import com.groupon.utility.OvalBuilder;
 import com.google.common.collect.Lists;
+import com.groupon.utility.OvalBuilder;
 import net.sf.oval.constraint.NotNull;
 
 import java.util.List;

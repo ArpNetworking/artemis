@@ -16,11 +16,11 @@
 package com.groupon.deployment.host;
 
 import akka.actor.UntypedActor;
-import com.groupon.deployment.HostDeploymentNotifications;
-import com.groupon.deployment.SshSessionFactory;
 import com.google.common.base.Charsets;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.AssistedInject;
+import com.groupon.deployment.HostDeploymentNotifications;
+import com.groupon.deployment.SshSessionFactory;
 import models.Host;
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.connection.channel.direct.Session;

@@ -28,6 +28,11 @@ import java.util.Map;
  * @author Brandon Arp (barp at groupon dot com)
  */
 public interface PackageProvider {
+    /**
+     * Provide a list of all packages.
+     *
+     * @return A {@link play.libs.F.Promise} of a list of packages.
+     */
     F.Promise<PackageProvider.PackageListResponse> getAllPackages();
 
     /**

@@ -17,14 +17,14 @@ package actors;
 
 import akka.actor.Props;
 import akka.actor.UntypedActor;
-import com.groupon.deployment.FleetDeploymentCommands;
-import com.groupon.deployment.fleet.FleetDeploymentFactory;
-import com.groupon.deployment.fleet.Sequential;
 import com.avaje.ebean.Ebean;
 import com.avaje.ebean.Transaction;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+import com.groupon.deployment.FleetDeploymentCommands;
+import com.groupon.deployment.fleet.FleetDeploymentFactory;
+import com.groupon.deployment.fleet.Sequential;
 import models.Deployment;
 import models.DeploymentState;
 import models.HostDeployment;

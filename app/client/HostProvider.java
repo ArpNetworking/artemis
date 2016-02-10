@@ -25,5 +25,10 @@ import java.util.Set;
  * @author Brandon Arp (barp at groupon dot com)
  */
 public interface HostProvider {
+    /**
+     * Provides a set of hosts.
+     *
+     * @return A {@link play.libs.F.Promise} containing a set of hosts
+     */
     F.Promise<Set<String>> getHosts();
 }

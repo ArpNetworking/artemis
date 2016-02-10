@@ -63,6 +63,7 @@ public class HostclassRefresher extends UntypedActor {
      * Public constructor.
      *
      * @param config The configuration to use
+     * @param hostProvider The host provider to get host data from
      */
     @Inject
     public HostclassRefresher(final Configuration config, final HostProvider hostProvider) {

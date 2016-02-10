@@ -20,12 +20,12 @@ import akka.actor.UntypedActor;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.jvm.JvmMetricsRunnable;
-import com.groupon.play.configuration.ConfigurationHelper;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.base.MoreObjects;
 import com.google.inject.Inject;
+import com.groupon.play.configuration.ConfigurationHelper;
 import play.Configuration;
 import scala.concurrent.duration.FiniteDuration;
 
