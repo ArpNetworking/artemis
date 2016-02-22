@@ -20,3 +20,8 @@ eclipse-bin/
 
 # Mac
 .DS_Store
+
+.ruby-version
+artemis.key
+conf/evolutions
+id_rsa
