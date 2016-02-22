@@ -7,11 +7,15 @@ install: true
 before_script:
 - gpg --import groupon-api.key
 script:
-- curl -s ${JDKW} | bash /dev/stdin ./activator clean compile checkstyle findbugs test stage
-- if [ \( -n "${TRAVIS_TAG}" \) -a  "${TRAVIS_PULL_REQUEST}" = "false" ]; then curl -s ${JDKW} | bash /dev/stdin ./activator publishSigned sonatypeRelease; fi;
+- curl -s ${JDKW} | bash /dev/stdin ./activator clean compile checkstyle findbugs
+  test stage
+- if [ \( -n "${TRAVIS_TAG}" \) -a  "${TRAVIS_PULL_REQUEST}" = "false" ]; then curl
+  -s ${JDKW} | bash /dev/stdin ./activator publishSigned sonatypeRelease; fi;
 env:
   global:
   - JDKW=https://raw.githubusercontent.com/vjkoskela/jdk-wrapper/master/jdk-wrapper.sh
   - JDKW_VERSION=8u65
   - JDKW_BUILD=b17
   - secure: tsVLcMZ4N2vw9myV99ytZWhuifI2T18VSOMeDy0/hJdRt3WBlyM4abv3eWCLzeVaHmaezA1YXXvkeh7ly99UrK4cFtjk7rkDLdk1XYkvTqMmSs1HeH1QtVgIKwk3eZzKV16AhuoZWvIj+qKFcxBr1ONjpKS0G0+Zx/OI356I0NEhm3PJiQjGiUdgIjREa9uyuZV+5caax5poqPJ4evEE0+g6WT+/UswOBd0IqlraPB/7aE1v4zpdqGdvAZxH+RsovQ6GHkFVX3T/bCL+R7bjdav4Emoh1cl4WcrleZw7r0CAhDWslwaLqeLkzgaz4KJDxSfQG7rbbFo4DrcCN7Ds/NiiwTqlVcMbkMWoRRvjKsEe3Xg8XAChnJCaXDJj4pEWKdSXaUesm87tLmvEn7ILz8lBcgm4bl6GxswHndwBk3ej+aDlMknJhwuvd+pRzWZO9S/W4D6/ATxSS5hnCxR2YzzWXZSEWJ6Xin15ElyfsW9QZv1TNhBYVjvX1TNuNUQDPZf4R/EEre/EQVWEvKVvDIGTdAS3qSvwEe4rN9AIxbXh3q89Bk3/8EVJSTtx2okWh9msIMwfvDIFW2dQ2KCYCNA8ZhBC+1qVsP7qQSBIoc+Z26hLzb/OZfBb7PSuK8NqiJtfZezCVGjk2VIxoKmOclZ/Hafh4BOS2am+m1w0O6c=
+  - secure: J4TFU2xlW7lPPC3sVoXxsof1hB7+8HB0EzvTUcsECii3jQhHfpw98XNYl7+eXYBpMvAEoehVV39O+qseiMxgRlaX0Lnv+tyJtPttxYfqEteRiYnbzxMW0aw7uK1A302yQ9aUYWV+ZG6f0gSGvWuG5pw7LnyGe607eBBNJ7eLL2jm+b6zRyUeappEn3n6czIBRgH6/vvc5iE6Nu59WAkCYEA1qS8cIfus8zW5pKB2+f90cEzI6q9w19cngZhcf0AWwSji/EBhg/AjNt1+xzDBasqtr+ZgzQOxiGNIrriJbTsNVlBlkj13T+mNzC5gd6H3/cihkXCq34usWlWyI5By9tPsFCT3CcAnZcT7RQ3OuDBIbdPGuWxtqJI6iEySMbsWPeD1uHqr/JIU6dJQSEFlBw2H1UaWc31L/VVS3KAWkAtTWUo25g6CR3Plj+5SEyOAYA2WVPaW5lmEiFnLZtGdnoMMAgu5WtAZeKg8YR8/h52+0CyZFm/IWiy15NdI3QPRT2DGIsqvY4I3pY8Jk+HLb4xoFu1mCvL34wQovYXRQWJvBX15tKM9TbrhpTwyyi+NtxIF0IqX91pTcldGhk/uW4OsdLGxI02q1syL1f6vCRzUtCZQIeAlhFgNBttdb+J5sJRxw9Ez5IYSYuwgKYQoZtGVxikkBeO4pEhY1N+ORQU=
+  - secure: kYiffsK0/xRbF1lKXoPPCZNvetIOS+PzvuLig8A9F5ZjcG/kyNmeXjeFaOrm5dGr9J3gTafkxTbsHzRlIBTQa2wRshsU8MLEcqe6mPUGdiN7WGZo7RoU0A1LA/ldM4fmTVSDzFv/0xlc7KQ0StdaknFOn9T8KZNc/SV9wjLn9gtvQMcLLRn2CgLIGnD5YRvbsQ/Bt3A0NH8EiCbmEmBACxJkagx4aoLaxhMkzqzpeJi1aTBNIIoDT25J36FRA80OB4S5Hgsev4mirv8uF9KPAK2JCo6ImEeNcEPy6t2Gaa5BqZiKwvX7uaIwE9UqBs2bV7k1lbkZv64+iq244q4Y0HyVL4y+fMO4OHZjKacaFIuujjQ841Z4t2iggtsO5pyPz28TwgABRJoyQ+3mwA8ecGEfhd3Yl0eueLXkiflNB1sAF0ZOVNwCi3xgPPwia/udKdfbzRdR0S6BLOvNwRFIaQ9br8EqN7s/iBIQDtt2zvphvpJRm5jblyDZYv8A77oNdnAteqbZNh2xgsotGz2QnsbU7VZdZSpHn90C+ymLbxUS+mlgz2Mpm8BOJpQV3lK9lSIcIiPHUlskPt6h78RM/s/I3DvQ/yq9/BsB4A+c5GY2tDk1wPF7mW2q1T3BtjVqixz5NAntQQgbKuvBBSCcKbsB35ItDnzD3ZzKPXxq598=
