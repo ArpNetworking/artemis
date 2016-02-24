@@ -31,6 +31,7 @@ import models.Manifest;
 import models.ManifestHistory;
 import models.Owner;
 import models.PackageVersion;
+import models.RollerPackageVersion;
 import models.Stage;
 import models.UserMembership;
 import org.joda.time.DateTime;
@@ -298,9 +299,9 @@ public class StandardEnvironment extends Controller implements Environment {
                 p.save();
             }
 
-            PackageVersion packageVersion = PackageVersion.getByPackageAndVersion(p, version);
+            RollerPackageVersion packageVersion = RollerPackageVersion.getByPackageAndVersion(p, version);
             if (packageVersion == null) {
-                packageVersion = new PackageVersion();
+                packageVersion = new RollerPackageVersion();
                 packageVersion.setPkg(p);
                 packageVersion.setVersion(version);
                 packageVersion.save();

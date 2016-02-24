@@ -34,6 +34,7 @@ import models.Manifest;
 import models.ManifestHistory;
 import models.Package;
 import models.PackageVersion;
+import models.RollerPackageVersion;
 import models.Stage;
 import play.Logger;
 import play.api.http.Writeable;
@@ -177,9 +178,9 @@ public class StandardApi extends Controller implements Api {
             packageModel.save();
         }
 
-        PackageVersion pkgVersion = PackageVersion.getByPackageAndVersion(packageModel, version);
+        RollerPackageVersion pkgVersion = RollerPackageVersion.getByPackageAndVersion(packageModel, version);
         if (pkgVersion == null) {
-            pkgVersion = new PackageVersion();
+            pkgVersion = new RollerPackageVersion();
             pkgVersion.setPkg(packageModel);
             pkgVersion.setVersion(version);
             pkgVersion.save();

@@ -26,8 +26,9 @@ import com.avaje.ebean.Transaction;
 import com.google.common.base.Throwables;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import models.DockerImageVersion;
 import models.Package;
-import models.PackageVersion;
+import models.RollerPackageVersion;
 import play.libs.F;
 import scala.concurrent.duration.FiniteDuration;
 
@@ -109,13 +110,13 @@ public class DockerPackageRefresher extends UntypedActor {
                 }
 
                 for (final DockerPackageClient.ImageMetadata imageMetadata : imageMetadataList) {
-                    PackageVersion packageVersion = PackageVersion.getByRepositoryPackageAndVersion(_registryName,
+                    RollerPackageVersion packageVersion = RollerPackageVersion.getByRepositoryPackageAndVersion(_registryName,
                                                                                                     aPackage,
                                                                                                     imageMetadata.getId());
 
                     if (packageVersion == null) {
-                        packageVersion = new PackageVersion();
-                        packageVersion.setType(TYPE_FOR_PACKAGES);
+                        packageVersion = new RollerPackageVersion();
+                        packageVersion.setType(DockerImageVersion.TYPE_FOR_PACKAGES);
                         packageVersion.setRepository(_registryName);
                         packageVersion.setVersion(imageMetadata.getId());
                         packageVersion.setPkg(aPackage);
@@ -139,7 +140,6 @@ public class DockerPackageRefresher extends UntypedActor {
     private final DockerPackageClient _dockerPackageClient;
     private final String _registryName;
 
-    private static final String TYPE_FOR_PACKAGES = "docker";
     private static final Logger LOGGER = LoggerFactory.getLogger(DockerPackageRefresher.class);
 
     private enum RefreshStates {

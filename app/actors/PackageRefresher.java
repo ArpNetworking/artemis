@@ -23,7 +23,7 @@ import com.avaje.ebean.Ebean;
 import com.avaje.ebean.Transaction;
 import com.google.inject.Inject;
 import models.Package;
-import models.PackageVersion;
+import models.RollerPackageVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import play.libs.F;
@@ -94,10 +94,10 @@ public class PackageRefresher extends UntypedActor {
                         }
 
                         for (final PackageProvider.PackageVersionMetadata versionMetadata : entry.getValue()) {
-                            PackageVersion version = PackageVersion.getByPackageAndVersion(aPackage,
+                            RollerPackageVersion version = RollerPackageVersion.getByPackageAndVersion(aPackage,
                                                                                            versionMetadata.getVersion());
                             if (version == null) {
-                                version = new PackageVersion();
+                                version = new RollerPackageVersion();
                                 version.setVersion(versionMetadata.getVersion());
                                 version.setPkg(aPackage);
                                 version.save();
