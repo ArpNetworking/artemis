@@ -229,6 +229,7 @@ public class StandardEnvironment extends Controller implements Environment {
             // create an image model object for the image sha; link to the package
 
 
+        List<DockerImageVersion> images = new ArrayList<>();
         for (int i = 0; i < repositoryNames.size(); i++) {
             String repositoryName = repositoryNames.get(i);
             String imageDigest = imageShas.get(i);
@@ -243,11 +244,27 @@ public class StandardEnvironment extends Controller implements Environment {
             DockerImageVersion imageVersion = DockerImageVersion.getByRepositoryAndDigest(repo, imageDigest);
             if (imageVersion == null) {
                 imageVersion = new DockerImageVersion();
-                //imageVersion.
+                imageVersion.setDockerRepository(repo);
+                imageVersion.setDigest(imageDigest);
+                imageVersion.save();
             }
+            images.add(imageVersion);
         }
-        return null;
 
+        final Manifest manifest = new Manifest();
+        manifest.setEnvironment(environment);
+        manifest.setDockerImages(images);
+
+        // Copied below
+        manifest.setVersion(manifestVersion[0]);
+        manifest.setCreatedBy(request().username());
+
+        try {
+            manifest.save();
+        } catch (final PersistenceException e) {
+            return F.Promise.pure(badRequest());
+        }
+        return F.Promise.pure(redirect(routes.Environment.detail(envName)));
     }
 
 
