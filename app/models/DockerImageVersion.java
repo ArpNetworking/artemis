@@ -29,11 +29,7 @@ public class DockerImageVersion extends Model implements PackageVersion {
 
     @Override
     public Package getPkg() {
-        return pkg;
-    }
-
-    public void setPkg(Package pkg) {
-        this.pkg = pkg;
+        return repository;
     }
 
     @Override
@@ -56,13 +52,13 @@ public class DockerImageVersion extends Model implements PackageVersion {
         return registry;
     }
 
-    public void setRepository(String repository) {
-        this.repository = repository;
-    }
-
     @Override
     public String getDescription() {
         return description;
+    }
+
+    public void setDockerRepository(DockerRepository repository) {
+        this.repository = repository;
     }
 
     public void setDescription(String description) {
@@ -93,7 +89,7 @@ public class DockerImageVersion extends Model implements PackageVersion {
      * @return a packageversion or null if it doesn't exist
      */
     @Nullable
-    public static DockerImageVersion getByPackageAndVersion(final DockerRepository repository, final String digest) {
+    public static DockerImageVersion getByRepositoryAndDigest(final DockerRepository repository, final String digest) {
         return FINDER.where().eq("repository", repository).eq("digest", digest).findUnique();
     }
 
@@ -115,9 +111,8 @@ public class DockerImageVersion extends Model implements PackageVersion {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
     private String registry;
-    private String repository;
     private String digest;
-    private Package pkg;
+    private DockerRepository repository;
     private String description;
 
     private static final Find<Long, DockerImageVersion> FINDER = new Find<Long, DockerImageVersion>(){};

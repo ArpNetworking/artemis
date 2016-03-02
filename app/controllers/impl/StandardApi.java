@@ -32,7 +32,7 @@ import models.Deployment;
 import models.Environment;
 import models.Manifest;
 import models.ManifestHistory;
-import models.Package;
+import models.PackageImpl;
 import models.PackageVersion;
 import models.RollerPackageVersion;
 import models.Stage;
@@ -89,7 +89,7 @@ public class StandardApi extends Controller implements Api {
     @Override
     public F.Promise<Result> packageSearch(final String query) {
         final ObjectNode node = Json.newObject();
-        final List<models.Package> packages = models.Package.searchByPartialName(query, 10);
+        final List<models.PackageImpl> packages = PackageImpl.searchByPartialName(query, 10);
         final ArrayNode resultsArray = node.putArray("results");
         for (final models.Package pkg : packages) {
             resultsArray.add(pkg.getName());
@@ -171,9 +171,9 @@ public class StandardApi extends Controller implements Api {
     }
 
     private PackageVersion getPackageVersion(final String packageName, final String version) {
-        Package packageModel = Package.getByName(packageName);
+        PackageImpl packageModel = PackageImpl.getByName(packageName);
         if (packageModel == null) {
-            packageModel = new Package();
+            packageModel = new PackageImpl();
             packageModel.setName(packageName);
             packageModel.save();
         }

@@ -22,7 +22,7 @@ import client.PackageProvider;
 import com.avaje.ebean.Ebean;
 import com.avaje.ebean.Transaction;
 import com.google.inject.Inject;
-import models.Package;
+import models.PackageImpl;
 import models.RollerPackageVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -86,9 +86,9 @@ public class PackageRefresher extends UntypedActor {
                 for (final Map.Entry<String, List<PackageProvider.PackageVersionMetadata>> entry : packages.entrySet()) {
                     final String packageName = entry.getKey();
                     try (final Transaction transaction = Ebean.beginTransaction()) {
-                        Package aPackage = Package.getByName(packageName);
+                        PackageImpl aPackage = PackageImpl.getByName(packageName);
                         if (aPackage == null) {
-                            aPackage = new Package();
+                            aPackage = new PackageImpl();
                             aPackage.setName(packageName);
                             aPackage.save();
                         }

@@ -27,13 +27,14 @@ import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
 /**
- * Model that represents a Docker repository (that is, the set of images for one project, e.g. 'nginx').
+ * Model that represents a package.
  *
- * @author Matthew Hayter (mhayter at groupon dot com)
+ * @author Brandon Arp (barp at groupon dot com)
  */
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = "name"))
-public class DockerRepository extends Model implements Package {
+public class PackageImpl extends Model implements Package {
+    @Override
     public long getId() {
         return id;
     }
@@ -42,6 +43,7 @@ public class DockerRepository extends Model implements Package {
         this.id = value;
     }
 
+    @Override
     public String getName() {
         return name;
     }
@@ -57,7 +59,7 @@ public class DockerRepository extends Model implements Package {
      * @return a package, or null if it does not exist
      */
     @Nullable
-    public static DockerRepository getByName(final String name) {
+    public static PackageImpl getByName(final String name) {
         return FINDER.where().eq("name", name).findUnique();
     }
 
@@ -68,7 +70,7 @@ public class DockerRepository extends Model implements Package {
      * @param limit maximum number of results
      * @return a list of packages
      */
-    public static List<DockerRepository> searchByPartialName(final String query, final int limit) {
+    public static List<PackageImpl> searchByPartialName(final String query, final int limit) {
         return FINDER.where().ilike("name", String.format("%%%s%%", query)).setMaxRows(limit).findList();
     }
 
@@ -77,5 +79,5 @@ public class DockerRepository extends Model implements Package {
     private long id;
     private String name;
 
-    private static final Find<Long, DockerRepository> FINDER = new Find<Long, DockerRepository>(){};
+    private static final Find<Long, PackageImpl> FINDER = new Find<Long, PackageImpl>(){};
 }

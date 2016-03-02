@@ -32,6 +32,7 @@ import models.EnvironmentType;
 import models.Manifest;
 import models.ManifestHistory;
 import models.Owner;
+import models.PackageImpl;
 import models.RollerPackageVersion;
 import models.Stage;
 import models.UserMembership;
@@ -239,7 +240,7 @@ public class StandardEnvironment extends Controller implements Environment {
                 repo.save();
             }
 
-            DockerImageVersion imageVersion = DockerImageVersion.getByPackageAndVersion(repo, imageDigest);
+            DockerImageVersion imageVersion = DockerImageVersion.getByRepositoryAndDigest(repo, imageDigest);
             if (imageVersion == null) {
                 imageVersion = new DockerImageVersion();
                 //imageVersion.
@@ -354,9 +355,9 @@ public class StandardEnvironment extends Controller implements Environment {
         for (final Map.Entry<String, String> entry : pkgs.entrySet()) {
             final String pkg = entry.getKey();
             final String version = entry.getValue();
-            models.Package p = models.Package.getByName(pkg);
+            PackageImpl p = PackageImpl.getByName(pkg);
             if (p == null) {
-                p = new models.Package();
+                p = new PackageImpl();
                 p.setName(pkg);
                 p.save();
             }

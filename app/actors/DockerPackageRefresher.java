@@ -27,7 +27,7 @@ import com.google.common.base.Throwables;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import models.DockerImageVersion;
-import models.Package;
+import models.PackageImpl;
 import models.RollerPackageVersion;
 import play.libs.F;
 import scala.concurrent.duration.FiniteDuration;
@@ -102,9 +102,9 @@ public class DockerPackageRefresher extends UntypedActor {
 
         repoToImageMap.forEach((repoName, imageMetadataList) -> {
             try (final Transaction transaction = Ebean.beginTransaction()) {
-                Package aPackage = Package.getByName(repoName);
+                PackageImpl aPackage = PackageImpl.getByName(repoName);
                 if (aPackage == null) {
-                    aPackage = new Package();
+                    aPackage = new PackageImpl();
                     aPackage.setName(repoName);
                     aPackage.save();
                 }
