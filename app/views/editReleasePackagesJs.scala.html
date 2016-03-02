@@ -16,7 +16,7 @@
 @(manifest: models.Manifest)
 
 @if(manifest != null) {
-    @defining(manifest.getPackages.map((p: RollerPackageVersion) => { s"""new Package("${p.getPkg.getName}", "${p.getVersion}")"""}).mkString(", ")
+    @defining(manifest.getPackages.map((p: PackageVersion) => { s"""new Package("${p.getPkg.getName}", "${p.getVersion}")"""}).mkString(", ")
     ) { initialPackages: String =>
     var initialPackages = [ @Html(initialPackages) ];
     }

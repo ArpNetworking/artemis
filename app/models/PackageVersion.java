@@ -2,7 +2,6 @@ package models;
 
 /**
  * @author Matthew Hayter (mhayter at groupon dot com)
- * @since 1.0.0
  */
 public interface PackageVersion {
     @Override

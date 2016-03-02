@@ -26,11 +26,12 @@ import controllers.routes;
 import forms.ConfigForm;
 import forms.NewEnvironment;
 import forms.NewStage;
+import models.DockerImageVersion;
+import models.DockerRepository;
 import models.EnvironmentType;
 import models.Manifest;
 import models.ManifestHistory;
 import models.Owner;
-import models.PackageVersion;
 import models.RollerPackageVersion;
 import models.Stage;
 import models.UserMembership;
@@ -189,6 +190,67 @@ public class StandardEnvironment extends Controller implements Environment {
         return F.Promise.pure(redirect(routes.Environment.detail(envName)));
     }
 
+    public F.Promise<Result> createDockerRelease(final String envName) {
+
+        final models.Environment environment = models.Environment.getByName(envName);
+        if (environment == null) {
+            return F.Promise.pure(notFound());
+        }
+
+        // Make sure the user is an owner of the env
+        if (!validateAuth(environment)) {
+            return F.Promise.pure(unauthorized());
+        }
+
+        final Map<String, String[]> formUrlEncoded = request().body().asFormUrlEncoded();
+
+
+        final String[] manifestVersion = formUrlEncoded.get("version");
+        if (manifestVersion == null || manifestVersion.length > 1) {
+            return F.Promise.pure(badRequest());
+        }
+
+
+        // Copied above
+
+
+        final ArrayList<String> repositoryNames = Lists.newArrayList(Optional.ofNullable(formUrlEncoded.get("repositoryNames")).orElse(new String[0]));
+        final ArrayList<String> imageShas = Lists.newArrayList(Optional.ofNullable(formUrlEncoded.get("imageShas")).orElse(new String[0]));
+
+        if (repositoryNames.size() != imageShas.size()) {
+            return F.Promise.pure(badRequest());
+        }
+
+        // Create list of docker images
+
+        // each 'image':
+            // Check the repo; create if doesn't exist
+            // create an image model object for the image sha; link to the package
+
+
+        for (int i = 0; i < repositoryNames.size(); i++) {
+            String repositoryName = repositoryNames.get(i);
+            String imageDigest = imageShas.get(i);
+
+            DockerRepository repo = DockerRepository.getByName(repositoryName);
+            if (repo == null) {
+                repo = new DockerRepository();
+                repo.setName(repositoryName);
+                repo.save();
+            }
+
+            DockerImageVersion imageVersion = DockerImageVersion.getByPackageAndVersion(repo, imageDigest);
+            if (imageVersion == null) {
+                imageVersion = new DockerImageVersion();
+                //imageVersion.
+            }
+        }
+        return null;
+
+    }
+
+
+
     @Override
     public F.Promise<Result> create() {
         final Form<NewEnvironment> bound = NewEnvironment.form().bindFromRequest();
@@ -288,7 +350,7 @@ public class StandardEnvironment extends Controller implements Environment {
     }
 
     private Manifest createManifest(final Map<String, String> pkgs) {
-        final List<PackageVersion> newPackages = Lists.newArrayList();
+        final List<RollerPackageVersion> newPackages = Lists.newArrayList();
         for (final Map.Entry<String, String> entry : pkgs.entrySet()) {
             final String pkg = entry.getKey();
             final String version = entry.getValue();

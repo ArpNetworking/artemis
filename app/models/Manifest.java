@@ -21,6 +21,7 @@ import com.google.common.base.Function;
 import com.google.common.collect.Maps;
 import org.joda.time.DateTime;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
@@ -40,11 +41,19 @@ import javax.persistence.OrderBy;
 @Entity
 public class Manifest extends Model {
     public List<PackageVersion> getPackages() {
-        return packages;
+        return new ArrayList<>(packages);
     }
 
-    public void setPackages(final List<PackageVersion> value) {
+    public void setPackages(final List<RollerPackageVersion> value) {
         packages = value;
+    }
+
+    public List<DockerImageVersion> getDockerImages() {
+        return dockerImages;
+    }
+
+    public void setDockerImages(List<DockerImageVersion> dockerImages) {
+        this.dockerImages = dockerImages;
     }
 
     public long getId() {
@@ -136,9 +145,17 @@ public class Manifest extends Model {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
+
+    /**
+     * One of package and dockerImages will be empty, according to environment.environmentType.
+     */
     @ManyToMany
     @OrderBy("pkg.name asc")
-    private List<PackageVersion> packages;
+    private List<RollerPackageVersion> packages;
+
+    @ManyToMany
+    @OrderBy("pkg.name asc")
+    private List<DockerImageVersion> dockerImages;
 
     //NOTE: createdBy serves as a field to put into the database to prevent
     // an ebean bug that doesn't allow the creation of "empty" table records in postgres
