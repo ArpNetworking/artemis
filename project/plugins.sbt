@@ -15,6 +15,8 @@
   */
 resolvers += "Typesafe repository" at "https://repo.typesafe.com/typesafe/releases/"
 
+resolvers += "SBT Community repository" at "http://dl.bintray.com/sbt/sbt-plugin-releases/"
+
 resolvers += "Typesafe repository plugin" at "https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/"
 
 // The Play plugin
