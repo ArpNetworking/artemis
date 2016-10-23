@@ -19,11 +19,13 @@ import api.HostclassOutput;
 import client.ConfigServerClient;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -44,7 +46,7 @@ import models.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import play.Configuration;
-import play.libs.F;
+import play.libs.ws.WSClient;
 import play.mvc.Result;
 
 import java.util.ArrayList;
@@ -53,6 +55,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
 
 /**
@@ -66,11 +69,12 @@ public class Config extends Proxy {
      * Public constructor.
      *
      * @param baseURL base url of the config server
+     * @param client ws client to use
      */
     @Inject
-    public Config(@Named("ConfigServerBaseUrl") final String baseURL) {
-        super(baseURL);
-        _configClient = new ConfigServerClient(baseURL);
+    public Config(@Named("ConfigServerBaseUrl") final String baseURL, final WSClient client) {
+        super(baseURL, client);
+        _configClient = new ConfigServerClient(baseURL, client);
     }
 
     /**
@@ -79,14 +83,18 @@ public class Config extends Proxy {
      * @param hostname the hostname
      * @return a host configuration yaml response
      */
-    public F.Promise<Result> host(final String hostname) {
+    public CompletionStage<Result> host(final String hostname) {
         LOGGER.info(String.format("Request for host; host=%s", hostname));
-        return _configClient.getHostData(hostname).map(
+        return _configClient.getHostData(hostname).thenApply(
                 hostOutput -> {
                     // Find the host
                     final Host host = Host.getByName(hostname);
                     if (host == null) {
-                        return ok(YAML_MAPPER.writeValueAsString(hostOutput));
+                        try {
+                            return ok(YAML_MAPPER.writeValueAsString(hostOutput));
+                        } catch (final JsonProcessingException e) {
+                            throw Throwables.propagate(e);
+                        }
                     }
                     final String rawHostclass = hostOutput.getHostclass();
                     hostOutput.setHostclass(rawHostclass + "::" + host.getHostclass().getName());
@@ -124,7 +132,11 @@ public class Config extends Proxy {
                         }
                     }
 
-                    return ok(YAML_MAPPER.writeValueAsString(hostOutput));
+                    try {
+                        return ok(YAML_MAPPER.writeValueAsString(hostOutput));
+                    } catch (final JsonProcessingException e) {
+                        throw Throwables.propagate(e);
+                    }
                 }
         );
     }
@@ -135,7 +147,7 @@ public class Config extends Proxy {
      * @param rawHostclass the hostclass
      * @return a hostclass configuration yaml response
      */
-    public F.Promise<Result> hostclass(final String rawHostclass) {
+    public CompletionStage<Result> hostclass(final String rawHostclass) {
         final String rollerHostclass = Iterables.get(
                 Splitter.on("-")
                         .trimResults()
@@ -154,7 +166,7 @@ public class Config extends Proxy {
                         "Request for hostclass; rollerHostclass=%s, artemisHostclass=%s",
                         rollerHostclass,
                         artemisHostclass.orElse("[null]")));
-        return _configClient.getHostclassData(rollerVersionedHostclass.get()).map(
+        return _configClient.getHostclassData(rollerVersionedHostclass.get()).thenApply(
                 hostclassOutput -> {
                     if (artemisHostclass.isPresent()) {
                         final Hostclass hostclass = Hostclass.getByName(artemisHostclass.get());
@@ -164,7 +176,11 @@ public class Config extends Proxy {
 
                         overlayHostclass(hostclassOutput, hostclass);
                     }
-                    return ok(YAML_MAPPER.writeValueAsString(hostclassOutput));
+                    try {
+                        return ok(YAML_MAPPER.writeValueAsString(hostclassOutput));
+                    } catch (final JsonProcessingException e) {
+                        throw Throwables.propagate(e);
+                    }
                 }
         );
     }

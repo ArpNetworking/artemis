@@ -15,10 +15,11 @@
  */
 package controllers;
 
-import play.libs.F;
 import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
+
+import java.util.concurrent.CompletionStage;
 
 /**
  * Handles administrative actions for Artemis.
@@ -32,12 +33,12 @@ public interface Admin {
      *
      * @return an http response
      */
-    F.Promise<Result> index();
+    CompletionStage<Result> index();
 
     /**
      * Starts a refresh of packages from various repositories.
      *
      * @return an http response
      */
-    F.Promise<Result> refreshPackages();
+    CompletionStage<Result> refreshPackages();
 }

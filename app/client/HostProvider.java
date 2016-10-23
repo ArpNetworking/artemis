@@ -15,9 +15,8 @@
  */
 package client;
 
-import play.libs.F;
-
 import java.util.Set;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Provider for retrieving a list of hosts.
@@ -30,5 +29,5 @@ public interface HostProvider {
      *
      * @return A {@link play.libs.F.Promise} containing a set of hosts
      */
-    F.Promise<Set<String>> getHosts();
+    CompletionStage<Set<String>> getHosts();
 }

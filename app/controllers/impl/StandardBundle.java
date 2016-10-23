@@ -16,12 +16,13 @@
 package controllers.impl;
 
 import controllers.Bundle;
-import play.libs.F;
 import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
 
 /**
@@ -39,7 +40,7 @@ public class StandardBundle extends Controller implements Bundle {
     }
 
     @Override
-    public F.Promise<Result> newBundle() {
+    public CompletionStage<Result> newBundle() {
         /*
         Form<NewEnvironment> form = NewEnvironment.form();
         final models.Environment parent = models.Environment.getByName(parentEnv);
@@ -51,6 +52,6 @@ public class StandardBundle extends Controller implements Bundle {
         final List<Owner> owners = UserMembership.getOrgsForUser(request().username());
         return ok(views.html.newEnvironment.render(form, owners));
         */
-        return F.Promise.pure(ok());
+        return CompletableFuture.completedFuture(ok());
     }
 }

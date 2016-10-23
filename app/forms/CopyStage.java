@@ -16,6 +16,7 @@
 package forms;
 
 import play.data.Form;
+import play.data.FormFactory;
 import play.data.validation.Constraints;
 
 /**
@@ -44,10 +45,11 @@ public class CopyStage {
     /**
      * Factory method for a form.
      *
+     * @param factory form factory to create forms
      * @return a new {@link Form} bound to this class
      */
-    public static Form<CopyStage> form() {
-        return Form.form(CopyStage.class);
+    public static Form<CopyStage> form(final FormFactory factory) {
+        return factory.form(CopyStage.class);
     }
 
     @Constraints.Required

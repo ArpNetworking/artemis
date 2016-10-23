@@ -18,11 +18,13 @@ package controllers.impl;
 import controllers.Deployment;
 import models.DeploymentDiff;
 import models.ManifestHistory;
-import play.libs.F;
 import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
+
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Deployment controller.
@@ -32,34 +34,35 @@ import utils.AuthN;
 @Security.Authenticated(AuthN.class)
 public class StandardDeployment extends Controller implements Deployment {
     @Override
-    public F.Promise<Result> detail(final long deploymentId) {
+    public CompletionStage<Result> detail(final long deploymentId) {
         final models.Deployment deployment = models.Deployment.getById(deploymentId);
         if (deployment == null) {
-            return F.Promise.pure(notFound());
+            return CompletableFuture.completedFuture(notFound());
         }
 
-        return F.Promise.pure(ok(views.html.deploymentStatus.render(deployment, deployment.getManifestHistory().getStage())));
+        return CompletableFuture.completedFuture(
+                ok(views.html.deploymentStatus.render(deployment, deployment.getManifestHistory().getStage())));
     }
 
     @Override
-    public F.Promise<Result> log(final long deploymentId) {
+    public CompletionStage<Result> log(final long deploymentId) {
         final models.Deployment deployment = models.Deployment.getById(deploymentId);
         if (deployment == null) {
-            return F.Promise.pure(notFound());
+            return CompletableFuture.completedFuture(notFound());
         }
 
-        return F.Promise.pure(ok(views.html.deployLog.render(deployment)));
+        return CompletableFuture.completedFuture(ok(views.html.deployLog.render(deployment)));
     }
 
     @Override
-    public F.Promise<Result> diff(final long deploymentId) {
+    public CompletionStage<Result> diff(final long deploymentId) {
         final models.Deployment deployment = models.Deployment.getById(deploymentId);
         if (deployment == null) {
-            return F.Promise.pure(notFound());
+            return CompletableFuture.completedFuture(notFound());
         }
         final ManifestHistory current = deployment.getManifestHistory();
         final ManifestHistory previous = current.getPrevious();
         final DeploymentDiff diff = new DeploymentDiff(previous.getManifest(), current.getManifest());
-        return F.Promise.pure(ok(views.html.deploymentDiff.render(deployment.getManifestHistory().getStage(), diff)));
+        return CompletableFuture.completedFuture(ok(views.html.deploymentDiff.render(deployment.getManifestHistory().getStage(), diff)));
     }
 }

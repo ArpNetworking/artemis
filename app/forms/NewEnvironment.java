@@ -19,6 +19,7 @@ import models.Environment;
 import models.EnvironmentType;
 import models.Owner;
 import play.data.Form;
+import play.data.FormFactory;
 import play.data.validation.Constraints;
 import play.data.validation.ValidationError;
 
@@ -66,10 +67,11 @@ public class NewEnvironment {
     /**
      * Factory method for a form.
      *
+     * @param factory form factory to create forms
      * @return a new {@link Form} bound to this class
      */
-    public static Form<NewEnvironment> form() {
-        return Form.form(NewEnvironment.class);
+    public static Form<NewEnvironment> form(final FormFactory factory) {
+        return factory.form(NewEnvironment.class);
     }
 
     /**

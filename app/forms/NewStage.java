@@ -18,6 +18,7 @@ package forms;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import play.data.Form;
+import play.data.FormFactory;
 import play.data.validation.Constraints;
 import play.data.validation.ValidationError;
 
@@ -33,10 +34,11 @@ public class NewStage {
     /**
      * Factory method for a form.
      *
+     * @param factory form factory to create forms
      * @return a new {@link Form} bound to this class
      */
-    public static Form<NewStage> form() {
-        return Form.form(NewStage.class);
+    public static Form<NewStage> form(final FormFactory factory) {
+        return factory.form(NewStage.class);
     }
 
     public String getName() {

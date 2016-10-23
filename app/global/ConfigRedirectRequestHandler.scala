@@ -15,6 +15,7 @@
  */
 package global
 
+import java.security.cert.X509Certificate
 import java.util.Locale
 import javax.inject.Inject
 
@@ -66,5 +67,6 @@ class ConfigRedirectRequestHandler @Inject() (defaultRouter: Router,
       override def version: String = wrapped.version
       override def tags: Map[String, String] = wrapped.tags
       override def id: Long = wrapped.id
+      override def clientCertificateChain: Option[Seq[X509Certificate]] = wrapped.clientCertificateChain
     }
 }

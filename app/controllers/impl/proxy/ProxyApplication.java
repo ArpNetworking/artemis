@@ -16,11 +16,12 @@
 package controllers.impl.proxy;
 
 import controllers.ArtemisProxy;
-import play.libs.F;
+import play.libs.ws.WSClient;
 import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
 
+import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
 import javax.inject.Named;
 
@@ -35,14 +36,15 @@ public class ProxyApplication extends ArtemisProxy implements controllers.Applic
      * Public constructor.
      *
      * @param baseURL the base proxy url
+     * @param client ws client to use
      */
     @Inject
-    public ProxyApplication(@Named("ArtemisProxyBaseUrl") final String baseURL) {
-        super(baseURL);
+    public ProxyApplication(@Named("ArtemisProxyBaseUrl") final String baseURL, final WSClient client) {
+        super(baseURL, client);
     }
 
     @Override
-    public F.Promise<Result> main() {
+    public CompletionStage<Result> main() {
         return proxy();
     }
 }

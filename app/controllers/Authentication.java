@@ -15,8 +15,9 @@
  */
 package controllers;
 
-import play.libs.F;
 import play.mvc.Result;
+
+import java.util.concurrent.CompletionStage;
 
 /**
  * Holds methods for authentication.
@@ -30,7 +31,7 @@ public interface Authentication {
      * @param redirectUrl URL to redirect back to when authentication is complete
      * @return a {@link Result}
      */
-    F.Promise<Result> auth(String redirectUrl);
+    CompletionStage<Result> auth(String redirectUrl);
 
     /**
      * Finishes the authentication of a client.
@@ -39,12 +40,12 @@ public interface Authentication {
      * @param state the state
      * @return a {@link Result}
      */
-    F.Promise<Result> finishAuth(String code, String state);
+    CompletionStage<Result> finishAuth(String code, String state);
 
     /**
      * Logs a user out.
      *
      * @return a {@link Result}
      */
-    F.Promise<Result> logout();
+    CompletionStage<Result> logout();
 }

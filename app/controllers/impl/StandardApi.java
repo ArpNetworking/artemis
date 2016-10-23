@@ -17,8 +17,11 @@ package controllers.impl;
 
 import actors.DeployLogRelay;
 import akka.actor.ActorRef;
-import akka.actor.PoisonPill;
-import akka.pattern.Patterns;
+import akka.actor.ActorSystem;
+import akka.pattern.PatternsCS;
+import akka.stream.OverflowStrategy;
+import akka.stream.javadsl.Source;
+import akka.util.ByteString;
 import akka.util.Timeout;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -36,24 +39,15 @@ import models.Package;
 import models.PackageVersion;
 import models.Stage;
 import play.Logger;
-import play.api.http.Writeable;
-import play.api.libs.iteratee.Concurrent;
-import play.api.libs.iteratee.Enumeratee;
-import play.api.libs.iteratee.Enumeratee$;
-import play.api.libs.iteratee.Enumerator;
-import play.api.mvc.Codec;
-import play.api.mvc.Results$;
-import play.libs.Akka;
-import play.libs.F;
 import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Result;
-import scala.Tuple2;
-import scala.compat.java8.JFunction;
-import scala.concurrent.Future;
+import play.mvc.Results;
 
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -68,50 +62,52 @@ public class StandardApi extends Controller implements Api {
      * Public constructor.
      *
      * @param deploymentManager the deployment manager
+     * @param actorSystem the actor system to create actors in
      */
     @Inject
-    public StandardApi(@Named("DeployManager") final ActorRef deploymentManager) {
+    public StandardApi(@Named("DeployManager") final ActorRef deploymentManager, final ActorSystem actorSystem) {
         _deploymentManager = deploymentManager;
+        _actorSystem = actorSystem;
     }
 
     @Override
-    public F.Promise<Result> hostclassSearch(final String query) {
+    public CompletionStage<Result> hostclassSearch(final String query) {
         final ObjectNode node = Json.newObject();
         final List<models.Hostclass> hostclasses = models.Hostclass.searchByPartialName(query, 10);
         final ArrayNode resultsArray = node.putArray("results");
         for (final models.Hostclass hostclass : hostclasses) {
             resultsArray.add(hostclass.getName());
         }
-        return F.Promise.pure(ok(node));
+        return CompletableFuture.completedFuture(ok(node));
     }
 
     @Override
-    public F.Promise<Result> packageSearch(final String query) {
+    public CompletionStage<Result> packageSearch(final String query) {
         final ObjectNode node = Json.newObject();
         final List<models.Package> packages = models.Package.searchByPartialName(query, 10);
         final ArrayNode resultsArray = node.putArray("results");
         for (final models.Package pkg : packages) {
             resultsArray.add(pkg.getName());
         }
-        return F.Promise.pure(ok(node));
+        return CompletableFuture.completedFuture(ok(node));
     }
 
     @Override
-    public F.Promise<Result> environmentSearch(final String query) {
+    public CompletionStage<Result> environmentSearch(final String query) {
         final ObjectNode node = Json.newObject();
         final List<Environment> environments = Environment.searchByPartialName(query, 10);
         final ArrayNode resultsArray = node.putArray("results");
         for (final Environment env : environments) {
             resultsArray.add(env.getName());
         }
-        return F.Promise.pure(ok(node));
+        return CompletableFuture.completedFuture(ok(node));
     }
 
     @Override
-    public F.Promise<Result> getStages(final String envName) {
+    public CompletionStage<Result> getStages(final String envName) {
         final Environment environment = Environment.getByName(envName);
         if (environment == null) {
-            return F.Promise.pure(notFound());
+            return CompletableFuture.completedFuture(notFound());
         }
 
         final ObjectNode node = Json.newObject();
@@ -119,21 +115,21 @@ public class StandardApi extends Controller implements Api {
         for (final Stage stage : environment.getStages()) {
             resultsArray.add(stage.getName());
         }
-        return F.Promise.pure(ok(node));
+        return CompletableFuture.completedFuture(ok(node));
     }
 
     //TODO(barp): Authenticate this [Artemis-?]
     @Override
-    public F.Promise<Result> updateStagePackageVersions(final String envName, final String stageName) {
+    public CompletionStage<Result> updateStagePackageVersions(final String envName, final String stageName) {
         final models.Stage stage = models.Stage.getByEnvironmentNameAndName(envName, stageName);
         if (stage == null) {
-            return F.Promise.pure(notFound());
+            return CompletableFuture.completedFuture(notFound());
         }
 
         final List<models.PackageVersion> versions = Lists.newArrayList();
         final JsonNode requestJson = request().body().asJson();
         if (requestJson == null) {
-            return F.Promise.pure(badRequest());
+            return CompletableFuture.completedFuture(badRequest());
         }
         final ArrayNode packages = (ArrayNode) requestJson.get("packages");
         for (final JsonNode node : packages) {
@@ -153,12 +149,12 @@ public class StandardApi extends Controller implements Api {
         newManifest.getPackages().addAll(newPackages.values());
         newManifest.save();
 
-        final Future<Object> ask = Patterns.ask(
+        final CompletionStage<Object> ask = PatternsCS.ask(
                 _deploymentManager,
                 new FleetDeploymentCommands.DeployStage(stage, newManifest, "api"),
                 Timeout.apply(30L, TimeUnit.SECONDS));
 
-        return F.Promise.wrap(ask).map(
+        return ask.thenApply(
                 o -> {
                     if (o instanceof Deployment) {
                         final Deployment deployment = (Deployment) o;
@@ -188,15 +184,15 @@ public class StandardApi extends Controller implements Api {
     }
 
     @Override
-    public F.Promise<Result> getReleasePreview(final String envName, final String version) {
+    public CompletionStage<Result> getReleasePreview(final String envName, final String version) {
         final Environment environment = Environment.getByName(envName);
         if (environment == null) {
-            return F.Promise.pure(notFound());
+            return CompletableFuture.completedFuture(notFound());
         }
 
         final Manifest manifest = Manifest.getVersion(environment, version);
         if (manifest == null) {
-            return F.Promise.pure(notFound());
+            return CompletableFuture.completedFuture(notFound());
         }
 
         final ObjectNode node = Json.newObject();
@@ -207,32 +203,26 @@ public class StandardApi extends Controller implements Api {
             entryNode.put("version", packageVersion.getVersion());
             resultsArray.add(entryNode);
         }
-        return F.Promise.pure(ok(node));
+        return CompletableFuture.completedFuture(ok(node));
     }
 
     @Override
-    public F.Promise<Result> deploymentLog(final long deploymentId) {
+    public CompletionStage<Result> deploymentLog(final long deploymentId) {
         final Deployment deployment = Deployment.getById(deploymentId);
         if (deployment == null) {
-            return F.Promise.pure(notFound());
+            return CompletableFuture.completedFuture(notFound());
         }
-        final Tuple2<Enumerator<String>, Concurrent.Channel<String>> channelTuple = Concurrent.broadcast();
-        final Enumerator<String> enumerator = channelTuple._1();
-        final Concurrent.Channel<String> channel = channelTuple._2();
 
-        final ActorRef relayActor = Akka.system().actorOf(DeployLogRelay.props(channel, deploymentId));
-        final Enumeratee<String, String> done = Enumeratee$.MODULE$.onIterateeDone(
-                JFunction.proc(
-                        () -> {
-                            relayActor.tell(PoisonPill.getInstance(), ActorRef.noSender());
-                            Logger.debug("Log session disconnected");
-                        }),
-                Akka.system().dispatcher());
-
-        response().setContentType("text/event-stream");
-        final play.api.mvc.Result result = Results$.MODULE$.Ok().feed(enumerator.$amp$greater(done), Writeable.wString(Codec.utf_8()));
-        return F.Promise.pure(() -> result);
+        final Source<ByteString, ?> source = Source.<String>actorRef(1024, OverflowStrategy.dropTail())
+                .map(ByteString::fromString)
+                .mapMaterializedValue((outRef) -> {
+                    final ActorRef relayActor = _actorSystem.actorOf(DeployLogRelay.props(outRef, deploymentId));
+                    relayActor.tell(outRef, ActorRef.noSender());
+                    return null;
+                });
+        return CompletableFuture.completedFuture(Results.ok().chunked(source).as("text/event-stream"));
     }
 
     private final ActorRef _deploymentManager;
+    private final ActorSystem _actorSystem;
 }

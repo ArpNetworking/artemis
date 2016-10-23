@@ -23,7 +23,7 @@ import controllers.Hostclass;
 import forms.AddHostToHostclass;
 import forms.NewHostclass;
 import play.data.Form;
-import play.libs.F;
+import play.data.FormFactory;
 import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.Security;
@@ -31,6 +31,8 @@ import utils.AuthN;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
 
 /**
@@ -42,60 +44,63 @@ import javax.inject.Inject;
 public class StandardHostclass extends Controller implements Hostclass {
     /**
      * Public constructor.
+     *
+     * @param formFactory form factory to create forms
      */
     @Inject
-    public StandardHostclass() {
+    public StandardHostclass(final FormFactory formFactory) {
+        _formFactory = formFactory;
     }
 
     @Override
-    public F.Promise<Result> detail(final String name) {
+    public CompletionStage<Result> detail(final String name) {
         final models.Hostclass hostclass = models.Hostclass.getByName(name);
         if (hostclass == null) {
-            return F.Promise.pure(notFound());
+            return CompletableFuture.completedFuture(notFound());
         } else {
-            return F.Promise.pure(ok(views.html.hostclass.render(hostclass, AddHostToHostclass.form())));
+            return CompletableFuture.completedFuture(ok(views.html.hostclass.render(hostclass, AddHostToHostclass.form(_formFactory))));
         }
     }
 
     @Override
-    public F.Promise<Result> newHostclass(final String parentHostclass) {
-        Form<NewHostclass> form = NewHostclass.form();
+    public CompletionStage<Result> newHostclass(final String parentHostclass) {
+        Form<NewHostclass> form = NewHostclass.form(_formFactory);
         final models.Hostclass parent = models.Hostclass.getByName(parentHostclass);
         if (parent != null) {
             final NewHostclass hostclass = new NewHostclass();
             hostclass.setParent(parent.getId());
             form = form.fill(hostclass);
         }
-        return F.Promise.pure(ok(views.html.newHostclass.render(form)));
+        return CompletableFuture.completedFuture(ok(views.html.newHostclass.render(form)));
     }
 
     @Override
-    public F.Promise<Result> addHost(final String hostclassName) {
-        final Form<AddHostToHostclass> bound = AddHostToHostclass.form().bindFromRequest();
+    public CompletionStage<Result> addHost(final String hostclassName) {
+        final Form<AddHostToHostclass> bound = AddHostToHostclass.form(_formFactory).bindFromRequest();
         final models.Hostclass hostclass = models.Hostclass.getByName(hostclassName);
         if (hostclass == null) {
-            return F.Promise.pure(notFound());
+            return CompletableFuture.completedFuture(notFound());
         }
         if (bound.hasErrors()) {
-            return F.Promise.pure(badRequest(views.html.hostclass.render(hostclass, bound)));
+            return CompletableFuture.completedFuture(badRequest(views.html.hostclass.render(hostclass, bound)));
         } else {
             final AddHostToHostclass addObject = bound.get();
             final models.Host host = models.Host.getByName(addObject.getHost());
             if (host == null) {
-                return F.Promise.pure(badRequest(views.html.hostclass.render(hostclass, bound)));
+                return CompletableFuture.completedFuture(badRequest(views.html.hostclass.render(hostclass, bound)));
             }
             // TODO(vkoskela): Attempting to move a host should generate a warning. [MAI-?]
             host.setHostclass(hostclass);
             host.save();
-            return F.Promise.pure(ok(views.html.hostclass.render(hostclass, AddHostToHostclass.form())));
+            return CompletableFuture.completedFuture(ok(views.html.hostclass.render(hostclass, AddHostToHostclass.form(_formFactory))));
         }
     }
 
     @Override
-    public F.Promise<Result> create() {
-        final Form<NewHostclass> bound = NewHostclass.form().bindFromRequest();
+    public CompletionStage<Result> create() {
+        final Form<NewHostclass> bound = NewHostclass.form(_formFactory).bindFromRequest();
         if (bound.hasErrors()) {
-            return F.Promise.pure(badRequest(views.html.newHostclass.render(bound)));
+            return CompletableFuture.completedFuture(badRequest(views.html.newHostclass.render(bound)));
         } else {
             try (final Transaction transaction = Ebean.beginTransaction()) {
                 final models.Hostclass hostclass = new models.Hostclass();
@@ -117,10 +122,12 @@ public class StandardHostclass extends Controller implements Hostclass {
                 hostclass.save();
 
                 transaction.commit();
-                return F.Promise.pure(redirect(controllers.routes.Hostclass.detail(hostclass.getName())));
+                return CompletableFuture.completedFuture(redirect(controllers.routes.Hostclass.detail(hostclass.getName())));
             } catch (final IOException e) {
                 throw Throwables.propagate(e);
             }
         }
     }
+
+    private final FormFactory _formFactory;
 }

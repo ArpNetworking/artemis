@@ -16,6 +16,7 @@
 package forms;
 
 import play.data.Form;
+import play.data.FormFactory;
 import play.data.validation.Constraints;
 
 /**
@@ -35,10 +36,11 @@ public class AddHostclassToStage {
     /**
      * Factory method for a form.
      *
+     * @param factory form factory to create forms
      * @return a new {@link Form} bound to this class
      */
-    public static Form<AddHostclassToStage> form() {
-        return Form.form(AddHostclassToStage.class);
+    public static Form<AddHostclassToStage> form(final FormFactory factory) {
+        return factory.form(AddHostclassToStage.class);
     }
 
     @Constraints.Required

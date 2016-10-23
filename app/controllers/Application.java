@@ -15,10 +15,11 @@
  */
 package controllers;
 
-import play.libs.F;
 import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
+
+import java.util.concurrent.CompletionStage;
 
 /**
  * Generic application actions.
@@ -32,5 +33,5 @@ public interface Application {
      *
      * @return a Result
      */
-    F.Promise<Result> main();
+    CompletionStage<Result> main();
 }

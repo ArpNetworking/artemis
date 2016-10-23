@@ -22,6 +22,7 @@ import com.typesafe.config.ConfigParseOptions;
 import models.Environment;
 import models.Stage;
 import play.data.Form;
+import play.data.FormFactory;
 import play.data.validation.Constraints;
 import play.data.validation.ValidationError;
 import utils.NoIncluder;
@@ -61,24 +62,26 @@ public class ConfigForm {
     /**
      * Factory method for a form.
      *
+     * @param factory form factory to create forms
      * @return a new {@link Form} bound to this class
      */
-    public static Form<ConfigForm> form() {
-        return Form.form(ConfigForm.class);
+    public static Form<ConfigForm> form(final FormFactory factory) {
+        return factory.form(ConfigForm.class);
     }
 
     /**
      * Factory method for a form.
      *
      * @param env Environment to bind from
+     * @param factory form factory to create forms
      * @return a new {@link Form} bound to this class
      */
-    public static Form<ConfigForm> form(final Environment env) {
+    public static Form<ConfigForm> form(final Environment env, final FormFactory factory) {
         final ConfigForm configForm = new ConfigForm();
         configForm._config = env.getConfig();
         configForm._id = env.getId();
         configForm._version = env.getVersion();
-        final Form<ConfigForm> form = Form.form(ConfigForm.class);
+        final Form<ConfigForm> form = factory.form(ConfigForm.class);
         return form.fill(configForm);
     }
 
@@ -86,14 +89,15 @@ public class ConfigForm {
      * Factory method for a form.
      *
      * @param stage Stage to bind from
+     * @param factory form factory to create forms
      * @return a new {@link Form} bound to this class
      */
-    public static Form<ConfigForm> form(final Stage stage) {
+    public static Form<ConfigForm> form(final Stage stage, final FormFactory factory) {
         final ConfigForm configForm = new ConfigForm();
         configForm._config = stage.getConfig();
         configForm._id = stage.getId();
         configForm._version = stage.getVersion();
-        final Form<ConfigForm> form = Form.form(ConfigForm.class);
+        final Form<ConfigForm> form = factory.form(ConfigForm.class);
         return form.fill(configForm);
     }
 

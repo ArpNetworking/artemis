@@ -32,46 +32,45 @@ object ApplicationBuild extends Build {
   val appName = "artemis"
   name := appName
 
-  val jacksonVersion = "2.6.2"
+  val jacksonVersion = "2.8.4"
   val guiceVersion = "4.0"
 
   val s = findbugsSettings ++ CheckstyleSettings.checkstyleTask
 
   lazy val root = Project(appName, file("."), settings = s).enablePlugins(PlayJava, PlayEbean).settings(
 
-  scalaVersion := "2.11.6",
+  scalaVersion := "2.11.8",
 
   libraryDependencies ++= Seq(
     javaJdbc,
     javaWs,
-    "cglib" % "cglib" % "3.1",
-    "com.arpnetworking.build" % "build-resources" % "1.0.5",
-    "com.arpnetworking.logback" % "logback-steno" % "1.11.0",
+    "cglib" % "cglib" % "3.2.4",
+    "com.arpnetworking.build" % "build-resources" % "1.0.6",
+    "com.arpnetworking.logback" % "logback-steno" % "1.16.1",
     "com.arpnetworking.metrics.extras" % "jvm-extra" % "0.4.2",
-    "com.arpnetworking.metrics" % "metrics-client" % "0.4.3",
+    "com.arpnetworking.metrics" % "metrics-client" % "0.5.0",
     "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % jacksonVersion,
     "com.fasterxml.jackson.datatype" % "jackson-datatype-guava" % jacksonVersion,
-    "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk7" % jacksonVersion,
     "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8" % jacksonVersion,
     "com.fasterxml.jackson.datatype" % "jackson-datatype-joda" % jacksonVersion,
-    "com.github.tomakehurst" % "wiremock" % "1.33" % "test",
+    "com.github.tomakehurst" % "wiremock" % "2.2.2" % "test",
     "com.google.code.findbugs" % "jsr305" % "3.0.1",
     "com.google.code.findbugs" % "annotations" % "3.0.1",
-    "com.google.guava" % "guava" % "18.0",
+    "com.google.guava" % "guava" % "19.0",
     "com.google.inject" % "guice" % guiceVersion,
     "com.google.inject.extensions" % "guice-assistedinject" % guiceVersion,
     "com.h2database" % "h2" % "1.4.186",
-    "com.hierynomus" % "sshj" % "0.15.0",
-    "net.sf.oval" % "oval" % "1.84",
+    "com.hierynomus" % "sshj" % "0.18.0",
+    "net.sf.oval" % "oval" % "1.86",
     "org.apache.httpcomponents" % "httpclient" % "4.3.1",
-    "org.flywaydb" % "flyway-play_2.11" % "2.2.1",
+    "org.flywaydb" % "flyway-play_2.11" % "3.0.1",
     "org.mockito" % "mockito-all" % "1.10.19",
     "org.postgresql" % "postgresql" % "9.4-1202-jdbc42",
     "org.scala-lang.modules" %% "scala-java8-compat" % "0.7.0",
-    "org.webjars" % "bootstrap" % "3.3.6",
-    "org.webjars" % "jquery" % "2.1.3",
-    "org.webjars" % "knockout" % "3.2.0-1",
-    "org.webjars" % "typeaheadjs" % "0.10.5-1"
+    "org.webjars" % "bootstrap" % "3.3.7",
+    "org.webjars" % "jquery" % "3.1.1",
+    "org.webjars" % "knockout" % "3.4.0",
+    "org.webjars" % "typeaheadjs" % "0.11.1"
   ),
 
   // Extract build resources

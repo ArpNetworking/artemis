@@ -22,13 +22,14 @@ import models.Hostclass;
 import models.Owner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import play.libs.F;
 import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
 
 
@@ -48,12 +49,12 @@ public class StandardApplication extends Controller implements controllers.Appli
     }
 
     @Override
-    public F.Promise<Result> main() {
+    public CompletionStage<Result> main() {
         final List<Owner> orgs = AuthN.getOrganizations(request().username());
         final List<Environment> environments = Environment.getEnvironmentsForOrgs(orgs, 10);
         final List<Bundle> bundles = Lists.newArrayList();
         final List<Hostclass> hostclasses = Hostclass.getHostclassesForEnvironments(environments, 10);
-        return F.Promise.pure(ok(views.html.index.render(environments, bundles, hostclasses)));
+        return CompletableFuture.completedFuture(ok(views.html.index.render(environments, bundles, hostclasses)));
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(StandardApplication.class);

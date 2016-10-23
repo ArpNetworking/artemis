@@ -36,8 +36,8 @@ import models.UserMembership;
 import org.joda.time.DateTime;
 import play.Logger;
 import play.data.Form;
+import play.data.FormFactory;
 import play.data.validation.ValidationError;
-import play.libs.F;
 import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.Security;
@@ -50,6 +50,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
 import javax.persistence.PersistenceException;
 
@@ -62,26 +64,29 @@ import javax.persistence.PersistenceException;
 public class StandardEnvironment extends Controller implements Environment {
     /**
      * Public constructor.
+     *
+     * @param formFactory form factory to create forms
      */
     @Inject
-    public StandardEnvironment() {
+    public StandardEnvironment(final FormFactory formFactory) {
+        _formFactory = formFactory;
     }
 
     @Override
-    public F.Promise<Result> detail(final String envName) {
+    public CompletionStage<Result> detail(final String envName) {
         final models.Environment environment = models.Environment.getByName(envName);
         if (environment == null) {
-            return F.Promise.pure(notFound());
+            return CompletableFuture.completedFuture(notFound());
         } else {
-            final Form<NewStage> newStageForm = NewStage.form();
-            final Form<ConfigForm> configForm = ConfigForm.form(environment);
-            return F.Promise.pure(ok(views.html.environment.render(environment, newStageForm, configForm, false)));
+            final Form<NewStage> newStageForm = NewStage.form(_formFactory);
+            final Form<ConfigForm> configForm = ConfigForm.form(environment, _formFactory);
+            return CompletableFuture.completedFuture(ok(views.html.environment.render(environment, newStageForm, configForm, false)));
         }
     }
 
     @Override
-    public F.Promise<Result> newEnvironment(final String parentEnv) {
-        Form<NewEnvironment> form = NewEnvironment.form();
+    public CompletionStage<Result> newEnvironment(final String parentEnv) {
+        Form<NewEnvironment> form = NewEnvironment.form(_formFactory);
         final models.Environment parent = models.Environment.getByName(parentEnv);
         if (parent != null) {
             final NewEnvironment env = new NewEnvironment();
@@ -90,14 +95,14 @@ public class StandardEnvironment extends Controller implements Environment {
         }
         final List<Owner> owners = UserMembership.getOrgsForUser(request().username());
         final List<EnvironmentType> envTypes = Arrays.asList(EnvironmentType.values());
-        return F.Promise.pure(ok(views.html.newEnvironment.render(form, owners, envTypes)));
+        return CompletableFuture.completedFuture(ok(views.html.newEnvironment.render(form, owners, envTypes)));
     }
 
     @Override
-    public F.Promise<Result> prepareRelease(final String envName) {
+    public CompletionStage<Result> prepareRelease(final String envName) {
         final models.Environment environment = models.Environment.getByName(envName);
         if (environment == null) {
-            return F.Promise.pure(notFound());
+            return CompletableFuture.completedFuture(notFound());
         } else {
             final String currentVersion;
             final Manifest manifest = Manifest.getLatestManifest(environment);
@@ -109,7 +114,7 @@ public class StandardEnvironment extends Controller implements Environment {
 
             final String nextVersion = incrementVersion(currentVersion);
 
-            return F.Promise.pure(ok(views.html.createReleasePrep.render(environment, manifest, nextVersion)));
+            return CompletableFuture.completedFuture(ok(views.html.createReleasePrep.render(environment, manifest, nextVersion)));
         }
     }
 
@@ -142,28 +147,28 @@ public class StandardEnvironment extends Controller implements Environment {
     }
 
     @Override
-    public F.Promise<Result> createRelease(final String envName) {
+    public CompletionStage<Result> createRelease(final String envName) {
         final models.Environment environment = models.Environment.getByName(envName);
         if (environment == null) {
-            return F.Promise.pure(notFound());
+            return CompletableFuture.completedFuture(notFound());
         }
         // Make sure the user is an owner of the env
         if (!validateAuth(environment)) {
-            return F.Promise.pure(unauthorized());
+            return CompletableFuture.completedFuture(unauthorized());
         }
 
         final Map<String, String[]> formUrlEncoded = request().body().asFormUrlEncoded();
 
         final String[] manifestVersion = formUrlEncoded.get("version");
         if (manifestVersion == null || manifestVersion.length > 1) {
-            return F.Promise.pure(badRequest());
+            return CompletableFuture.completedFuture(badRequest());
         }
 
         final ArrayList<String> packages = Lists.newArrayList(Optional.ofNullable(formUrlEncoded.get("packages")).orElse(new String[0]));
         final ArrayList<String> versions = Lists.newArrayList(Optional.ofNullable(formUrlEncoded.get("versions")).orElse(new String[0]));
 
         if (packages.size() != versions.size()) {
-            return F.Promise.pure(badRequest());
+            return CompletableFuture.completedFuture(badRequest());
         }
 
         final Map<String, String> pkgs = Maps.newHashMap();
@@ -171,7 +176,7 @@ public class StandardEnvironment extends Controller implements Environment {
             final String aPackage = packages.get(i);
             final String version = versions.get(i);
             if (environment.getEnvironmentType() == EnvironmentType.ROLLER && (aPackage.contains("-") || version.contains("-"))) {
-                return F.Promise.pure(badRequest());
+                return CompletableFuture.completedFuture(badRequest());
             }
             pkgs.put(aPackage, version);
         }
@@ -183,18 +188,19 @@ public class StandardEnvironment extends Controller implements Environment {
         try {
             manifest.save();
         } catch (final PersistenceException e) {
-            return F.Promise.pure(badRequest());
+            return CompletableFuture.completedFuture(badRequest());
         }
-        return F.Promise.pure(redirect(routes.Environment.detail(envName)));
+        return CompletableFuture.completedFuture(redirect(routes.Environment.detail(envName)));
     }
 
     @Override
-    public F.Promise<Result> create() {
-        final Form<NewEnvironment> bound = NewEnvironment.form().bindFromRequest();
+    public CompletionStage<Result> create() {
+
+        final Form<NewEnvironment> bound = NewEnvironment.form(_formFactory).bindFromRequest();
         if (bound.hasErrors()) {
             final List<Owner> owners = UserMembership.getOrgsForUser(request().username());
             final List<EnvironmentType> envTypes = Arrays.asList(EnvironmentType.values());
-            return F.Promise.pure(badRequest(views.html.newEnvironment.render(bound, owners, envTypes)));
+            return CompletableFuture.completedFuture(badRequest(views.html.newEnvironment.render(bound, owners, envTypes)));
         } else {
             try (final Transaction transaction = Ebean.beginTransaction()) {
                 final models.Environment environment = new models.Environment();
@@ -224,7 +230,7 @@ public class StandardEnvironment extends Controller implements Environment {
                 createStage(environment, manifest, "UAT");
 
                 transaction.commit();
-                return F.Promise.pure(redirect(controllers.routes.Environment.detail(environment.getName())));
+                return CompletableFuture.completedFuture(redirect(controllers.routes.Environment.detail(environment.getName())));
             } catch (final IOException e) {
                 throw Throwables.propagate(e);
             }
@@ -245,10 +251,10 @@ public class StandardEnvironment extends Controller implements Environment {
     }
 
     @Override
-    public F.Promise<Result> save(final String envName) {
+    public CompletionStage<Result> save(final String envName) {
         final models.Environment environment = models.Environment.getByName(envName);
-        final Form<NewStage> newStageForm = NewStage.form();
-        final Form<ConfigForm> configForm = ConfigForm.form().bindFromRequest();
+        final Form<NewStage> newStageForm = NewStage.form(_formFactory);
+        final Form<ConfigForm> configForm = ConfigForm.form(_formFactory).bindFromRequest();
         final Map<String, String> configData = configForm.data();
         final String config = configData.get("config");
         final Long version = Long.parseLong(configData.get("version"));
@@ -259,14 +265,17 @@ public class StandardEnvironment extends Controller implements Environment {
         }
 
         if (configForm.hasErrors()) {
-            return F.Promise.pure(badRequest(views.html.environment.render(environment, newStageForm, configForm, true)));
+            return CompletableFuture.completedFuture(
+                    badRequest(views.html.environment.render(environment, newStageForm, configForm, true)));
         }
         environment.setConfig(config);
         try {
             environment.save();
-            return F.Promise.pure(ok(views.html.environment.render(environment, newStageForm, configForm, true)));
+            return CompletableFuture.completedFuture(
+                    ok(views.html.environment.render(environment, newStageForm, configForm, true)));
         } catch (final PersistenceException e) {
-            return F.Promise.pure(badRequest(views.html.environment.render(environment, newStageForm, configForm, true)));
+            return CompletableFuture.completedFuture(
+                    badRequest(views.html.environment.render(environment, newStageForm, configForm, true)));
         }
     }
 
@@ -315,4 +324,5 @@ public class StandardEnvironment extends Controller implements Environment {
         return manifest;
     }
 
+    private final FormFactory _formFactory;
 }

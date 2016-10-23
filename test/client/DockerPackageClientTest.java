@@ -20,29 +20,31 @@ import com.github.tomakehurst.wiremock.client.WireMock;
 import com.google.common.collect.ImmutableMap;
 import org.junit.Assert;
 import org.junit.Test;
-import play.GlobalSettings;
-import play.test.FakeApplication;
-import play.test.Helpers;
+import play.Application;
+import play.inject.guice.GuiceApplicationBuilder;
+import play.libs.ws.WSClient;
 import play.test.WithApplication;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * @author Matthew Hayter (mhayter at groupon dot com)
  */
 public class DockerPackageClientTest extends WithApplication {
     @Override
-    protected FakeApplication provideFakeApplication() {
-        return Helpers.fakeApplication(ImmutableMap.of(
-                "logger.application", "DEBUG"
-        ), new GlobalSettings());
+    protected Application provideApplication() {
+        final GuiceApplicationBuilder applicationBuilder = new GuiceApplicationBuilder();
+        applicationBuilder.configure(ImmutableMap.of("logger.application", "DEBUG"));
+        return applicationBuilder.build();
     }
 
     @Test
-    public void testGetImageVersions() {
+    public void testGetImageVersions() throws InterruptedException, ExecutionException, TimeoutException {
         final WireMockServer server = new WireMockServer(8089);
         WireMock.configureFor("localhost", 8089);
         server.start();
@@ -67,9 +69,10 @@ public class DockerPackageClientTest extends WithApplication {
                         .withBody("{\"latest\": \"845d6a1f029c81c83cdf82fce0048030af355b2edd1795e0f559f264d0a29559\", \"0.1\": \"ccccca1f029c81c83cdf82fce0048030af355b2edd1795e0f559f264d0a29559\"}")));
 
 
-        final DockerPackageClient client = new DockerPackageClient("http://localhost:8089");
+        final WSClient wsClient = app.injector().instanceOf(WSClient.class);
+        final DockerPackageClient client = new DockerPackageClient("http://localhost:8089", wsClient);
 
-        final DockerPackageClient.PackageListResponse packageListResponse = client.getAllPackages().get(5, TimeUnit.SECONDS);
+        final DockerPackageClient.PackageListResponse packageListResponse = client.getAllPackages().toCompletableFuture().get(5, TimeUnit.SECONDS);
 
         final Map<String, List<DockerPackageClient.ImageMetadata>> pkgMap = packageListResponse.getPackages();
 

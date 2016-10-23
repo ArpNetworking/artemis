@@ -15,8 +15,10 @@
  */
 package actors;
 
+import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
+import akka.actor.Terminated;
 import akka.actor.UntypedActor;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
@@ -31,7 +33,6 @@ import com.google.common.collect.Iterables;
 import models.Deployment;
 import models.DeploymentLog;
 import models.Host;
-import play.api.libs.iteratee.Concurrent;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.util.List;
@@ -46,22 +47,23 @@ public class DeployLogRelay extends UntypedActor {
     /**
      * Creates a {@link Props} to create this actor.
      *
-     * @param channel Play channel to send data to
+     * @param subscriber actor to send data to
      * @param deploymentId the deployment id
      * @return a new {@link Props}
      */
-    public static Props props(final Concurrent.Channel<String> channel, final long deploymentId) {
-        return Props.create(DeployLogRelay.class, channel, deploymentId);
+    public static Props props(final ActorRef subscriber, final long deploymentId) {
+        return Props.create(DeployLogRelay.class, subscriber, deploymentId);
     }
 
     /**
      * Public constructor.
      *
-     * @param channel Play channel to send data to
+     * @param subscriber actor to send data to
      * @param deploymentId the deployment id
      */
-    public DeployLogRelay(final Concurrent.Channel<String> channel, final long deploymentId) {
-        _channel = channel;
+    public DeployLogRelay(final ActorRef subscriber, final long deploymentId) {
+        _subscriber = subscriber;
+        context().watch(_subscriber);
         _deployment = Deployment.getById(deploymentId);
         context().system().scheduler().schedule(
                 FiniteDuration.apply(1, TimeUnit.SECONDS),
@@ -95,9 +97,11 @@ public class DeployLogRelay extends UntypedActor {
                                                             context().dispatcher(),
                                                             self());
             }
-        } else if ("close".equals(message)) {
-            _channel.eofAndEnd();
-            self().tell(PoisonPill.getInstance(), self());
+        } else if (message instanceof Terminated) {
+            final Terminated terminated = (Terminated) message;
+            if (terminated.actor().equals(_subscriber)) {
+                self().tell(PoisonPill.getInstance(), self());
+            }
         }
     }
 
@@ -109,15 +113,15 @@ public class DeployLogRelay extends UntypedActor {
         Joiner.on("\ndata: ").appendTo(builder, split);
         builder.append("\n\n");
 
-        _channel.push(builder.toString());
+        _subscriber.tell(builder.toString(), self());
     }
 
     private void pushEnd() {
-        _channel.push("event: end\ndata: \n\n");
+        _subscriber.tell("event: end\ndata: \n\n", self());
     }
 
     private long _lastId = 0;
     private final Logger _logger = LoggerFactory.getLogger(DeployLogRelay.class);
-    private final Concurrent.Channel<String> _channel;
+    private final ActorRef _subscriber;
     private final Deployment _deployment;
 }

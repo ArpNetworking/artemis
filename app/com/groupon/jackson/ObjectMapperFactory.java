@@ -22,7 +22,6 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.util.ISO8601DateFormat;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
-import com.fasterxml.jackson.datatype.jdk7.Jdk7Module;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
 
@@ -72,7 +71,6 @@ public final class ObjectMapperFactory {
         final SimpleModule module = new SimpleModule(name);
         objectMapper.registerModule(module);
         objectMapper.registerModule(new GuavaModule());
-        objectMapper.registerModule(new Jdk7Module());
         objectMapper.registerModule(new Jdk8Module());
         objectMapper.registerModule(new JodaModule());
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);

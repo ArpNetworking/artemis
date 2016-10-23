@@ -16,11 +16,11 @@
 package client;
 
 import com.google.common.collect.Maps;
-import play.libs.F;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
 
 /**
  * A provider that can be used to get a list of packages.
@@ -31,9 +31,9 @@ public interface PackageProvider {
     /**
      * Provide a list of all packages.
      *
-     * @return A {@link play.libs.F.Promise} of a list of packages.
+     * @return A {@link CompletionStage} of a list of packages.
      */
-    F.Promise<PackageProvider.PackageListResponse> getAllPackages();
+    CompletionStage<PackageListResponse> getAllPackages();
 
     /**
      * A response for a list of packages.

@@ -19,9 +19,10 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import controllers.Admin;
 import controllers.ArtemisProxy;
-import play.libs.F;
+import play.libs.ws.WSClient;
 import play.mvc.Result;
 
+import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
 
 /**
@@ -35,19 +36,20 @@ public class ProxyAdmin extends ArtemisProxy implements Admin {
      * Public constructor.
      *
      * @param baseURL the base proxy url
+     * @param client ws client to use
      */
     @Inject
-    public ProxyAdmin(@Named("ArtemisProxyBaseUrl") final String baseURL) {
-        super(baseURL);
+    public ProxyAdmin(@Named("ArtemisProxyBaseUrl") final String baseURL, final WSClient client) {
+        super(baseURL, client);
     }
 
     @Override
-    public F.Promise<Result> index() {
+    public CompletionStage<Result> index() {
         return proxy();
     }
 
     @Override
-    public F.Promise<Result> refreshPackages() {
+    public CompletionStage<Result> refreshPackages() {
         return proxy();
     }
 }

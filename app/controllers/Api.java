@@ -15,8 +15,9 @@
  */
 package controllers;
 
-import play.libs.F;
 import play.mvc.Result;
+
+import java.util.concurrent.CompletionStage;
 
 /**
  * JSON REST Apis.
@@ -30,7 +31,7 @@ public interface Api {
      * @param query the query
      * @return an http response
      */
-    F.Promise<Result> hostclassSearch(final String query);
+    CompletionStage<Result> hostclassSearch(final String query);
 
     /**
      * Performs a search for a package.
@@ -38,7 +39,7 @@ public interface Api {
      * @param query the query
      * @return an http response
      */
-    F.Promise<Result> packageSearch(final String query);
+    CompletionStage<Result> packageSearch(final String query);
 
     /**
      * Performs a search for an environment.
@@ -46,7 +47,7 @@ public interface Api {
      * @param query the query
      * @return an http response
      */
-    F.Promise<Result> environmentSearch(final String query);
+    CompletionStage<Result> environmentSearch(final String query);
 
     /**
      * Gets a list of stages in an environment.
@@ -54,7 +55,7 @@ public interface Api {
      * @param envName the environment name
      * @return an http response
      */
-    F.Promise<Result> getStages(final String envName);
+    CompletionStage<Result> getStages(final String envName);
 
     /**
      * Updates the packages and versions in a stage.
@@ -63,7 +64,7 @@ public interface Api {
      * @param stageName the stage name
      * @return an http response
      */
-    F.Promise<Result> updateStagePackageVersions(final String envName, final String stageName);
+    CompletionStage<Result> updateStagePackageVersions(final String envName, final String stageName);
 
     /**
      * Streams the log of a deployment.
@@ -71,7 +72,7 @@ public interface Api {
      * @param deploymentId the deployment id
      * @return an http response
      */
-    F.Promise<Result> deploymentLog(final long deploymentId);
+    CompletionStage<Result> deploymentLog(final long deploymentId);
 
     /**
      * Gets a list of packages in a manifest version.
@@ -80,5 +81,5 @@ public interface Api {
      * @param version the version of the manifest
      * @return an http response
      */
-    F.Promise<Result> getReleasePreview(final String envName, final String version);
+    CompletionStage<Result> getReleasePreview(final String envName, final String version);
 }

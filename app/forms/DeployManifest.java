@@ -16,6 +16,7 @@
 package forms;
 
 import play.data.Form;
+import play.data.FormFactory;
 
 /**
  * Form to hold the data about the previous manifest version and the new packages.
@@ -42,10 +43,11 @@ public class DeployManifest {
     /**
      * Factory method for a form.
      *
+     * @param factory form factory to create forms
      * @return a new {@link Form} bound to this class
      */
-    public static Form<DeployManifest> form() {
-        return Form.form(DeployManifest.class);
+    public static Form<DeployManifest> form(final FormFactory factory) {
+        return factory.form(DeployManifest.class);
     }
 
     private long _manifest;

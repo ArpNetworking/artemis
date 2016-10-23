@@ -16,7 +16,7 @@
 package actors;
 
 import akka.actor.UntypedActor;
-import akka.pattern.Patterns;
+import akka.pattern.PatternsCS;
 import client.DockerPackageClient;
 import client.DockerPackageClient.PackageListResponse;
 import com.arpnetworking.steno.Logger;
@@ -28,12 +28,12 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import models.Package;
 import models.PackageVersion;
-import play.libs.F;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Singleton;
 
@@ -90,11 +90,11 @@ public class DockerPackageRefresher extends UntypedActor {
 
     private void fetchPackagesAndSendMessage() {
         _refreshState = RefreshStates.RUNNING;
-        final F.Promise<PackageListMessage> imagesListPromise =
+        final CompletionStage<PackageListMessage> imagesListPromise =
                 _dockerPackageClient
                         .getAllPackages()
-                        .map(PackageListMessage::new);
-        Patterns.pipe(imagesListPromise.wrapped(), context().dispatcher()).to(self(), self());
+                        .thenApply(PackageListMessage::new);
+        PatternsCS.pipe(imagesListPromise, context().dispatcher()).to(self(), self());
     }
 
     private void persistImagesToPackageVersions(final Map<String, List<DockerPackageClient.ImageMetadata>> repoToImageMap) {

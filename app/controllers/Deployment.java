@@ -15,10 +15,11 @@
  */
 package controllers;
 
-import play.libs.F;
 import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
+
+import java.util.concurrent.CompletionStage;
 
 /**
  * Deployment controller.
@@ -33,7 +34,7 @@ public interface Deployment {
      * @param deploymentId the deployment id
      * @return a {@link Result}
      */
-    F.Promise<Result> detail(long deploymentId);
+    CompletionStage<Result> detail(long deploymentId);
 
     /**
      * Shows a deployment log page.
@@ -41,7 +42,7 @@ public interface Deployment {
      * @param deploymentId the deployment id
      * @return a {@link Result}
      */
-    F.Promise<Result> log(long deploymentId);
+    CompletionStage<Result> log(long deploymentId);
 
     /**
      * Shows a deployment diff page.
@@ -49,5 +50,5 @@ public interface Deployment {
      * @param deploymentId the deployment id
      * @return a {@link Result}
      */
-    F.Promise<Result> diff(long deploymentId);
+    CompletionStage<Result> diff(long deploymentId);
 }
