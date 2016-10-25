@@ -83,6 +83,8 @@ object ApplicationBuild extends Build {
     Seq.empty[File]
   }),
 
+  javaOptions += "-Dconfig.file=conf/artemis-application.conf",
+
   // Compiler warnings as errors
   javacOptions ++= Seq(
     "-Xlint:all",
