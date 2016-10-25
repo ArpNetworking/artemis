@@ -15,6 +15,7 @@
  */
 package client;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.common.collect.Maps;
 
 import java.util.Collections;
@@ -27,6 +28,10 @@ import java.util.concurrent.CompletionStage;
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.CLASS,
+        include = JsonTypeInfo.As.PROPERTY,
+        property = "type")
 public interface PackageProvider {
     /**
      * Provide a list of all packages.

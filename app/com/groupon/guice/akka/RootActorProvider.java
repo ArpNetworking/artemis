@@ -18,6 +18,7 @@ package com.groupon.guice.akka;
 import akka.actor.Actor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import com.arpnetworking.commons.akka.GuiceActorCreator;
 import com.google.inject.Injector;
 import com.google.inject.Provider;
 
@@ -26,7 +27,7 @@ import com.google.inject.Provider;
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
-public abstract  class RootActorProvider implements Provider<ActorRef> {
+public abstract class RootActorProvider implements Provider<ActorRef> {
     /**
      * Public constructor.
      *

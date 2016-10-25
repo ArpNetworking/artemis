@@ -15,6 +15,8 @@
  */
 package client;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
 
@@ -23,11 +25,15 @@ import java.util.concurrent.CompletionStage;
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.CLASS,
+        include = JsonTypeInfo.As.PROPERTY,
+        property = "type")
 public interface HostProvider {
     /**
      * Provides a set of hosts.
      *
-     * @return A {@link play.libs.F.Promise} containing a set of hosts
+     * @return A {@link CompletionStage} containing a set of hosts
      */
     CompletionStage<Set<String>> getHosts();
 }

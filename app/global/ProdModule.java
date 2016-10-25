@@ -25,9 +25,15 @@ import akka.actor.ActorSystem;
 import client.DeploymentClientFactory;
 import client.DockerDeploymentClient;
 import client.DockerSshClient;
+import com.arpnetworking.commons.akka.GuiceActorCreator;
+import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.impl.TsdLogSink;
 import com.arpnetworking.metrics.impl.TsdMetricsFactory;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.introspect.AnnotationIntrospectorPair;
+import com.fasterxml.jackson.module.guice.GuiceAnnotationIntrospector;
+import com.fasterxml.jackson.module.guice.GuiceInjectableValues;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -41,7 +47,6 @@ import com.groupon.deployment.fleet.FleetDeploymentFactory;
 import com.groupon.deployment.fleet.Sequential;
 import com.groupon.deployment.host.HostDeploymentFactory;
 import com.groupon.deployment.host.Roller;
-import com.groupon.guice.akka.GuiceActorCreator;
 import com.groupon.guice.akka.RootActorProvider;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import play.Configuration;
@@ -86,6 +91,21 @@ public class ProdModule extends AbstractModule {
                         .implement(Roller.class, Roller.class)
                                 // TODO(barp): add the docker fun [Artemis-?]
                         .build(HostDeploymentFactory.class));
+    }
+
+    @Provides
+    @Singleton
+    ObjectMapper provideObjectMapper(final Injector injector) {
+        final ObjectMapper objectMapper = ObjectMapperFactory.createInstance();
+        final GuiceAnnotationIntrospector guiceIntrospector = new GuiceAnnotationIntrospector();
+        objectMapper.setInjectableValues(new GuiceInjectableValues(injector));
+        objectMapper.setAnnotationIntrospectors(
+                new AnnotationIntrospectorPair(
+                        guiceIntrospector, objectMapper.getSerializationConfig().getAnnotationIntrospector()),
+                new AnnotationIntrospectorPair(
+                        guiceIntrospector, objectMapper.getDeserializationConfig().getAnnotationIntrospector()));
+
+        return objectMapper;
     }
 
 
