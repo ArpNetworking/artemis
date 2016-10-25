@@ -25,7 +25,8 @@ import akka.actor.ActorSystem;
 import client.DeploymentClientFactory;
 import client.DockerDeploymentClient;
 import client.DockerSshClient;
-import com.arpnetworking.commons.akka.GuiceActorCreator;
+import client.HostProvider;
+import client.PackageProvider;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.impl.TsdLogSink;
@@ -50,10 +51,11 @@ import com.groupon.deployment.host.Roller;
 import com.groupon.guice.akka.RootActorProvider;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import play.Configuration;
+import utils.JsonConfigBridge;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collections;
-import javax.inject.Provider;
 import javax.inject.Singleton;
 
 /**
@@ -91,6 +93,20 @@ public class ProdModule extends AbstractModule {
                         .implement(Roller.class, Roller.class)
                                 // TODO(barp): add the docker fun [Artemis-?]
                         .build(HostDeploymentFactory.class));
+    }
+
+    @Provides
+    @Singleton
+    HostProvider provideHostProvider(final Configuration configuration, final ObjectMapper objectMapper) throws IOException {
+        final Configuration providerConfig = configuration.getConfig("hostProvider");
+        return JsonConfigBridge.load(providerConfig, HostProvider.class, objectMapper);
+    }
+
+    @Provides
+    @Singleton
+    PackageProvider providePackageProvider(final Configuration configuration, final ObjectMapper objectMapper) throws IOException {
+        final Configuration providerConfig = configuration.getConfig("packageProvider");
+        return JsonConfigBridge.load(providerConfig, PackageProvider.class, objectMapper);
     }
 
     @Provides
@@ -177,19 +193,11 @@ public class ProdModule extends AbstractModule {
         }
     }
 
-    private static final class JvmMetricsCollectorProvider implements Provider<ActorRef> {
+    @Singleton
+    private static final class JvmMetricsCollectorProvider extends RootActorProvider {
         @Inject
         private JvmMetricsCollectorProvider(final Injector injector, final ActorSystem system) {
-            _injector = injector;
-            _system = system;
+            super(system, injector, JvmMetricsCollector.class, "JvmMetricsCollector");
         }
-
-        @Override
-        public ActorRef get() {
-            return _system.actorOf(GuiceActorCreator.props(_injector, JvmMetricsCollector.class));
-        }
-
-        private final Injector _injector;
-        private final ActorSystem _system;
     }
 }
