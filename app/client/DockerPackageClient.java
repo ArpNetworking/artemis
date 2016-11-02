@@ -18,8 +18,7 @@ package client;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import play.libs.F;
-import play.libs.ws.WS;
+import play.libs.ws.WSClient;
 import play.libs.ws.WSRequest;
 import play.libs.ws.WSResponse;
 
@@ -30,6 +29,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Spliterator;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import javax.inject.Inject;
@@ -46,10 +47,11 @@ public class DockerPackageClient extends ClientBase {
      * Public constructor.
      *
      * @param baseUrl the base url of the docker registry
+     * @param client ws client to use
      */
     @Inject
-    public DockerPackageClient(@Named("DockerRegistryUrl") final String baseUrl) {
-        super(baseUrl);
+    public DockerPackageClient(@Named("DockerRegistryUrl") final String baseUrl, final WSClient client) {
+        super(baseUrl, client);
     }
 
     /**
@@ -57,12 +59,12 @@ public class DockerPackageClient extends ClientBase {
      *
      * @return a response with all of the packages
      */
-    public F.Promise<PackageListResponse> getAllPackages() {
+    public CompletionStage<PackageListResponse> getAllPackages() {
 
-        final F.Promise<List<String>> repoNamesPromise = WS.client()
+        final CompletionStage<List<String>> repoNamesPromise = client()
                 .url(uri("/v1/search").toString())
                 .get()
-                .map(searchResponse -> {
+                .thenApply(searchResponse -> {
                     // searchResponse = { results: [ {name: "", description: "" }, ... ] }
                     final Spliterator<JsonNode> resultsIter = searchResponse.asJson().get("results").spliterator();
 
@@ -72,10 +74,10 @@ public class DockerPackageClient extends ClientBase {
 
                 });
 
-        final F.Promise<List<WSResponse>> tagListJsonNodes = repoNamesPromise.flatMap(repoNames -> {
+        final CompletionStage<List<WSResponse>> tagListJsonNodes = repoNamesPromise.thenCompose(repoNames -> {
 
             final List<WSRequest> requests = repoNames.stream()
-                    .map(name -> WS.client().url(uri(String.format("/v1/repositories/%s/tags", name)).toString()))
+                    .map(name -> client().url(uri(String.format("/v1/repositories/%s/tags", name)).toString()))
                     .collect(Collectors.toList());
 
             return concurrentExecute(requests, 5);
@@ -83,14 +85,13 @@ public class DockerPackageClient extends ClientBase {
         });
 
         // Combine the repo names and the tag lists into a Map, and package in a PackageListResponse:
-        return repoNamesPromise
-                .zip(tagListJsonNodes)
-                .map(namesAndJsonTuple -> {
-
-                    final Map<String, List<ImageMetadata>> packages = Maps.newHashMapWithExpectedSize(namesAndJsonTuple._1.size());
-
-                    final Iterator<String> repoNamesIter = namesAndJsonTuple._1.iterator();
-                    final Iterator<WSResponse> tagListsIter = namesAndJsonTuple._2.iterator();
+        return CompletableFuture.allOf(repoNamesPromise.toCompletableFuture(), tagListJsonNodes.toCompletableFuture())
+                .thenApply(v -> {
+                    final List<String> repoNames = repoNamesPromise.toCompletableFuture().join();
+                    final List<WSResponse> tags = tagListJsonNodes.toCompletableFuture().join();
+                    final Map<String, List<ImageMetadata>> packages = Maps.newHashMapWithExpectedSize(repoNames.size());
+                    final Iterator<String> repoNamesIter = repoNames.iterator();
+                    final Iterator<WSResponse> tagListsIter = tags.iterator();
 
                     while (repoNamesIter.hasNext() && tagListsIter.hasNext()) {
                         final String nextName = repoNamesIter.next();
@@ -104,32 +105,39 @@ public class DockerPackageClient extends ClientBase {
                 });
     }
 
-    private F.Promise<List<WSResponse>> concurrentExecute(final List<WSRequest> reqs, final int concurrency) {
+    private CompletionStage<List<WSResponse>> concurrentExecute(final List<WSRequest> reqs, final int concurrency) {
         if (concurrency <= 0) {
             throw new IllegalArgumentException("concurrency must be >= 1");
         }
 
         // Maintains the 'lines' of concurrent requests
-        final ArrayList<F.Promise<WSResponse>> concurrentReqs = Lists.newArrayListWithExpectedSize(concurrency);
+        final ArrayList<CompletionStage<WSResponse>> concurrentReqs = Lists.newArrayListWithExpectedSize(concurrency);
         for (int i = 0; i < concurrency; i++) {
             // Dummy promises
-            concurrentReqs.add(F.Promise.pure(null));
+            concurrentReqs.add(CompletableFuture.completedFuture(null));
         }
 
         int concurrentCount = 0;
-        final ArrayList<F.Promise<WSResponse>> results = new ArrayList<>(reqs.size());
+        final ArrayList<CompletionStage<WSResponse>> results = new ArrayList<>(reqs.size());
 
         for (final WSRequest next : reqs) {
             final int concurrentIndex = concurrentCount % concurrency;
-            final F.Promise<WSResponse> prev = concurrentReqs.get(concurrentIndex);
-            final F.Promise<WSResponse> responsePromise = prev.flatMap(dontCare -> next.execute());
+            final CompletionStage<WSResponse> prev = concurrentReqs.get(concurrentIndex);
+            final CompletionStage<WSResponse> responsePromise = prev.thenCompose((ignored) -> next.execute());
             results.add(responsePromise);
             concurrentReqs.add(concurrentIndex, responsePromise);
 
             concurrentCount += 1;
         }
 
-        return F.Promise.sequence(results);
+        @SuppressWarnings("rawtypes")
+        final CompletableFuture[] futures = results.stream()
+                .map(CompletionStage::toCompletableFuture)
+                .toArray(CompletableFuture[]::new);
+        return CompletableFuture.allOf(futures)
+                .thenApply(v -> results.stream()
+                        .map(cs -> cs.toCompletableFuture().join())
+                        .collect(Collectors.toList()));
     }
 
     /**

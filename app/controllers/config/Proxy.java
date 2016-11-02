@@ -15,32 +15,33 @@
  */
 package controllers.config;
 
-import akka.dispatch.Futures;
 import client.ProxyClient;
 import com.google.common.base.Throwables;
+import com.google.common.collect.Lists;
 import com.google.inject.Singleton;
-import com.ning.http.client.AsyncCompletionHandler;
-import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-import com.ning.http.client.HttpResponseBodyPart;
-import com.ning.http.client.HttpResponseHeaders;
-import com.ning.http.client.HttpResponseStatus;
-import com.ning.http.client.Response;
+import com.google.inject.assistedinject.AssistedInject;
+import io.netty.handler.codec.http.HttpHeaders;
+import org.asynchttpclient.AsyncCompletionHandler;
+import org.asynchttpclient.HttpResponseBodyPart;
+import org.asynchttpclient.HttpResponseHeaders;
+import org.asynchttpclient.HttpResponseStatus;
+import org.asynchttpclient.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import play.api.http.Writeable;
-import play.api.libs.iteratee.Enumerator$;
-import play.api.mvc.Results$;
-import play.libs.F;
+import play.libs.ws.WSClient;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import scala.concurrent.Promise;
+import play.mvc.Results;
 
 import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
-import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.stream.Collectors;
 
 /**
  * A generic proxy controller.
@@ -53,10 +54,12 @@ public class Proxy extends Controller {
      * Public constructor.
      *
      * @param baseURL the base url to proxy
+     * @param client ws client to use
      */
-    public Proxy(final String baseURL) {
+    @AssistedInject
+    public Proxy(final String baseURL, final WSClient client) {
         _baseURL = baseURL;
-        _client = new ProxyClient(baseURL);
+        _client = new ProxyClient(baseURL, client);
     }
 
     /**
@@ -65,9 +68,9 @@ public class Proxy extends Controller {
      * @param path the path
      * @return the proxied {@link Result}
      */
-    public F.Promise<Result> proxy(final String path) {
+    public CompletionStage<Result> proxy(final String path) {
         LOGGER.info("proxying call from " + path + " to " + _baseURL);
-        final Promise<Result> promise = Futures.promise();
+        final CompletableFuture<Result> promise = new CompletableFuture<>();
         final Http.Request request = request();
         final boolean isHttp10 = request.version().equals("HTTP/1.0");
         LOGGER.info(String.format("Version=%s", request.version()));
@@ -82,7 +85,7 @@ public class Proxy extends Controller {
         } catch (final IOException e) {
             throw Throwables.propagate(e);
         }
-        return F.Promise.wrap(promise.future());
+        return promise;
     }
 
     private final ProxyClient _client;
@@ -95,7 +98,7 @@ public class Proxy extends Controller {
                 final PipedOutputStream outputStream,
                 final Http.Response configResponse,
                 final PipedInputStream inputStream,
-                final Promise<Result> promise,
+                final CompletableFuture<Result> promise,
                 final boolean isHttp10) {
             _outputStream = outputStream;
             _configResponse = configResponse;
@@ -105,36 +108,47 @@ public class Proxy extends Controller {
         }
 
         @Override
-        public STATE onStatusReceived(final HttpResponseStatus status) throws Exception {
+        public State onStatusReceived(final HttpResponseStatus status) throws Exception {
             _status = status.getStatusCode();
-            return STATE.CONTINUE;
+            return State.CONTINUE;
         }
 
         @Override
-        public STATE onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
+        public State onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
             _outputStream.write(content.getBodyPartBytes());
 
             if (content.isLast()) {
                 _outputStream.flush();
                 _outputStream.close();
             }
-            return STATE.CONTINUE;
+            return State.CONTINUE;
         }
 
         @Override
-        public STATE onHeadersReceived(final HttpResponseHeaders headers) throws Exception {
+        public State onHeadersReceived(final HttpResponseHeaders headers) throws Exception {
             try {
-                final FluentCaseInsensitiveStringsMap entries = headers.getHeaders();
-                if (entries.getFirstValue(CONTENT_TYPE) != null) {
-                    _configResponse.setHeader(CONTENT_TYPE, entries.getFirstValue(CONTENT_TYPE));
-                } else if (entries.getFirstValue(CONTENT_LENGTH) != null) {
-                    final String clen = entries.getFirstValue(CONTENT_LENGTH);
-                    final int length = Integer.parseInt(clen);
-                    if (length == 0) {
-                        _configResponse.setHeader(CONTENT_TYPE, "text/html");
-                    }
+                final HttpHeaders entries = headers.getHeaders();
+                long length = -1;
+                if (entries.contains(CONTENT_LENGTH)) {
+                    final String clen = entries.get(CONTENT_LENGTH);
+                    length = Long.parseLong(clen);
                 }
-                for (final Map.Entry<String, List<String>> entry : entries.entrySet()) {
+                if (entries.get(CONTENT_TYPE) != null) {
+                    _configResponse.setHeader(CONTENT_TYPE, entries.get(CONTENT_TYPE));
+                } else if (length == 0) {
+                    _configResponse.setHeader(CONTENT_TYPE, "text/html");
+                }
+
+                final Map<String, ArrayList<String>> mapped = entries.entries().stream().collect(
+                        Collectors.toMap(
+                                Map.Entry::getKey,
+                                entry -> Lists.newArrayList(entry.getValue()),
+                                (a, b) -> {
+                                    a.addAll(b);
+                                    return a;
+                                }));
+
+                for (final Map.Entry<String, ArrayList<String>> entry : mapped.entrySet()) {
                     for (final String val : entry.getValue()) {
                         _configResponse.setHeader(entry.getKey(), val);
                     }
@@ -146,31 +160,19 @@ public class Proxy extends Controller {
                     _configResponse.getHeaders().remove(CONNECTION);
                 }
 
-                final play.api.mvc.Result result;
-                if (entries.containsKey(TRANSFER_ENCODING)
-                        && entries.getFirstValue(TRANSFER_ENCODING).equalsIgnoreCase("chunked")
-                        && !_isHttp10) {
-                    result = Results$.MODULE$.Status(_status)
-                            .chunked(
-                                    Enumerator$.MODULE$.fromStream(_inputStream, 4096,
-                                            play.api.libs.concurrent.Execution
-                                                    .defaultContext()),
-                                    Writeable.wBytes());
+                final play.mvc.Result result;
+                if (length >= 0) {
+                    result = Results.status(_status, _inputStream, length);
                 } else {
-                    result = Results$.MODULE$.Status(_status)
-                            .feed(Enumerator$.MODULE$.fromStream(_inputStream, 4096,
-                                    play.api.libs.concurrent.Execution
-                                            .defaultContext()),
-                                    Writeable.wBytes());
+                    result = Results.status(_status, _inputStream);
                 }
 
-                final Result r = () -> result;
-                _promise.success(r);
-                return STATE.CONTINUE;
+                _promise.complete(result);
+                return State.CONTINUE;
                 // CHECKSTYLE.OFF: IllegalCatch - We need to return a response no matter what
             } catch (final Throwable e) {
                 // CHECKSTYLE.ON: IllegalCatch
-                _promise.failure(e);
+                _promise.completeExceptionally(e);
                 throw e;
             }
         }
@@ -179,7 +181,7 @@ public class Proxy extends Controller {
         public void onThrowable(final Throwable t) {
             try {
                 _outputStream.close();
-                _promise.failure(t);
+                _promise.completeExceptionally(t);
             } catch (final IOException e) {
                 throw Throwables.propagate(e);
             }
@@ -201,7 +203,7 @@ public class Proxy extends Controller {
         private final PipedOutputStream _outputStream;
         private final Http.Response _configResponse;
         private final PipedInputStream _inputStream;
-        private final Promise<Result> _promise;
+        private final CompletableFuture<Result> _promise;
         private final boolean _isHttp10;
 
     }

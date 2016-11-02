@@ -15,10 +15,11 @@
  */
 package controllers;
 
-import play.libs.F;
 import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
+
+import java.util.concurrent.CompletionStage;
 
 /**
  * Hostclass controller.
@@ -33,7 +34,7 @@ public interface Hostclass {
      * @param name the hostclass name
      * @return a {@link Result}
      */
-    F.Promise<Result> detail(String name);
+    CompletionStage<Result> detail(String name);
 
     /**
      * Creates a new hostclass.
@@ -41,7 +42,7 @@ public interface Hostclass {
      * @param parentHostclass the parent hostclass name
      * @return a {@link Result}
      */
-    F.Promise<Result> newHostclass(String parentHostclass);
+    CompletionStage<Result> newHostclass(String parentHostclass);
 
     /**
      * Add a host to a hostclass.
@@ -49,12 +50,12 @@ public interface Hostclass {
      * @param hostclassName the hostclass name
      * @return a {@link Result}
      */
-    F.Promise<Result> addHost(String hostclassName);
+    CompletionStage<Result> addHost(String hostclassName);
 
     /**
      * Shows the create hostclass page.
      *
      * @return a {@link Result}
      */
-    F.Promise<Result> create();
+    CompletionStage<Result> create();
 }

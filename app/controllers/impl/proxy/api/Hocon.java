@@ -24,7 +24,6 @@ import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigParseOptions;
 import com.typesafe.config.ConfigValue;
-import play.libs.F;
 import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Result;
@@ -33,6 +32,8 @@ import utils.NoIncluder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 /**
  * JSON REST Apis for Hocon related services.
@@ -59,7 +60,7 @@ public class Hocon extends Controller {
      *
      * @return an http response
      */
-    public F.Promise<Result> isValid() {
+    public CompletionStage<Result> isValid() {
         final JsonNode postJson = request().body().asJson();
         final String hoconText = postJson.get("hocon").asText();
         boolean isValid = true;
@@ -72,7 +73,7 @@ public class Hocon extends Controller {
 
         final ObjectNode resultJson = Json.newObject();
         resultJson.put("valid", isValid);
-        return F.Promise.pure(ok(resultJson));
+        return CompletableFuture.completedFuture(ok(resultJson));
     }
 
     /**
@@ -124,7 +125,7 @@ public class Hocon extends Controller {
      *
      * @return an http response
      */
-    public F.Promise<Result> viewCombinedHocon() {
+    public CompletionStage<Result> viewCombinedHocon() {
         final JsonNode postJson = request().body().asJson();
         final String hoconText = postJson.get("hocon").asText();
         final String type = postJson.get("type").asText();
@@ -133,20 +134,20 @@ public class Hocon extends Controller {
         if (type.equals("environment")) {
             final models.Environment startEnv = models.Environment.getById(id);
             if (startEnv == null) {
-                return F.Promise.pure(badRequest());
+                return CompletableFuture.completedFuture(badRequest());
             }
             hoconsToCombine = hoconConfigsForEnv(startEnv.getParent());
         } else if (type.equals("stage")) {
             final models.Stage stage = models.Stage.getById(id);
             if (stage == null) {
-                return F.Promise.pure(badRequest());
+                return CompletableFuture.completedFuture(badRequest());
             }
             hoconsToCombine = hoconConfigsForEnv(stage.getEnvironment());
         }
         hoconsToCombine.add(0, hoconText);
         final Config finalHocon = combineHocons(hoconsToCombine);
         final ObjectNode resultJson = hoconToJson(finalHocon);
-        return F.Promise.pure(ok(resultJson));
+        return CompletableFuture.completedFuture(ok(resultJson));
     }
 
 }

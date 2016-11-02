@@ -15,13 +15,14 @@
  */
 package client;
 
-import com.ning.http.client.AsyncHandler;
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.Request;
-import com.ning.http.client.RequestBuilder;
+import com.google.inject.assistedinject.Assisted;
+import com.google.inject.assistedinject.AssistedInject;
+import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.RequestBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import play.libs.ws.WS;
+import play.libs.ws.WSClient;
 import play.mvc.Http;
 
 import java.net.URI;
@@ -37,9 +38,11 @@ public class ProxyClient extends ClientBase {
      * Public constructor.
      *
      * @param baseUrl the base url for the proxy
+     * @param client ws client to use
      */
-    public ProxyClient(final String baseUrl) {
-        super(baseUrl);
+    @AssistedInject
+    public ProxyClient(@Assisted final String baseUrl, final WSClient client) {
+        super(baseUrl, client);
     }
 
     /**
@@ -59,7 +62,6 @@ public class ProxyClient extends ClientBase {
         final URI uri = uri(path);
         LOGGER.info(String.format("Proxy url: %s", uri));
 
-        final AsyncHttpClient client = (AsyncHttpClient) WS.client().getUnderlying();
         final RequestBuilder builder = new RequestBuilder();
         for (final Map.Entry<String, String[]> entry : request.queryString().entrySet()) {
             for (final String val : entry.getValue()) {
@@ -75,11 +77,14 @@ public class ProxyClient extends ClientBase {
             }
         }
         if (body != null) {
-            builder.setBody(body.asBytes());
+            builder.setBody(body.asBytes().asByteBuffer());
         }
 
-        final Request wsRequest = builder.build();
-        client.prepareRequest(wsRequest).execute(handler);
+        final Object underlying = client().getUnderlying();
+        if (underlying instanceof AsyncHttpClient) {
+            final AsyncHttpClient client = (AsyncHttpClient) underlying;
+            client.executeRequest(builder.build(), handler);
+        }
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ProxyClient.class);

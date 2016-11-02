@@ -17,7 +17,7 @@ package actors;
 
 import akka.actor.Props;
 import akka.actor.UntypedActor;
-import akka.pattern.Patterns;
+import akka.pattern.PatternsCS;
 import client.PackageProvider;
 import com.avaje.ebean.Ebean;
 import com.avaje.ebean.Transaction;
@@ -26,11 +26,11 @@ import models.Package;
 import models.PackageVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import play.libs.F;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Singleton;
 import javax.persistence.PersistenceException;
@@ -73,10 +73,10 @@ public class PackageRefresher extends UntypedActor {
     @Override
     public void onReceive(final Object message) throws Exception {
         if (message instanceof RefreshPackagesMessage) {
-            final F.Promise<PackageListMessage> messagePromise = _packageClient.getAllPackages().map(
+            final CompletionStage<PackageListMessage> messagePromise = _packageClient.getAllPackages().thenApply(
                     PackageListMessage::new
             );
-            Patterns.pipe(messagePromise.wrapped(), context().dispatcher()).to(self(), self());
+            PatternsCS.pipe(messagePromise, context().dispatcher()).to(self(), self());
         } else if (message instanceof PackageListMessage) {
             LOGGER.info("Received packageListMessage, proceeding to insert packages");
             final PackageListMessage packageListMessage = (PackageListMessage) message;

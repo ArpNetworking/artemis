@@ -15,10 +15,11 @@
  */
 package controllers;
 
-import play.libs.F;
 import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
+
+import java.util.concurrent.CompletionStage;
 
 /**
  * Controller for bundles.
@@ -32,5 +33,5 @@ public interface Bundle {
      *
      * @return a {@link Result}
      */
-    F.Promise<Result> newBundle();
+    CompletionStage<Result> newBundle();
 }

@@ -17,10 +17,11 @@ package controllers.impl;
 
 import com.google.inject.Singleton;
 import controllers.Admin;
-import play.libs.F;
 import play.mvc.Controller;
 import play.mvc.Result;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
 
 /**
@@ -38,12 +39,12 @@ public class StandardAdmin extends Controller implements Admin {
     }
 
     @Override
-    public F.Promise<Result> index() {
-        return F.Promise.pure(ok(views.html.admin.render()));
+    public CompletionStage<Result> index() {
+        return CompletableFuture.completedFuture(ok(views.html.admin.render()));
     }
 
     @Override
-    public F.Promise<Result> refreshPackages() {
-        return F.Promise.pure(ok(views.html.admin.render()));
+    public CompletionStage<Result> refreshPackages() {
+        return CompletableFuture.completedFuture(ok(views.html.admin.render()));
     }
 }

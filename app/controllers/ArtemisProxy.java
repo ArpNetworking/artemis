@@ -19,9 +19,10 @@ import com.google.inject.name.Named;
 import controllers.config.Proxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import play.libs.F;
+import play.libs.ws.WSClient;
 import play.mvc.Result;
 
+import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
 
 /**
@@ -34,10 +35,11 @@ public class ArtemisProxy extends Proxy {
      * Public constructor.
      *
      * @param baseURL the base url to proxy to
+     * @param client ws client to use
      */
     @Inject
-    public ArtemisProxy(@Named("ArtemisProxyBaseUrl") final String baseURL) {
-        super(baseURL);
+    public ArtemisProxy(@Named("ArtemisProxyBaseUrl") final String baseURL, final WSClient client) {
+        super(baseURL, client);
     }
 
     /**
@@ -45,7 +47,7 @@ public class ArtemisProxy extends Proxy {
      *
      * @return a {@link Result}
      */
-    public F.Promise<Result> proxy() {
+    public CompletionStage<Result> proxy() {
         return super.proxy(request().uri());
     }
 

@@ -17,11 +17,12 @@ package controllers.impl.proxy;
 
 import controllers.ArtemisProxy;
 import controllers.Environment;
-import play.libs.F;
+import play.libs.ws.WSClient;
 import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
 
+import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
 import javax.inject.Named;
 
@@ -36,40 +37,41 @@ public class ProxyEnvironment extends ArtemisProxy implements Environment {
      * Public constructor.
      *
      * @param baseURL the base proxy url
+     * @param client ws client to use
      */
     @Inject
-    public ProxyEnvironment(@Named("ArtemisProxyBaseUrl") final String baseURL) {
-        super(baseURL);
+    public ProxyEnvironment(@Named("ArtemisProxyBaseUrl") final String baseURL, final WSClient client) {
+        super(baseURL, client);
     }
 
     @Override
-    public F.Promise<Result> detail(final String name) {
+    public CompletionStage<Result> detail(final String name) {
         return proxy();
     }
 
     @Override
-    public F.Promise<Result> newEnvironment(final String parentEnv) {
+    public CompletionStage<Result> newEnvironment(final String parentEnv) {
         return proxy();
     }
 
 
     @Override
-    public F.Promise<Result> create() {
+    public CompletionStage<Result> create() {
         return proxy();
     }
 
     @Override
-    public F.Promise<Result> save(final String envName) {
+    public CompletionStage<Result> save(final String envName) {
         return proxy();
     }
 
     @Override
-    public F.Promise<Result> createRelease(final String envName) {
+    public CompletionStage<Result> createRelease(final String envName) {
         return proxy();
     }
 
     @Override
-    public F.Promise<Result> prepareRelease(final String envName) {
+    public CompletionStage<Result> prepareRelease(final String envName) {
         return proxy();
     }
 }

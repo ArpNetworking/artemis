@@ -17,9 +17,10 @@ package controllers.impl.proxy;
 
 import controllers.Api;
 import controllers.ArtemisProxy;
-import play.libs.F;
+import play.libs.ws.WSClient;
 import play.mvc.Result;
 
+import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
 import javax.inject.Named;
 
@@ -33,44 +34,45 @@ public class ProxyApi extends ArtemisProxy implements Api {
      * Public constructor.
      *
      * @param baseURL the base proxy url
+     * @param client ws client to use
      */
     @Inject
-    public ProxyApi(@Named("ArtemisProxyBaseUrl") final String baseURL) {
-        super(baseURL);
+    public ProxyApi(@Named("ArtemisProxyBaseUrl") final String baseURL, final WSClient client) {
+        super(baseURL, client);
     }
 
     @Override
-    public F.Promise<Result> hostclassSearch(final String query) {
+    public CompletionStage<Result> hostclassSearch(final String query) {
         return proxy();
     }
 
     @Override
-    public F.Promise<Result> packageSearch(final String query) {
+    public CompletionStage<Result> packageSearch(final String query) {
         return proxy();
     }
 
     @Override
-    public F.Promise<Result> environmentSearch(final String query) {
+    public CompletionStage<Result> environmentSearch(final String query) {
         return proxy();
     }
 
     @Override
-    public F.Promise<Result> getStages(final String envName) {
+    public CompletionStage<Result> getStages(final String envName) {
         return proxy();
     }
 
     @Override
-    public F.Promise<Result> updateStagePackageVersions(final String envName, final String stageName) {
+    public CompletionStage<Result> updateStagePackageVersions(final String envName, final String stageName) {
         return proxy();
     }
 
     @Override
-    public F.Promise<Result> deploymentLog(final long deploymentId) {
+    public CompletionStage<Result> deploymentLog(final long deploymentId) {
         return proxy();
     }
 
     @Override
-    public F.Promise<Result> getReleasePreview(final String envName, final String version) {
+    public CompletionStage<Result> getReleasePreview(final String envName, final String version) {
         return proxy();
     }
 }

@@ -17,9 +17,10 @@ package controllers.impl.proxy;
 
 import controllers.ArtemisProxy;
 import controllers.Authentication;
-import play.libs.F;
+import play.libs.ws.WSClient;
 import play.mvc.Result;
 
+import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
 import javax.inject.Named;
 
@@ -33,24 +34,25 @@ public class ProxyAuthentication extends ArtemisProxy implements Authentication 
      * Public constructor.
      *
      * @param baseURL the base proxy url
+     * @param client ws client to use
      */
     @Inject
-    public ProxyAuthentication(@Named("ArtemisProxyBaseUrl") final String baseURL) {
-        super(baseURL);
+    public ProxyAuthentication(@Named("ArtemisProxyBaseUrl") final String baseURL, final WSClient client) {
+        super(baseURL, client);
     }
 
     @Override
-    public F.Promise<Result> auth(final String redirectUrl) {
+    public CompletionStage<Result> auth(final String redirectUrl) {
         return proxy();
     }
 
     @Override
-    public F.Promise<Result> finishAuth(final String code, final String state) {
+    public CompletionStage<Result> finishAuth(final String code, final String state) {
         return proxy();
     }
 
     @Override
-    public F.Promise<Result> logout() {
+    public CompletionStage<Result> logout() {
         return proxy();
     }
 }

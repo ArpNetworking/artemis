@@ -18,18 +18,20 @@ package utils;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
+import com.google.inject.Singleton;
 import models.Authentication;
 import models.Owner;
 import models.UserMembership;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import play.Application;
 import play.Configuration;
-import play.Play;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Security;
 
 import java.util.List;
+import javax.inject.Inject;
 import javax.persistence.PersistenceException;
 
 /**
@@ -37,11 +39,23 @@ import javax.persistence.PersistenceException;
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
+@Singleton
 public class AuthN extends Security.Authenticator {
+    /**
+     * Public constructor.
+     *
+     * @param application the running application
+     * @param configuration application configuration
+     */
+    @Inject
+    public AuthN(final Application application, final Configuration configuration) {
+        _application = application;
+        _configuration = configuration;
+    }
+
     @Override
     public String getUsername(final Http.Context ctx) {
-        final Configuration configuration = Play.application().configuration();
-        final boolean useDefaultLogin = Play.isDev() && configuration.getBoolean("auth.useDefaultLogin", false);
+        final boolean useDefaultLogin = _application.isDev() && _configuration.getBoolean("auth.useDefaultLogin", false);
         if (ctx.session().containsKey("auth-id")) {
             LOGGER.debug("Found auth id in session cookie");
             final String authId = ctx.session().get("auth-id");
@@ -57,7 +71,7 @@ public class AuthN extends Security.Authenticator {
                     // If the user has an existing group, then we can assume the database wasn't just reset
                     if (getOrganizations(authId).size() == 0) {
                         LOGGER.debug(String.format("Did not find orgs for user=%s, storing the defaults", authId));
-                        initializeAuthenticatedSession(ctx, authId, configuration.getStringList("dev.defaultGroups"));
+                        initializeAuthenticatedSession(ctx, authId, _configuration.getStringList("dev.defaultGroups"));
                     }
                     return authId;
                 } else {
@@ -66,8 +80,8 @@ public class AuthN extends Security.Authenticator {
             }
         } else if (useDefaultLogin) {
             LOGGER.debug("Did not find auth id in sesion cookie, using defaults");
-            final String userName = configuration.getString("dev.defaultUser");
-            initializeAuthenticatedSession(ctx, userName, configuration.getStringList("dev.defaultGroups"));
+            final String userName = _configuration.getString("dev.defaultUser");
+            initializeAuthenticatedSession(ctx, userName, _configuration.getStringList("dev.defaultGroups"));
             return userName;
         }
 
@@ -165,6 +179,9 @@ public class AuthN extends Security.Authenticator {
         }
         TOKEN_CACHE.put(userName, token);
     }
+
+    private final Application _application;
+    private final Configuration _configuration;
 
     private static final Cache<String, String> TOKEN_CACHE = CacheBuilder.newBuilder().build();
     private static final Cache<String, List<Owner>> USER_ORGS = CacheBuilder.newBuilder().build();

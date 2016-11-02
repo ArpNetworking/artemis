@@ -15,20 +15,25 @@
  */
 package client;
 
-import play.libs.F;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import java.util.Set;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Provider for retrieving a list of hosts.
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.CLASS,
+        include = JsonTypeInfo.As.PROPERTY,
+        property = "type")
 public interface HostProvider {
     /**
      * Provides a set of hosts.
      *
-     * @return A {@link play.libs.F.Promise} containing a set of hosts
+     * @return A {@link CompletionStage} containing a set of hosts
      */
-    F.Promise<Set<String>> getHosts();
+    CompletionStage<Set<String>> getHosts();
 }

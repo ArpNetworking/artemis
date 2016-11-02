@@ -17,11 +17,12 @@ package controllers.impl.proxy;
 
 import controllers.ArtemisProxy;
 import controllers.Deployment;
-import play.libs.F;
+import play.libs.ws.WSClient;
 import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
 
+import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
 import javax.inject.Named;
 
@@ -36,23 +37,24 @@ public class ProxyDeployment extends ArtemisProxy implements Deployment {
      * Public constructor.
      *
      * @param baseURL the base proxy url
+     * @param client ws client to use
      */
     @Inject
-    public ProxyDeployment(@Named("ArtemisProxyBaseUrl") final String baseURL) {
-        super(baseURL);
+    public ProxyDeployment(@Named("ArtemisProxyBaseUrl") final String baseURL, final WSClient client) {
+        super(baseURL, client);
     }
     @Override
-    public F.Promise<Result> detail(final long deploymentId) {
+    public CompletionStage<Result> detail(final long deploymentId) {
         return proxy();
     }
 
     @Override
-    public F.Promise<Result> log(final long deploymentId) {
+    public CompletionStage<Result> log(final long deploymentId) {
         return proxy();
     }
 
     @Override
-    public F.Promise<Result> diff(final long deploymentId) {
+    public CompletionStage<Result> diff(final long deploymentId) {
         return proxy();
     }
 }

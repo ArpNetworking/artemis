@@ -15,8 +15,8 @@
  */
 package models;
 
+import com.arpnetworking.commons.builder.OvalBuilder;
 import com.google.common.collect.Lists;
-import com.groupon.utility.OvalBuilder;
 import net.sf.oval.constraint.NotNull;
 
 import java.util.List;
@@ -52,7 +52,7 @@ public final class DeploymentDescription {
          * Public constructor.
          */
         public Builder() {
-            super(DeploymentDescription.class);
+            super(DeploymentDescription::new);
         }
 
         /**

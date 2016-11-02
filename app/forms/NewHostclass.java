@@ -17,6 +17,7 @@ package forms;
 
 import models.Hostclass;
 import play.data.Form;
+import play.data.FormFactory;
 import play.data.validation.Constraints;
 import play.data.validation.ValidationError;
 
@@ -57,9 +58,10 @@ public class NewHostclass {
      * Factory method for a form.
      *
      * @return a new {@link Form} bound to this class
+     * @param factory form factory to create forms
      */
-    public static Form<NewHostclass> form() {
-        return Form.form(NewHostclass.class);
+    public static Form<NewHostclass> form(final FormFactory factory) {
+        return factory.form(NewHostclass.class);
     }
 
     /**

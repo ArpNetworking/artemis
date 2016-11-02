@@ -15,10 +15,11 @@
  */
 package controllers;
 
-import play.libs.F;
 import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
+
+import java.util.concurrent.CompletionStage;
 
 /**
  * Environment controller.
@@ -33,7 +34,7 @@ public interface Environment {
      * @param name the environment name
      * @return a {@link Result}
      */
-    F.Promise<Result> detail(String name);
+    CompletionStage<Result> detail(String name);
 
     /**
      * Creates a new environment.
@@ -41,14 +42,14 @@ public interface Environment {
      * @param parentEnv the parent environment
      * @return a {@link Result}
      */
-    F.Promise<Result> newEnvironment(String parentEnv);
+    CompletionStage<Result> newEnvironment(String parentEnv);
 
     /**
      * Create an environment page.
      *
      * @return a {@link Result}
      */
-    F.Promise<Result> create();
+    CompletionStage<Result> create();
 
     /**
      * Save changes to an environment.
@@ -56,7 +57,7 @@ public interface Environment {
      * @param envName the environment name
      * @return a {@link Result}
      */
-    F.Promise<Result> save(String envName);
+    CompletionStage<Result> save(String envName);
 
     /**
      * Create a new release.
@@ -64,7 +65,7 @@ public interface Environment {
      * @param envName the environment name
      * @return a {@link Result}
      */
-    F.Promise<Result> createRelease(final String envName);
+    CompletionStage<Result> createRelease(final String envName);
 
     /**
      * Prepare a release.
@@ -72,5 +73,5 @@ public interface Environment {
      * @param envName the environment name
      * @return a {@link Result}
      */
-    F.Promise<Result> prepareRelease(final String envName);
+    CompletionStage<Result> prepareRelease(final String envName);
 }

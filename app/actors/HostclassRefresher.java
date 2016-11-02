@@ -17,7 +17,7 @@ package actors;
 
 import akka.actor.Props;
 import akka.actor.UntypedActor;
-import akka.pattern.Patterns;
+import akka.pattern.PatternsCS;
 import client.HostProvider;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
@@ -29,12 +29,12 @@ import models.Hostclass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import play.Configuration;
-import play.libs.F;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Singleton;
 import javax.persistence.PersistenceException;
@@ -80,10 +80,10 @@ public class HostclassRefresher extends UntypedActor {
     @Override
     public void onReceive(final Object message) throws Exception {
         if (message instanceof RefreshHostclassesMessage) {
-            final F.Promise<HostclassListMessage> messagePromise = _hostProvider.getHosts()
-                    .recover(this::recoverHostclassListLookupFailure)
-                    .map(HostclassListMessage::new);
-            Patterns.pipe(messagePromise.wrapped(), context().dispatcher()).to(self(), self());
+            final CompletionStage<HostclassListMessage> messagePromise = _hostProvider.getHosts()
+                    .exceptionally(this::recoverHostclassListLookupFailure)
+                    .thenApply(HostclassListMessage::new);
+            PatternsCS.pipe(messagePromise, context().dispatcher()).to(self(), self());
         } else if (message instanceof HostclassListMessage) {
             final HostclassListMessage listMessage = (HostclassListMessage) message;
             final Set<String> hosts = listMessage.getHosts();
@@ -122,7 +122,7 @@ public class HostclassRefresher extends UntypedActor {
 
     private String hostclassFromHost(final String name) {
         // First strip off the colo suffix
-        final int index = name.lastIndexOf('.');
+        final int index = name.indexOf('.');
         if (index == -1) {
             return name;
         }
@@ -141,7 +141,7 @@ public class HostclassRefresher extends UntypedActor {
     private static class HostclassSplitterMatcher extends CharMatcher {
         @Override
         public boolean matches(final char c) {
-            return Character.isDigit(c) || c == '-' || c == '_';
+            return Character.isDigit(c) || c == '-' || c == '_' || c == '.';
         }
     }
 

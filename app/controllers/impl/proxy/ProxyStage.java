@@ -19,10 +19,12 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import controllers.ArtemisProxy;
 import controllers.Stage;
-import play.libs.F;
+import play.libs.ws.WSClient;
 import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
+
+import java.util.concurrent.CompletionStage;
 
 /**
  * Holds stage actions.
@@ -35,64 +37,65 @@ public class ProxyStage extends ArtemisProxy implements Stage {
      * Public constructor.
      *
      * @param baseURL the base proxy url
+     * @param client ws client to use
      */
     @Inject
-    public ProxyStage(@Named("ArtemisProxyBaseUrl") final String baseURL) {
-        super(baseURL);
+    public ProxyStage(@Named("ArtemisProxyBaseUrl") final String baseURL, final WSClient client) {
+        super(baseURL, client);
     }
 
     @Override
-    public F.Promise<Result> detail(final String envName, final String stageName) {
+    public CompletionStage<Result> detail(final String envName, final String stageName) {
         return proxy();
     }
 
     @Override
-    public F.Promise<Result> addHostclass(final String envName, final String stageName) {
+    public CompletionStage<Result> addHostclass(final String envName, final String stageName) {
         return proxy();
     }
 
     @Override
-    public F.Promise<Result> removeHostclass(final String envName, final String stageName, final String hostclassName) {
+    public CompletionStage<Result> removeHostclass(final String envName, final String stageName, final String hostclassName) {
         return proxy();
     }
 
     @Override
-    public F.Promise<Result> prepareDeploy(final String envName, final String stageName) {
+    public CompletionStage<Result> prepareDeploy(final String envName, final String stageName) {
         return proxy();
     }
 
     @Override
-    public F.Promise<Result> previewDeploy(final String envName, final String stageName) {
+    public CompletionStage<Result> previewDeploy(final String envName, final String stageName) {
         return proxy();
     }
 
     @Override
-    public F.Promise<Result> confirmDeploy(final String envName, final String stageName, final long version, final long manifestId) {
+    public CompletionStage<Result> confirmDeploy(final String envName, final String stageName, final long version, final long manifestId) {
         return proxy();
     }
 
     @Override
-    public F.Promise<Result> prepareDeployManifest(final String envName, final String stageName, final long manifestId) {
+    public CompletionStage<Result> prepareDeployManifest(final String envName, final String stageName, final long manifestId) {
         return proxy();
     }
 
     @Override
-    public F.Promise<Result> create(final String envName) {
+    public CompletionStage<Result> create(final String envName) {
         return proxy();
     }
 
     @Override
-    public F.Promise<Result> promote(final String sourceEnvName, final String sourceStageName) {
+    public CompletionStage<Result> promote(final String sourceEnvName, final String sourceStageName) {
         return proxy();
     }
 
     @Override
-    public F.Promise<Result> synchronize(final String sourceEnvName, final String sourceStageName) {
+    public CompletionStage<Result> synchronize(final String sourceEnvName, final String sourceStageName) {
         return proxy();
     }
 
     @Override
-    public F.Promise<Result> save(final String envName, final String stageName) {
+    public CompletionStage<Result> save(final String envName, final String stageName) {
         return proxy();
     }
 }

@@ -16,9 +16,12 @@
 package client;
 
 import com.google.common.base.Throwables;
+import com.google.inject.assistedinject.Assisted;
+import com.google.inject.assistedinject.AssistedInject;
 import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import play.libs.ws.WSClient;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -33,9 +36,12 @@ public class ClientBase {
      * Public constructor.
      *
      * @param baseUrl the base URL for all relative addresses
+     * @param client ws client to use
      */
-    public ClientBase(final String baseUrl) {
+    @AssistedInject
+    public ClientBase(@Assisted final String baseUrl, final WSClient client) {
         _baseUrl = baseUrl;
+        _client = client;
     }
 
     /**
@@ -50,6 +56,15 @@ public class ClientBase {
         } catch (final URISyntaxException e) {
             throw Throwables.propagate(e);
         }
+    }
+
+    /**
+     * Gets the WSClient.
+     *
+     * @return injected WSClient
+     */
+    protected WSClient client() {
+        return _client;
     }
 
     /**
@@ -70,5 +85,6 @@ public class ClientBase {
     }
 
     private final String _baseUrl;
+    private final WSClient _client;
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientBase.class);
 }

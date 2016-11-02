@@ -19,11 +19,15 @@ import api.HostOutput;
 import api.HostclassOutput;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import play.libs.F;
-import play.libs.ws.WS;
+import com.google.common.base.Throwables;
+import com.google.inject.assistedinject.Assisted;
+import com.google.inject.assistedinject.AssistedInject;
+import play.libs.ws.WSClient;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.List;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Serves as a client for accessing the config server.
@@ -36,9 +40,11 @@ public class ConfigServerClient extends ClientBase {
      * Public constructor.
      *
      * @param baseUrl the base URL
+     * @param client ws client to use
      */
-    public ConfigServerClient(final String baseUrl) {
-        super(baseUrl);
+    @AssistedInject
+    public ConfigServerClient(@Assisted final String baseUrl, final WSClient client) {
+        super(baseUrl, client);
     }
 
     /**
@@ -46,12 +52,12 @@ public class ConfigServerClient extends ClientBase {
      *
      * @return a list of all the packages
      */
-    public F.Promise<List<Package>> getPackages() {
-        return WS.client()
+    public CompletionStage<List<Package>> getPackages() {
+        return client()
                 .url(uri("/package").toString())
                 .setHeader("Accept", "application/json")
                 .get()
-                .map(wsResponse -> null);
+                .thenApply(wsResponse -> null);
     }
 
     /**
@@ -60,11 +66,17 @@ public class ConfigServerClient extends ClientBase {
      * @param hostname the host to lookup
      * @return the data for the host
      */
-    public F.Promise<HostOutput> getHostData(final String hostname) {
+    public CompletionStage<HostOutput> getHostData(final String hostname) {
         final URI uri = uri(String.format("/host/%s", hostname));
-        return WS.url(uri.toString())
+        return client().url(uri.toString())
                 .get()
-                .map(wsResponse -> YAML_MAPPER.readValue(wsResponse.getBody(), HostOutput.class));
+                .thenApply(wsResponse -> {
+                    try {
+                        return YAML_MAPPER.readValue(wsResponse.getBody(), HostOutput.class);
+                    } catch (final IOException e) {
+                        throw Throwables.propagate(e);
+                    }
+                });
     }
 
     /**
@@ -73,11 +85,17 @@ public class ConfigServerClient extends ClientBase {
      * @param hostclass the hostclass to lookup
      * @return the data for the hostclass
      */
-    public F.Promise<HostclassOutput> getHostclassData(final String hostclass) {
+    public CompletionStage<HostclassOutput> getHostclassData(final String hostclass) {
         final URI uri = uri(String.format("/hostclass/%s", hostclass));
-        return WS.url(uri.toString())
+        return client().url(uri.toString())
                 .get()
-                .map(wsResponse -> YAML_MAPPER.readValue(wsResponse.getBody(), HostclassOutput.class));
+                .thenApply(wsResponse -> {
+                    try {
+                        return YAML_MAPPER.readValue(wsResponse.getBody(), HostclassOutput.class);
+                    } catch (final IOException e) {
+                        throw Throwables.propagate(e);
+                    }
+                });
     }
 
     private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory());

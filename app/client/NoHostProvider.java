@@ -1,5 +1,5 @@
 /**
- * Copyright 2014 Groupon.com
+ * Copyright 2016 Brandon Arp
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,22 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.groupon.utility;
+package client;
+
+import java.util.Collections;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 /**
- * Generic builder interface.
+ * Host provider that always returns an empty list of hosts.
  *
- * @param <T> The type of the object created by this builder.
- * @author Ville Koskela (vkoskela at groupon dot com)
+ * @author Brandon Arp (brandon dot arp at inscopemetrics dot com)
  */
-public interface Builder<T> {
-
-    /**
-     * Create a new instance of <code>T</code> based on the attributes currently
-     * set on this builder. The method will throw an exception if a valid
-     * instance of <code>T</code> cannot be constructed.
-     *
-     * @return New instance of <code>T</code>.
-     */
-    T build();
+public class NoHostProvider implements HostProvider {
+    @Override
+    public CompletionStage<Set<String>> getHosts() {
+        return CompletableFuture.completedFuture(Collections.emptySet());
+    }
 }

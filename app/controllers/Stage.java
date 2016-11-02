@@ -15,10 +15,11 @@
  */
 package controllers;
 
-import play.libs.F;
 import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
+
+import java.util.concurrent.CompletionStage;
 
 /**
  * Stage controller.
@@ -34,7 +35,7 @@ public interface Stage {
      * @param stageName the stage name
      * @return a {@link Result}
      */
-    F.Promise<Result> detail(String envName, String stageName);
+    CompletionStage<Result> detail(String envName, String stageName);
 
     /**
      * Add a hostclass to a stage.
@@ -43,7 +44,7 @@ public interface Stage {
      * @param stageName the stage name
      * @return a {@link Result}
      */
-    F.Promise<Result> addHostclass(String envName, String stageName);
+    CompletionStage<Result> addHostclass(String envName, String stageName);
 
     /**
      * Remove a hostclass from a stage.
@@ -53,7 +54,7 @@ public interface Stage {
      * @param hostclassName the name of the hostclass to add
      * @return a {@link Result}
      */
-    F.Promise<Result> removeHostclass(String envName, String stageName, String hostclassName);
+    CompletionStage<Result> removeHostclass(String envName, String stageName, String hostclassName);
 
     /**
      * Prepare a deployment.
@@ -62,7 +63,7 @@ public interface Stage {
      * @param stageName the stage name
      * @return a {@link Result}
      */
-    F.Promise<Result> prepareDeploy(String envName, String stageName);
+    CompletionStage<Result> prepareDeploy(String envName, String stageName);
 
     /**
      * Prepare a deployment.
@@ -72,7 +73,7 @@ public interface Stage {
      * @param manifestId the manifest
      * @return a {@link Result}
      */
-    F.Promise<Result> prepareDeployManifest(String envName, String stageName, long manifestId);
+    CompletionStage<Result> prepareDeployManifest(String envName, String stageName, long manifestId);
 
     /**
      * Preview a deployment.
@@ -81,7 +82,7 @@ public interface Stage {
      * @param stageName the stage name
      * @return a {@link Result}
      */
-    F.Promise<Result> previewDeploy(String envName, String stageName);
+    CompletionStage<Result> previewDeploy(String envName, String stageName);
 
     /**
      * Confirm a deployment.
@@ -92,7 +93,7 @@ public interface Stage {
      * @param manifestId the manifest to deploy
      * @return a {@link Result}
      */
-    F.Promise<Result> confirmDeploy(String envName, String stageName, long version, long manifestId);
+    CompletionStage<Result> confirmDeploy(String envName, String stageName, long version, long manifestId);
 
     /**
      * Create a stage.
@@ -100,7 +101,7 @@ public interface Stage {
      * @param envName the environment name
      * @return a {@link Result}
      */
-    F.Promise<Result> create(String envName);
+    CompletionStage<Result> create(String envName);
 
     /**
      * Update stage config.
@@ -109,7 +110,7 @@ public interface Stage {
      * @param stageName the stage name
      * @return a {@link Result}
      */
-    F.Promise<Result> save(String envName, String stageName);
+    CompletionStage<Result> save(String envName, String stageName);
 
     /**
      * Promote a stage to another.
@@ -118,7 +119,7 @@ public interface Stage {
      * @param sourceStageName the source stage name
      * @return a {@link Result}
      */
-    F.Promise<Result> promote(String sourceEnvName, String sourceStageName);
+    CompletionStage<Result> promote(String sourceEnvName, String sourceStageName);
 
     /**
      * Synchronize this stage from another.
@@ -127,5 +128,5 @@ public interface Stage {
      * @param sourceStageName the source stage name
      * @return a {@link Result}
      */
-    F.Promise<Result> synchronize(String sourceEnvName, String sourceStageName);
+    CompletionStage<Result> synchronize(String sourceEnvName, String sourceStageName);
 }

@@ -20,17 +20,15 @@ resolvers += "SBT Community repository" at "http://dl.bintray.com/sbt/sbt-plugin
 resolvers += "Typesafe repository plugin" at "https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/"
 
 // The Play plugin
-addSbtPlugin("com.typesafe.play" %% "sbt-plugin" % "2.4.4")
+addSbtPlugin("com.typesafe.play" %% "sbt-plugin" % "2.5.9")
 
-addSbtPlugin("com.typesafe.sbt" %% "sbt-play-ebean" % "1.0.0")
+addSbtPlugin("com.typesafe.sbt" %% "sbt-play-ebean" % "3.1.0")
 
 addSbtPlugin("de.johoop" %% "findbugs4sbt" % "1.4.0")
 
 addSbtPlugin("com.typesafe.sbt" %% "sbt-digest" % "1.1.0")
 
 addSbtPlugin("com.typesafe.sbt" %% "sbt-gzip" % "1.0.0")
-
-addSbtPlugin("com.typesafe.sbt" % "sbt-play-ebean" % "1.0.0")
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-play-enhancer" % "1.1.0")
 

@@ -15,10 +15,11 @@
  */
 package controllers;
 
-import play.libs.F;
 import play.mvc.Controller;
 import play.mvc.Result;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
 
 /**
@@ -39,7 +40,7 @@ public class LoggedOut extends Controller {
      *
      * @return an html response
      */
-    public F.Promise<Result> index() {
-        return F.Promise.pure(ok(views.html.loggedout.render()));
+    public CompletionStage<Result> index() {
+        return CompletableFuture.completedFuture(ok(views.html.loggedout.render()));
     }
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 Groupon.com
+ * Copyright 2016 Brandon Arp
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,32 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package controllers;
+package client;
 
-import play.mvc.Result;
-import play.mvc.Security;
-import utils.AuthN;
-
+import java.util.Collections;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Handles administrative actions for Artemis.
+ * Returns an empty set of packages.
  *
- * @author Brandon Arp (barp at groupon dot com)
+ * @author Brandon Arp (brandon dot arp at inscopemetrics dot com)
  */
-@Security.Authenticated(AuthN.class)
-public interface Admin {
-    /**
-     * Renders the main application page.
-     *
-     * @return an http response
-     */
-    CompletionStage<Result> index();
-
-    /**
-     * Starts a refresh of packages from various repositories.
-     *
-     * @return an http response
-     */
-    CompletionStage<Result> refreshPackages();
+public class NoPackageProvider implements PackageProvider {
+    @Override
+    public CompletionStage<PackageListResponse> getAllPackages() {
+        return CompletableFuture.completedFuture(new PackageListResponse(Collections.emptyMap()));
+    }
 }
