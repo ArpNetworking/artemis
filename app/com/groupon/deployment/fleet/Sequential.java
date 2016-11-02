@@ -31,6 +31,7 @@ import com.groupon.deployment.SshSessionFactory;
 import com.groupon.deployment.host.Docker;
 import com.groupon.deployment.host.HostDeploymentFactory;
 import com.groupon.deployment.host.Roller;
+import com.groupon.deployment.host.Rpm;
 import models.Deployment;
 import models.DeploymentLog;
 import models.DeploymentState;
@@ -210,30 +211,51 @@ public class Sequential extends UntypedActor {
                     .getStage()
                     .getEnvironment()
                     .getEnvironmentType();
-            if (environmentType.equals(EnvironmentType.ROLLER)) {
-                final String actorName = "rollerDeploy-" + _current.getHost().getId();
-                context()
-                        .actorOf(
-                                Props.create(
-                                        Roller.class,
-                                        () -> _hostDeploymentFactory.createRoller(
-                                                _current.getHost())),
-                                actorName);
-            } else if (environmentType.equals(EnvironmentType.DOCKER)) {
-                final String actorName = "dockerDeploy-" + _current.getHost().getId();
-                final ActorRef dockerDeployActor = context()
-                        .actorOf(
-                                Props.create(
-                                        Docker.class,
-                                        () -> _hostDeploymentFactory.createDocker(
-                                                _dcf.createDockerClient(_sshFactory.create(_current.getHost().getName())))),
-                                actorName);
-                dockerDeployActor.tell(
-                        new HostDeploymentCommands.StartDeployment(
-                                manifestHistory.getManifest(),
-                                _current.getHost(),
-                                manifestHistory.getStage()),
-                        self());
+            final String actorName;
+            switch (environmentType) {
+                case ROLLER:
+                    actorName = "rollerDeploy-" + _current.getHost().getId();
+                    context()
+                            .actorOf(
+                                    Props.create(
+                                            Roller.class,
+                                            () -> _hostDeploymentFactory.createRoller(
+                                                    _current.getHost())),
+                                    actorName);
+                        break;
+                case DOCKER:
+                    actorName = "dockerDeploy-" + _current.getHost().getId();
+                    final ActorRef dockerDeployActor = context()
+                            .actorOf(
+                                    Props.create(
+                                            Docker.class,
+                                            () -> _hostDeploymentFactory.createDocker(
+                                                    _dcf.createDockerClient(_sshFactory.create(_current.getHost().getName())))),
+                                    actorName);
+                    dockerDeployActor.tell(
+                            new HostDeploymentCommands.StartDeployment(
+                                    manifestHistory.getManifest(),
+                                    _current.getHost(),
+                                    manifestHistory.getStage()),
+                            self());
+                        break;
+                case RPM:
+                    actorName = "rpmDeploy-" + _current.getHost().getId();
+                    context()
+                            .actorOf(
+                                    Props.create(
+                                            Rpm.class,
+                                            () -> _hostDeploymentFactory.createRpm(
+                                                    _current.getHost(),
+                                                    _deployment)),
+                                    actorName);
+                    break;
+                default:
+                    log(
+                            String.format(
+                                    "Unable to start deployment: Unknown environment type [%s]",
+                                    environmentType.toString()),
+                            _current.getHost());
             }
         }
     }

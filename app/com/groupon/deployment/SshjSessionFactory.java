@@ -16,13 +16,19 @@
 package com.groupon.deployment;
 
 import com.google.common.base.Throwables;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+import net.schmizz.sshj.DefaultConfig;
 import net.schmizz.sshj.SSHClient;
+import net.schmizz.sshj.common.Factory;
 import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
+import net.schmizz.sshj.userauth.keyprovider.FileKeyProvider;
 import net.schmizz.sshj.userauth.keyprovider.KeyProvider;
+import net.schmizz.sshj.userauth.keyprovider.PKCS5KeyFile;
 import play.Configuration;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * A factory for creating ssh sessions.
@@ -44,7 +50,12 @@ public class SshjSessionFactory implements SshSessionFactory {
     @Override
     public SSHClient create(final String host) {
         try {
-            final SSHClient client = new SSHClient();
+            final DefaultConfig config = new DefaultConfig();
+            final List<Factory.Named<FileKeyProvider>> keyProviders = Lists.newArrayList();
+            keyProviders.add(new PKCS5KeyFile.Factory());
+            config.setFileKeyProviderFactories(keyProviders);
+
+            final SSHClient client = new SSHClient(config);
             final KeyProvider keys = client.loadKeys(_keyPath);
             client.addHostKeyVerifier(new PromiscuousVerifier());
             client.connect(host);

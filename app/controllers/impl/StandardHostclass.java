@@ -22,6 +22,7 @@ import com.google.common.collect.Lists;
 import controllers.Hostclass;
 import forms.AddHostToHostclass;
 import forms.NewHostclass;
+import models.Host;
 import play.data.Form;
 import play.data.FormFactory;
 import play.mvc.Controller;
@@ -85,9 +86,10 @@ public class StandardHostclass extends Controller implements Hostclass {
             return CompletableFuture.completedFuture(badRequest(views.html.hostclass.render(hostclass, bound)));
         } else {
             final AddHostToHostclass addObject = bound.get();
-            final models.Host host = models.Host.getByName(addObject.getHost());
+            models.Host host = models.Host.getByName(addObject.getHost());
             if (host == null) {
-                return CompletableFuture.completedFuture(badRequest(views.html.hostclass.render(hostclass, bound)));
+                host = new Host();
+                host.setName(addObject.getHost());
             }
             // TODO(vkoskela): Attempting to move a host should generate a warning. [MAI-?]
             host.setHostclass(hostclass);

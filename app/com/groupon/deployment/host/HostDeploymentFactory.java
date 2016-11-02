@@ -16,6 +16,7 @@
 package com.groupon.deployment.host;
 
 import client.DockerDeploymentClient;
+import models.Deployment;
 import models.Host;
 
 /**
@@ -39,4 +40,13 @@ public interface HostDeploymentFactory {
      * @return a new host deployment strategy
      */
     Docker createDocker(DockerDeploymentClient deploymentClient);
+
+    /**
+     * Create a docker deployment.
+     *
+     * @param host the host to deploy to
+     * @param deployment the deployment spec
+     * @return a new host deployment strategy
+     */
+    Rpm createRpm(final Host host, final Deployment deployment);
 }

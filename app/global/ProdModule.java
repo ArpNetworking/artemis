@@ -45,9 +45,7 @@ import com.google.inject.name.Names;
 import com.groupon.deployment.SshSessionFactory;
 import com.groupon.deployment.SshjSessionFactory;
 import com.groupon.deployment.fleet.FleetDeploymentFactory;
-import com.groupon.deployment.fleet.Sequential;
 import com.groupon.deployment.host.HostDeploymentFactory;
-import com.groupon.deployment.host.Roller;
 import com.groupon.guice.akka.RootActorProvider;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import play.Configuration;
@@ -66,7 +64,7 @@ import javax.inject.Singleton;
 public class ProdModule extends AbstractModule {
     @Override
     protected void configure() {
-        bind(SshSessionFactory.class).to(SshjSessionFactory.class);
+        bind(SshSessionFactory.class).to(SshjSessionFactory.class).asEagerSingleton();
         bind(ActorRef.class)
                 .annotatedWith(Names.named("HostclassRefresher"))
                 .toProvider(HostclassRefresherProvider.class)
@@ -87,11 +85,8 @@ public class ProdModule extends AbstractModule {
                         .build(DeploymentClientFactory.class));
         install(
                 new FactoryModuleBuilder()
-                        .implement(Sequential.class, Sequential.class)
                         .build(FleetDeploymentFactory.class));
         install(new FactoryModuleBuilder()
-                        .implement(Roller.class, Roller.class)
-                                // TODO(barp): add the docker fun [Artemis-?]
                         .build(HostDeploymentFactory.class));
     }
 

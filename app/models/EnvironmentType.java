@@ -32,5 +32,10 @@ public enum EnvironmentType {
      * Docker environment.
      */
     @EnumValue("DOCKER")
-    DOCKER
+    DOCKER,
+    /**
+     * RPM environment.
+     */
+    @EnumValue("RPM")
+    RPM
 }
