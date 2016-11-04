@@ -109,7 +109,7 @@ public class Rpm extends UntypedActor {
             }
 
             if (installTargets.size() > 0 || downgradeTargets.size() > 0 || updateTargets.size() > 0) {
-                executeRequired(sshClient, "sudo yum clean expire-cache", "yum");
+                executeRequired(sshClient, "sudo -n yum clean expire-cache", "yum");
             }
             executeYum(sshClient, deploymentMap, "install", installTargets);
             executeYum(sshClient, deploymentMap, "downgrade", downgradeTargets);
@@ -133,7 +133,7 @@ public class Rpm extends UntypedActor {
             final String installString = targetList.stream()
                     .map(pkg -> String.format("%s-%s", pkg, deploymentMap.get(pkg).getVersion()))
                     .reduce("", (a, b) -> String.format("%s %s", a, b));
-            executeRequired(sshClient, String.format("sudo yum %s -y %s 2>&1", operation, installString), "yum");
+            executeRequired(sshClient, String.format("sudo -n yum %s -y %s 2>&1", operation, installString), "yum");
         }
     }
 

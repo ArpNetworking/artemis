@@ -17,6 +17,7 @@ package controllers.impl;
 
 import com.avaje.ebean.Ebean;
 import com.avaje.ebean.Transaction;
+import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -43,6 +44,8 @@ import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
 
+import javax.inject.Inject;
+import javax.persistence.PersistenceException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -52,8 +55,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import javax.inject.Inject;
-import javax.persistence.PersistenceException;
 
 /**
  * Controller for Environments.
@@ -176,6 +177,8 @@ public class StandardEnvironment extends Controller implements Environment {
             final String aPackage = packages.get(i);
             final String version = versions.get(i);
             if (environment.getEnvironmentType() == EnvironmentType.ROLLER && (aPackage.contains("-") || version.contains("-"))) {
+                return CompletableFuture.completedFuture(badRequest());
+            } else if (Strings.isNullOrEmpty(version)) {
                 return CompletableFuture.completedFuture(badRequest());
             }
             pkgs.put(aPackage, version);
