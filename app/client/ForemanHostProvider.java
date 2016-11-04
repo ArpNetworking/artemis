@@ -59,7 +59,7 @@ public final class ForemanHostProvider implements HostProvider {
     }
 
     private CompletionStage<HostPageResponse> getHostPage(final int page) {
-        return getHostPage(page, 2);
+        return getHostPage(page, 250);
     }
 
     private CompletionStage<HostPageResponse> getHostPage(final int page, final int perPage) {

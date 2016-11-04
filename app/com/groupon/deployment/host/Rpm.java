@@ -149,6 +149,7 @@ public class Rpm extends UntypedActor {
                 final Session.Command command = session.exec(commandString);
                 final BufferedReader error = new BufferedReader(new InputStreamReader(command.getErrorStream(), Charsets.UTF_8));
                 final BufferedReader reader = new BufferedReader(new InputStreamReader(command.getInputStream(), Charsets.UTF_8))) {
+            session.allocateDefaultPTY();
             String line = reader.readLine();
             while (line != null) {
                 Logger.info("***" + line);
