@@ -108,6 +108,9 @@ public class Rpm extends UntypedActor {
                 context().parent().tell(new HostDeploymentNotifications.DeploymentLog(_host, line), self());
             }
 
+            if (installTargets.size() > 0 || downgradeTargets.size() > 0 || updateTargets.size() > 0) {
+                executeRequired(sshClient, "sudo yum clean expire-cache", "yum");
+            }
             executeYum(sshClient, deploymentMap, "install", installTargets);
             executeYum(sshClient, deploymentMap, "downgrade", downgradeTargets);
             executeYum(sshClient, deploymentMap, "update", updateTargets);
@@ -145,20 +148,22 @@ public class Rpm extends UntypedActor {
     private Integer executeCommand(final SSHClient sshClient, final String commandString) throws IOException {
         context().parent().tell(new HostDeploymentNotifications.DeploymentLog(_host, "Executing '" + commandString + "'"), self());
         final Integer exitStatus;
-        try (final Session session = sshClient.startSession();
+        try (final Session session = sshClient.startSession()) {
+            session.allocateDefaultPTY();
+            try (
                 final Session.Command command = session.exec(commandString);
                 final BufferedReader error = new BufferedReader(new InputStreamReader(command.getErrorStream(), Charsets.UTF_8));
                 final BufferedReader reader = new BufferedReader(new InputStreamReader(command.getInputStream(), Charsets.UTF_8))) {
-            session.allocateDefaultPTY();
-            String line = reader.readLine();
-            while (line != null) {
-                Logger.info("***" + line);
-                context().parent().tell(new HostDeploymentNotifications.DeploymentLog(_host, line), self());
-                line = reader.readLine();
+                String line = reader.readLine();
+                while (line != null) {
+                    Logger.info("***" + line);
+                    context().parent().tell(new HostDeploymentNotifications.DeploymentLog(_host, line), self());
+                    line = reader.readLine();
+                }
+                command.join(30, TimeUnit.SECONDS);
+                session.join(30, TimeUnit.SECONDS);
+                exitStatus = command.getExitStatus();
             }
-            command.join(30, TimeUnit.SECONDS);
-            session.join(30, TimeUnit.SECONDS);
-            exitStatus = command.getExitStatus();
         }
         return exitStatus;
     }

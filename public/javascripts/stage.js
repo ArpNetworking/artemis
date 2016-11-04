@@ -65,18 +65,89 @@
         return false;
       };
 
+      var hc_lookup = function(query, none, cb) {
+          $.ajax(jsRoutes.controllers.Api.hostclassSearch(query))
+              .done(
+                  function(data) {
+                      cb(data.results);
+                  });
+      };
+
+      var env_lookup = function(query, none, cb) {
+          $.ajax(jsRoutes.controllers.Api.environmentSearch(query))
+              .done(
+                  function(data) {
+                      cb(data.results);
+                  });
+      };
+
+      var stage_populate_promote = function(envName, none, cb) {
+          envName = $("#promote_env_input" ).val();
+          $.ajax(jsRoutes.controllers.Api.getStages(envName))
+          .done(
+              function(data) {
+                  cb(data.results);
+              });
+      };
+
+      var stage_populate_synchronize = function(envName, none, cb) {
+          envName = $("#synchronize_env_input" ).val();
+          $.ajax(jsRoutes.controllers.Api.getStages(envName))
+              .done(
+                  function(data) {
+                      cb(data.results);
+                  });
+      };
+
       window.Stage.init = function() {
         $(".config-display-control .show-config").on("click", showConfigHandler);
         $(".config-display-control .hide-config").on("click", hideConfigHandler);
         $("#preview-merged-config").on("click", previewMergedConfig);
         $("#hc_input" ).typeahead(
-          {
-              minLength: 3,
-              hint: true,
-              highlight: true
-          },
-          {
-              source: typeAheadLookup
+            {
+                minLength: 3,
+                hint: true,
+                highlight: true
+            },
+            {
+                source: hc_lookup
+            });
+        $("#promote_env_input" ).typeahead(
+            {
+                minLength: 3,
+                hint: true,
+                highlight: true
+            },
+            {
+                source: env_lookup
+            });
+        $("#promote_stage_input" ).typeahead(
+            {
+                minLength: 0,
+                hint: true,
+                highlight: true
+            },
+            {
+                source: stage_populate_promote
+            });
+
+        $("#synchronize_env_input" ).typeahead(
+            {
+                minLength: 3,
+                hint: true,
+                highlight: true
+            },
+            {
+                source: env_lookup
+            });
+        $("#synchronize_stage_input" ).typeahead(
+            {
+                minLength: 0,
+                hint: true,
+                highlight: true
+            },
+            {
+                source: stage_populate_synchronize
           });
         initConfigDisplay();
       };

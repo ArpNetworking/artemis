@@ -71,8 +71,7 @@ object ApplicationBuild extends Build {
     "org.scala-lang.modules" %% "scala-java8-compat" % "0.7.0",
     "org.webjars" % "bootstrap" % "3.3.7",
     "org.webjars" % "jquery" % "3.1.1",
-    "org.webjars" % "knockout" % "3.4.0",
-    "org.webjars" % "typeaheadjs" % "0.11.1"
+    "org.webjars" % "knockout" % "3.4.0"
   ),
 
   // Extract build resources
