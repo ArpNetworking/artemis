@@ -15,6 +15,7 @@
  */
 package client;
 
+import akka.util.ByteString;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.AssistedInject;
 import org.asynchttpclient.AsyncHandler;
@@ -58,7 +59,7 @@ public class ProxyClient extends ClientBase {
             final play.mvc.Http.Request request,
             final AsyncHandler<T> handler) {
 
-        final Http.RawBuffer body = request.body().asRaw();
+        final ByteString body = request.body().asBytes();
         final URI uri = uri(path);
         LOGGER.info(String.format("Proxy url: %s", uri));
 
@@ -77,7 +78,7 @@ public class ProxyClient extends ClientBase {
             }
         }
         if (body != null) {
-            builder.setBody(body.asBytes().asByteBuffer());
+            builder.setBody(body.asByteBuffer());
         }
 
         final Object underlying = client().getUnderlying();
