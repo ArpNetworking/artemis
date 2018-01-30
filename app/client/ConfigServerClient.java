@@ -19,10 +19,10 @@ import api.HostOutput;
 import api.HostclassOutput;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.common.base.Throwables;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.AssistedInject;
 import play.libs.ws.WSClient;
+import play.mvc.Http;
 
 import java.io.IOException;
 import java.net.URI;
@@ -55,7 +55,7 @@ public class ConfigServerClient extends ClientBase {
     public CompletionStage<List<Package>> getPackages() {
         return client()
                 .url(uri("/package").toString())
-                .setHeader("Accept", "application/json")
+                .addHeader(Http.HeaderNames.ACCEPT, "application/json")
                 .get()
                 .thenApply(wsResponse -> null);
     }
@@ -74,7 +74,7 @@ public class ConfigServerClient extends ClientBase {
                     try {
                         return YAML_MAPPER.readValue(wsResponse.getBody(), HostOutput.class);
                     } catch (final IOException e) {
-                        throw Throwables.propagate(e);
+                        throw new RuntimeException(e);
                     }
                 });
     }
@@ -93,7 +93,7 @@ public class ConfigServerClient extends ClientBase {
                     try {
                         return YAML_MAPPER.readValue(wsResponse.getBody(), HostclassOutput.class);
                     } catch (final IOException e) {
-                        throw Throwables.propagate(e);
+                        throw new RuntimeException(e);
                     }
                 });
     }

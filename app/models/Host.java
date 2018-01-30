@@ -15,7 +15,8 @@
  */
 package models;
 
-import com.avaje.ebean.Model;
+import io.ebean.Finder;
+import io.ebean.Model;
 
 import java.util.List;
 import javax.annotation.Nullable;
@@ -67,7 +68,7 @@ public class Host extends Model {
      */
     @Nullable
     public static Host getByName(final String name) {
-        return FINDER.where().eq("name", name).findUnique();
+        return FINDER.query().where().eq("name", name).findOne();
     }
 
     /**
@@ -77,7 +78,7 @@ public class Host extends Model {
      * @return a Host or null if it doesn't exist
      */
     public static Host getById(final Long id) {
-        return FINDER.where().eq("id", id).findUnique();
+        return FINDER.query().where().eq("id", id).findOne();
     }
 
     /**
@@ -88,7 +89,7 @@ public class Host extends Model {
      * @return a list of Hosts
      */
     public static List<Host> searchByPartialName(final String query, final int limit) {
-        return FINDER.where().ilike("name", String.format("%%%s%%", query)).setMaxRows(limit).findList();
+        return FINDER.query().where().ilike("name", String.format("%%%s%%", query)).setMaxRows(limit).findList();
     }
 
     @Id
@@ -98,6 +99,6 @@ public class Host extends Model {
     @ManyToOne
     private Hostclass hostclass;
 
-    private static final Find<Long, Host> FINDER = new Find<Long, Host>(){};
+    private static final Finder<Long, Host> FINDER = new Finder<>(Host.class);
 }
 

@@ -53,7 +53,7 @@ public class RpmVersionComparator implements Comparator<String> {
             if (leftString.equals(rightString)) {
                 continue;
             } else if (leftString.charAt(0) == '~' && rightString.charAt(0) == '~') {
-                return Integer.valueOf(leftString.length()).compareTo(rightString.length());
+                return Integer.compare(leftString.length(), rightString.length());
             } else if (leftString.charAt(0) == '~') {
                 return -1;
             } else if (rightString.charAt(0) == '~') {
@@ -83,7 +83,7 @@ public class RpmVersionComparator implements Comparator<String> {
         } else if (rightRemaining > 0 && o2.charAt(rightIndex) == '~') {
             return 1;
         } else {
-            return Integer.valueOf(leftRemaining).compareTo(rightRemaining);
+            return Integer.compare(leftRemaining, rightRemaining);
         }
     }
 

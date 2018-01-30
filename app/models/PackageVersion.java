@@ -15,8 +15,9 @@
  */
 package models;
 
-import com.avaje.ebean.Model;
 import com.google.common.base.Objects;
+import io.ebean.Finder;
+import io.ebean.Model;
 
 import javax.annotation.Nullable;
 import javax.persistence.Entity;
@@ -109,7 +110,7 @@ public class PackageVersion extends Model {
      */
     @Nullable
     public static PackageVersion getByPackageAndVersion(final Package pkg, final String version) {
-        return FINDER.where().eq("pkg", pkg).eq("version", version).findUnique();
+        return FINDER.query().where().eq("pkg", pkg).eq("version", version).findOne();
     }
 
     /**
@@ -122,7 +123,7 @@ public class PackageVersion extends Model {
      */
     @Nullable
     public static PackageVersion getByRepositoryPackageAndVersion(final String repository, final Package pkg, final String version) {
-        return FINDER.where().eq("repository", repository).eq("pkg", pkg).eq("version", version).findUnique();
+        return FINDER.query().where().eq("repository", repository).eq("pkg", pkg).eq("version", version).findOne();
     }
 
     @Id
@@ -135,5 +136,5 @@ public class PackageVersion extends Model {
     private String version;
     private String description;
 
-    private static final Find<Long, PackageVersion> FINDER = new Find<Long, PackageVersion>(){};
+    private static final Finder<Long, PackageVersion> FINDER = new Finder<>(PackageVersion.class);
 }

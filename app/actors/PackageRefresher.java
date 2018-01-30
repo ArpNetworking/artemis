@@ -15,13 +15,13 @@
  */
 package actors;
 
+import akka.actor.AbstractActor;
 import akka.actor.Props;
-import akka.actor.UntypedActor;
 import akka.pattern.PatternsCS;
 import client.PackageProvider;
-import com.avaje.ebean.Ebean;
-import com.avaje.ebean.Transaction;
 import com.google.inject.Inject;
+import io.ebean.Ebean;
+import io.ebean.Transaction;
 import models.Package;
 import models.PackageVersion;
 import org.slf4j.Logger;
@@ -41,7 +41,7 @@ import javax.persistence.PersistenceException;
  * @author Brandon Arp (barp at groupon dot com)
  */
 @Singleton
-public class PackageRefresher extends UntypedActor {
+public class PackageRefresher extends AbstractActor {
     /**
      * Creates a {@link Props} to create this actor.
      *
@@ -69,49 +69,46 @@ public class PackageRefresher extends UntypedActor {
         _packageClient = packageClient;
     }
 
-
     @Override
-    public void onReceive(final Object message) throws Exception {
-        if (message instanceof RefreshPackagesMessage) {
-            final CompletionStage<PackageListMessage> messagePromise = _packageClient.getAllPackages().thenApply(
-                    PackageListMessage::new
-            );
-            PatternsCS.pipe(messagePromise, context().dispatcher()).to(self(), self());
-        } else if (message instanceof PackageListMessage) {
-            LOGGER.info("Received packageListMessage, proceeding to insert packages");
-            final PackageListMessage packageListMessage = (PackageListMessage) message;
-            final Map<String, List<PackageProvider.PackageVersionMetadata>> packages = packageListMessage
-                    .getList()
-                    .getPackages();
-                for (final Map.Entry<String, List<PackageProvider.PackageVersionMetadata>> entry : packages.entrySet()) {
-                    final String packageName = entry.getKey();
-                    try (final Transaction transaction = Ebean.beginTransaction()) {
-                        Package aPackage = Package.getByName(packageName);
-                        if (aPackage == null) {
-                            aPackage = new Package();
-                            aPackage.setName(packageName);
-                            aPackage.save();
-                        }
-
-                        for (final PackageProvider.PackageVersionMetadata versionMetadata : entry.getValue()) {
-                            PackageVersion version = PackageVersion.getByPackageAndVersion(aPackage,
-                                                                                           versionMetadata.getVersion());
-                            if (version == null) {
-                                version = new PackageVersion();
-                                version.setVersion(versionMetadata.getVersion());
-                                version.setPkg(aPackage);
-                                version.save();
+    public Receive createReceive() {
+        return receiveBuilder()
+                .match(RefreshPackagesMessage.class, refresh -> {
+                    final CompletionStage<PackageListMessage> messagePromise = _packageClient.getAllPackages().thenApply(
+                            PackageListMessage::new
+                    );
+                    PatternsCS.pipe(messagePromise, context().dispatcher()).to(self(), self());
+                })
+                .match(PackageListMessage.class, packageListMessage -> {
+                    final Map<String, List<PackageProvider.PackageVersionMetadata>> packages = packageListMessage
+                            .getList()
+                            .getPackages();
+                    for (final Map.Entry<String, List<PackageProvider.PackageVersionMetadata>> entry : packages.entrySet()) {
+                        final String packageName = entry.getKey();
+                        try (Transaction transaction = Ebean.beginTransaction()) {
+                            Package aPackage = Package.getByName(packageName);
+                            if (aPackage == null) {
+                                aPackage = new Package();
+                                aPackage.setName(packageName);
+                                aPackage.save();
                             }
+
+                            for (final PackageProvider.PackageVersionMetadata versionMetadata : entry.getValue()) {
+                                PackageVersion version = PackageVersion.getByPackageAndVersion(aPackage,
+                                        versionMetadata.getVersion());
+                                if (version == null) {
+                                    version = new PackageVersion();
+                                    version.setVersion(versionMetadata.getVersion());
+                                    version.setPkg(aPackage);
+                                    version.save();
+                                }
+                            }
+                            transaction.commit();
+                        } catch (final PersistenceException e) {
+                            LOGGER.warn(String.format("Package %s not updated", packageName), e);
                         }
-                        transaction.commit();
-                    } catch (final PersistenceException e) {
-                        LOGGER.warn(String.format("Package %s not updated", packageName), e);
                     }
-                }
-        } else {
-            LOGGER.warn(String.format("Unhandled message; message=%s", message));
-            unhandled(message);
-        }
+                })
+                .build();
     }
 
     private final PackageProvider _packageClient;
@@ -120,7 +117,7 @@ public class PackageRefresher extends UntypedActor {
     private static class RefreshPackagesMessage { }
 
     private static class PackageListMessage {
-        public PackageListMessage(final PackageProvider.PackageListResponse list) {
+        PackageListMessage(final PackageProvider.PackageListResponse list) {
             _list = list;
         }
 

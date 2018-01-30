@@ -15,8 +15,8 @@
  */
 package actors;
 
+import akka.actor.AbstractActor;
 import akka.actor.Cancellable;
-import akka.actor.UntypedActor;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.jvm.JvmMetricsRunnable;
@@ -26,7 +26,7 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.base.MoreObjects;
 import com.google.inject.Inject;
 import com.groupon.play.configuration.ConfigurationHelper;
-import play.Configuration;
+import com.typesafe.config.Config;
 import scala.concurrent.duration.FiniteDuration;
 
 /**
@@ -34,7 +34,7 @@ import scala.concurrent.duration.FiniteDuration;
  *
  * @author Deepika Misra (deepika at groupon dot com)
  */
-public final class JvmMetricsCollector extends UntypedActor {
+public final class JvmMetricsCollector extends AbstractActor {
 
     /**
      * Public constructor.
@@ -44,7 +44,7 @@ public final class JvmMetricsCollector extends UntypedActor {
      */
     @Inject
     public JvmMetricsCollector(
-            final Configuration configuration,
+            final Config configuration,
             final MetricsFactory metricsFactory) {
         _interval = ConfigurationHelper.getFiniteDuration(configuration, "metrics.jvm.interval");
         _jvmMetricsRunnable = new JvmMetricsRunnable.Builder()
@@ -80,20 +80,11 @@ public final class JvmMetricsCollector extends UntypedActor {
         _cancellable.cancel();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public void onReceive(final Object message) {
-        LOGGER.trace().setMessage("Message received")
-                .addData("data", message)
-                .addData("actor", self())
-                .log();
-        if (message instanceof CollectJvmMetrics) {
-            _jvmMetricsRunnable.run();
-        } else {
-            unhandled(message);
-        }
+    public Receive createReceive() {
+        return receiveBuilder()
+                .match(CollectJvmMetrics.class, message -> _jvmMetricsRunnable.run())
+                .build();
     }
 
     /**

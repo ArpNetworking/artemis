@@ -20,24 +20,24 @@ resolvers += "SBT Community repository" at "http://dl.bintray.com/sbt/sbt-plugin
 resolvers += "Typesafe repository plugin" at "https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/"
 
 // The Play plugin
-addSbtPlugin("com.typesafe.play" %% "sbt-plugin" % "2.5.9")
+addSbtPlugin("com.typesafe.play" %% "sbt-plugin" % "2.6.10")
 
-addSbtPlugin("com.typesafe.sbt" %% "sbt-play-ebean" % "3.1.0")
+addSbtPlugin("com.typesafe.sbt" %% "sbt-play-ebean" % "4.1.0")
 
-addSbtPlugin("de.johoop" %% "findbugs4sbt" % "1.4.0")
+addSbtPlugin("uk.co.josephearl" %% "sbt-findbugs" % "2.4.3")
 
-addSbtPlugin("com.typesafe.sbt" %% "sbt-digest" % "1.1.0")
+addSbtPlugin("com.typesafe.sbt" %% "sbt-digest" % "1.1.3")
 
-addSbtPlugin("com.typesafe.sbt" %% "sbt-gzip" % "1.0.0")
+addSbtPlugin("com.typesafe.sbt" %% "sbt-gzip" % "1.0.2")
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-play-enhancer" % "1.1.0")
 
-addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.0")
+addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.6")
 
-addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "0.5.1")
+addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "1.1")
 
 addSbtPlugin("com.jsuereth" % "sbt-pgp" % "1.0.0")
 
 libraryDependencies ++= Seq(
-  "com.puppycrawl.tools" % "checkstyle" % "6.3"
+  "com.puppycrawl.tools" % "checkstyle" % "8.4"
 )

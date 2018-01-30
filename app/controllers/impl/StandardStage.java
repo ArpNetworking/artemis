@@ -18,9 +18,6 @@ package controllers.impl;
 import akka.actor.ActorRef;
 import akka.pattern.PatternsCS;
 import akka.util.Timeout;
-import com.avaje.ebean.Ebean;
-import com.avaje.ebean.Transaction;
-import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -32,6 +29,8 @@ import forms.ConfigForm;
 import forms.CopyStage;
 import forms.DeployManifest;
 import forms.NewStage;
+import io.ebean.Ebean;
+import io.ebean.Transaction;
 import models.ConflictedPackages;
 import models.Deployment;
 import models.DeploymentDescription;
@@ -45,14 +44,12 @@ import models.UserMembership;
 import play.Logger;
 import play.data.Form;
 import play.data.FormFactory;
-import play.data.validation.ValidationError;
 import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
 import utils.StageUtil;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -61,6 +58,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
+import javax.inject.Singleton;
 import javax.persistence.PersistenceException;
 
 /**
@@ -68,6 +66,7 @@ import javax.persistence.PersistenceException;
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
+@Singleton
 @Security.Authenticated(AuthN.class)
 public class StandardStage extends Controller implements Stage {
     /**
@@ -259,13 +258,13 @@ public class StandardStage extends Controller implements Stage {
     }
 
     private boolean validateAuth(final models.Stage stage) {
-        final Set<Owner> userGroups = Sets.newHashSet(UserMembership.getOrgsForUser(request().username()));
+        final Set<Owner> userGroups = Sets.newHashSet(UserMembership.getOrgsForUser(request().attrs().get(Security.USERNAME)));
         if (!userGroups.contains(stage.getEnvironment().getOwner())) {
             Logger.warn(String.format(
                     "Attempt at unauthorized deployment; environment=%s, owner=%s, user=%s, users_orgs=%s",
                     stage.getEnvironment().getName(),
                     stage.getEnvironment().getOwner().getOrgName(),
-                    request().username(),
+                    request().attrs().get(Security.USERNAME),
                     userGroups));
             return false;
         }
@@ -297,7 +296,7 @@ public class StandardStage extends Controller implements Stage {
 
         final CompletionStage<Object> ask = PatternsCS.ask(
                 _deploymentManager,
-                new FleetDeploymentCommands.DeployStage(stage, manifest, request().username()),
+                new FleetDeploymentCommands.DeployStage(stage, manifest, request().attrs().get(Security.USERNAME)),
                 Timeout.apply(30L, TimeUnit.SECONDS));
 
         return ask.thenApply(
@@ -313,31 +312,29 @@ public class StandardStage extends Controller implements Stage {
 
     @Override
     public CompletionStage<Result> create(final String envName) {
-      final Form<NewStage> bound = NewStage.form(_formFactory).bindFromRequest();
-        final Form<ConfigForm> configFormBound = ConfigForm.form(_formFactory).bindFromRequest();
-      final models.Environment environment = models.Environment.getByName(envName);
-      if (environment == null) {
-          return CompletableFuture.completedFuture(notFound());
-      }
-      if (bound.hasErrors()) {
-          return CompletableFuture.completedFuture(badRequest(views.html.environment.render(environment, bound, configFormBound, false)));
-      } else {
-          try (final Transaction transaction = Ebean.beginTransaction()) {
-              final NewStage newStageForm = bound.get();
-              final models.Stage newStage = new models.Stage();
-              newStage.setName(newStageForm.getName());
-              newStage.setEnvironment(environment);
-              newStage.save();
+        final Form<NewStage> bound = NewStage.form(_formFactory).bindFromRequest();
+            final Form<ConfigForm> configFormBound = ConfigForm.form(_formFactory).bindFromRequest();
+        final models.Environment environment = models.Environment.getByName(envName);
+        if (environment == null) {
+            return CompletableFuture.completedFuture(notFound());
+        }
+        if (bound.hasErrors()) {
+            return CompletableFuture.completedFuture(badRequest(views.html.environment.render(environment, bound, configFormBound, false)));
+        } else {
+            try (Transaction transaction = Ebean.beginTransaction()) {
+                final NewStage newStageForm = bound.get();
+                final models.Stage newStage = new models.Stage();
+                newStage.setName(newStageForm.getName());
+                newStage.setEnvironment(environment);
+                newStage.save();
 
-              final Manifest manifest = new Manifest();
-              manifest.setCreatedBy(request().username());
-              manifest.save();
+                final Manifest manifest = new Manifest();
+                manifest.setCreatedBy(request().attrs().get(Security.USERNAME));
+                manifest.save();
 
-              models.Stage.applyManifestToStage(newStage, manifest);
-              transaction.commit();
-              return CompletableFuture.completedFuture(redirect(controllers.routes.Environment.detail(envName)));
-          } catch (final IOException e) {
-              throw Throwables.propagate(e);
+                models.Stage.applyManifestToStage(newStage, manifest);
+                transaction.commit();
+                return CompletableFuture.completedFuture(redirect(controllers.routes.Environment.detail(envName)));
           }
       }
     }
@@ -345,15 +342,13 @@ public class StandardStage extends Controller implements Stage {
     @Override
     public CompletionStage<Result> save(final String envName, final String stageName) {
         final models.Stage stage = models.Stage.getByEnvironmentNameAndName(envName, stageName);
-        final Form<ConfigForm> configForm = ConfigForm.form(_formFactory).bindFromRequest();
+        Form<ConfigForm> configForm = ConfigForm.form(_formFactory).bindFromRequest();
 
-        final Map<String, String> configData = configForm.data();
+        final Map<String, String> configData = configForm.rawData();
         final String config = configData.get("config");
         final Long version = Long.parseLong(configData.get("version"));
         if (version != stage.getVersion()) {
-            final ArrayList<ValidationError> errorList = new ArrayList<>();
-            errorList.add(new ValidationError("VersionConflict", "There was a version conflict. Please try saving again."));
-            configForm.errors().put("VersionConflict", errorList);
+            configForm = configForm.withError("VersionConflict", "There was a version conflict. Please try saving again.");
         }
 
         final List<Deployment> stageDeployments = models.Deployment.getByStage(stage, 10, 0);
@@ -400,7 +395,7 @@ public class StandardStage extends Controller implements Stage {
         if (sourceStage == null || destStage == null) {
             return CompletableFuture.completedFuture(notFound());
         }
-        try (final Transaction transaction = Ebean.beginTransaction()) {
+        try (Transaction transaction = Ebean.beginTransaction()) {
             final Manifest manifestToCopy = ManifestHistory.getCurrentForStage(sourceStage).getManifest();
             if (manifestToCopy == null) {
                 return CompletableFuture.completedFuture(notFound());
@@ -414,8 +409,6 @@ public class StandardStage extends Controller implements Stage {
                                     destStage,
                                     manifestToCopy,
                                     currentOnDest.getId())));
-        } catch (final IOException e) {
-            throw Throwables.propagate(e);
         }
     }
 

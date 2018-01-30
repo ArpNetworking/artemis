@@ -51,12 +51,14 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Singleton;
 
 /**
  * JSON REST Apis.
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
+@Singleton
 public class StandardApi extends Controller implements Api {
     /**
      * Public constructor.
@@ -215,7 +217,7 @@ public class StandardApi extends Controller implements Api {
 
         final Source<ByteString, ?> source = Source.<String>actorRef(1024, OverflowStrategy.dropTail())
                 .map(ByteString::fromString)
-                .mapMaterializedValue((outRef) -> {
+                .mapMaterializedValue(outRef -> {
                     final ActorRef relayActor = _actorSystem.actorOf(DeployLogRelay.props(outRef, deploymentId));
                     relayActor.tell(outRef, ActorRef.noSender());
                     return null;

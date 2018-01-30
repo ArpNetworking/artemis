@@ -25,12 +25,14 @@ import utils.AuthN;
 import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Singleton;
 
 /**
  * Controller for Environments.
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
+@Singleton
 @Security.Authenticated(AuthN.class)
 public class ProxyEnvironment extends ArtemisProxy implements Environment {
     /**

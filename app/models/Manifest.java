@@ -15,10 +15,11 @@
  */
 package models;
 
-import com.avaje.ebean.Model;
-import com.avaje.ebean.annotation.CreatedTimestamp;
 import com.google.common.base.Function;
 import com.google.common.collect.Maps;
+import io.ebean.Finder;
+import io.ebean.Model;
+import io.ebean.annotation.CreatedTimestamp;
 import org.joda.time.DateTime;
 
 import java.util.List;
@@ -107,7 +108,7 @@ public class Manifest extends Model {
      */
     @Nullable
     public static Manifest getLatestManifest(final Environment environment) {
-        return FINDER.where().eq("environment", environment).orderBy().desc("id").setMaxRows(1).findUnique();
+        return FINDER.query().where().eq("environment", environment).orderBy().desc("id").setMaxRows(1).findOne();
     }
 
     /**
@@ -119,7 +120,7 @@ public class Manifest extends Model {
      */
     @Nullable
     public static Manifest getVersion(final Environment environment, final String version) {
-        return FINDER.where().eq("environment", environment).eq("version", version).findUnique();
+        return FINDER.query().where().eq("environment", environment).eq("version", version).findOne();
     }
 
     /**
@@ -149,5 +150,5 @@ public class Manifest extends Model {
     private Environment environment;
     private String version;
 
-    private static final Find<Long, Manifest> FINDER = new Find<Long, Manifest>(){};
+    private static final Finder<Long, Manifest> FINDER = new Finder<>(Manifest.class);
 }

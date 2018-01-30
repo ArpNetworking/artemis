@@ -15,16 +15,16 @@
  */
 package com.groupon.deployment.host;
 
-import akka.actor.UntypedActor;
+import akka.actor.AbstractActor;
 import com.google.common.base.Charsets;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.AssistedInject;
 import com.groupon.deployment.HostDeploymentNotifications;
 import com.groupon.deployment.SshSessionFactory;
+import com.typesafe.config.Config;
 import models.Host;
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.connection.channel.direct.Session;
-import play.Configuration;
 import play.Logger;
 
 import java.io.BufferedReader;
@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
-public class Roller extends UntypedActor {
+public class Roller extends AbstractActor {
     /**
      * Public constructor.
      *
@@ -49,7 +49,7 @@ public class Roller extends UntypedActor {
     public Roller(
             @Assisted final Host host,
             final SshSessionFactory sshFactory,
-            final Configuration config) {
+            final Config config) {
         _host = host;
         _sshFactory = sshFactory;
         _config = config;
@@ -59,37 +59,37 @@ public class Roller extends UntypedActor {
     }
 
     @Override
-    public void onReceive(final Object message) {
-        if ("start".equals(message)) {
-            final String dc = _host.getName().substring(_host.getName().lastIndexOf('.') + 1);
-            String baseUrl = _config.getString("roller.artemisBaseUrl." + dc);
-            if (baseUrl == null) {
-                baseUrl = _config.getString("roller.artemisBaseUrl.default");
-            }
+    public Receive createReceive() {
+        return receiveBuilder()
+                .matchEquals("start", start -> {
+                    final String dc = _host.getName().substring(_host.getName().lastIndexOf('.') + 1);
+                    String baseUrl = _config.getString("roller.artemisBaseUrl." + dc);
+                    if (baseUrl == null) {
+                        baseUrl = _config.getString("roller.artemisBaseUrl.default");
+                    }
 
-            try (final SSHClient sshClient = _sshFactory.create(_host.getName())) {
+                    try (SSHClient sshClient = _sshFactory.create(_host.getName())) {
 
-                // Pre-roll scripts
-                executeCommand(sshClient, "sudo /usr/local/bin/beforeRoll 2>&1");
+                        // Pre-roll scripts
+                        executeCommand(sshClient, "sudo /usr/local/bin/beforeRoll 2>&1");
 
-                // Roll
-                executeRequired(sshClient, "sudo /var/tmp/roll --baseurl " + baseUrl + " 2>&1", "roller");
+                        // Roll
+                        executeRequired(sshClient, "sudo /var/tmp/roll --baseurl " + baseUrl + " 2>&1", "roller");
 
-                // Verify
-                executeRequired(sshClient, "sudo /usr/local/bin/verifyRoll 2>&1", "verify roll script");
+                        // Verify
+                        executeRequired(sshClient, "sudo /usr/local/bin/verifyRoll 2>&1", "verify roll script");
 
-                // Post-roll scripts
-                executeRequired(sshClient, "sudo /usr/local/bin/afterRoll 2>&1", "post-roll script");
+                        // Post-roll scripts
+                        executeRequired(sshClient, "sudo /usr/local/bin/afterRoll 2>&1", "post-roll script");
 
-                context().parent().tell(new HostDeploymentNotifications.DeploymentSucceeded(_host), self());
-                // CHECKSTYLE.OFF: IllegalCatch - we need to catch everything, we'll record it and die
-            } catch (final IOException | RuntimeException e) {
-                // CHECKSTYLE.ON: IllegalCatch
-                context().parent().tell(new HostDeploymentNotifications.DeploymentFailed(_host, e), self());
-            }
-        } else {
-            unhandled(message);
-        }
+                        context().parent().tell(new HostDeploymentNotifications.DeploymentSucceeded(_host), self());
+                        // CHECKSTYLE.OFF: IllegalCatch - we need to catch everything, we'll record it and die
+                    } catch (final IOException | RuntimeException e) {
+                        // CHECKSTYLE.ON: IllegalCatch
+                        context().parent().tell(new HostDeploymentNotifications.DeploymentFailed(_host, e), self());
+                    }
+                })
+                .build();
     }
 
     private void executeRequired(final SSHClient sshClient, final String commandString, final String description) throws IOException {
@@ -103,10 +103,10 @@ public class Roller extends UntypedActor {
     private Integer executeCommand(final SSHClient sshClient, final String commandString) throws IOException {
         context().parent().tell(new HostDeploymentNotifications.DeploymentLog(_host, "Executing '" + commandString + "'"), self());
         final Integer exitStatus;
-        try (final Session session = sshClient.startSession();
-                final Session.Command command = session.exec(commandString);
-                final BufferedReader error = new BufferedReader(new InputStreamReader(command.getErrorStream(), Charsets.UTF_8));
-                final BufferedReader reader = new BufferedReader(new InputStreamReader(command.getInputStream(), Charsets.UTF_8))) {
+        try (Session session = sshClient.startSession();
+                Session.Command command = session.exec(commandString);
+                BufferedReader error = new BufferedReader(new InputStreamReader(command.getErrorStream(), Charsets.UTF_8));
+                BufferedReader reader = new BufferedReader(new InputStreamReader(command.getInputStream(), Charsets.UTF_8))) {
             String line = reader.readLine();
             while (line != null) {
                 Logger.info("***" + line);
@@ -122,5 +122,5 @@ public class Roller extends UntypedActor {
 
     private final Host _host;
     private final SshSessionFactory _sshFactory;
-    private final Configuration _config;
+    private final Config _config;
 }

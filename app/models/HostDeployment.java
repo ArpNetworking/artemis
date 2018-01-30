@@ -15,7 +15,7 @@
  */
 package models;
 
-import com.avaje.ebean.Model;
+import io.ebean.Model;
 import org.joda.time.DateTime;
 
 import javax.persistence.Entity;

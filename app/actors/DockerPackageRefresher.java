@@ -15,22 +15,20 @@
  */
 package actors;
 
-import akka.actor.UntypedActor;
+import akka.actor.AbstractActor;
 import akka.pattern.PatternsCS;
 import client.DockerPackageClient;
 import client.DockerPackageClient.PackageListResponse;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.avaje.ebean.Ebean;
-import com.avaje.ebean.Transaction;
-import com.google.common.base.Throwables;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import io.ebean.Ebean;
+import io.ebean.Transaction;
 import models.Package;
 import models.PackageVersion;
 import scala.concurrent.duration.FiniteDuration;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
@@ -43,7 +41,7 @@ import javax.inject.Singleton;
  * @author Matthew Hayter (mhayter at groupon dot com)
  */
 @Singleton
-public class DockerPackageRefresher extends UntypedActor {
+public class DockerPackageRefresher extends AbstractActor {
 
     /**
      * Public constructor.
@@ -65,27 +63,27 @@ public class DockerPackageRefresher extends UntypedActor {
     }
 
     @Override
-    public void onReceive(final Object message) {
-        if (message instanceof RefreshPackagesMessage) {
-            if (_refreshState == RefreshStates.READY) {
-                fetchPackagesAndSendMessage();
-            } else {
-                _refreshState = RefreshStates.QUEUED;
-            }
-        } else if (message instanceof PackageListMessage) {
-            final DockerPackageClient.PackageListResponse list = ((PackageListMessage) message).getList();
-            final Map<String, List<DockerPackageClient.ImageMetadata>> packages = list.getPackages();
-            persistImagesToPackageVersions(packages);
+    public Receive createReceive() {
+        return receiveBuilder()
+                .match(RefreshPackagesMessage.class, message -> {
+                    if (_refreshState == RefreshStates.READY) {
+                        fetchPackagesAndSendMessage();
+                    } else {
+                        _refreshState = RefreshStates.QUEUED;
+                    }
+                })
+                .match(PackageListMessage.class, message -> {
+                    final DockerPackageClient.PackageListResponse list = message.getList();
+                    final Map<String, List<DockerPackageClient.ImageMetadata>> packages = list.getPackages();
+                    persistImagesToPackageVersions(packages);
 
-            if (_refreshState == RefreshStates.QUEUED) {
-                self().tell(new RefreshPackagesMessage(), self());
-            }
-            _refreshState = RefreshStates.READY;
+                    if (_refreshState == RefreshStates.QUEUED) {
+                        self().tell(new RefreshPackagesMessage(), self());
+                    }
+                    _refreshState = RefreshStates.READY;
 
-        } else {
-            LOGGER.warn(String.format("Unhandled message; message=%s", message));
-            unhandled(message);
-        }
+                })
+                .build();
     }
 
     private void fetchPackagesAndSendMessage() {
@@ -100,7 +98,7 @@ public class DockerPackageRefresher extends UntypedActor {
     private void persistImagesToPackageVersions(final Map<String, List<DockerPackageClient.ImageMetadata>> repoToImageMap) {
 
         repoToImageMap.forEach((repoName, imageMetadataList) -> {
-            try (final Transaction transaction = Ebean.beginTransaction()) {
+            try (Transaction transaction = Ebean.beginTransaction()) {
                 Package aPackage = Package.getByName(repoName);
                 if (aPackage == null) {
                     aPackage = new Package();
@@ -129,8 +127,6 @@ public class DockerPackageRefresher extends UntypedActor {
                     packageVersion.save();
                 }
                 transaction.commit();
-            } catch (final IOException e) {
-                throw Throwables.propagate(e);
             }
         });
     }
@@ -151,7 +147,7 @@ public class DockerPackageRefresher extends UntypedActor {
     private static class PackageListMessage {
         private final PackageListResponse _list;
 
-        public PackageListMessage(final PackageListResponse list) {
+        PackageListMessage(final PackageListResponse list) {
             _list = list;
         }
 

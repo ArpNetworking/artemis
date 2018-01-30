@@ -26,7 +26,6 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -45,7 +44,6 @@ import models.PackageVersion;
 import models.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import play.Configuration;
 import play.libs.ws.WSClient;
 import play.mvc.Result;
 
@@ -70,10 +68,12 @@ public class Config extends Proxy {
      *
      * @param baseURL base url of the config server
      * @param client ws client to use
+     * @param config Play config
      */
     @Inject
-    public Config(@Named("ConfigServerBaseUrl") final String baseURL, final WSClient client) {
+    public Config(@Named("ConfigServerBaseUrl") final String baseURL, final WSClient client, final com.typesafe.config.Config config) {
         super(baseURL, client);
+        _config = config;
         _configClient = new ConfigServerClient(baseURL, client);
     }
 
@@ -93,7 +93,7 @@ public class Config extends Proxy {
                         try {
                             return ok(YAML_MAPPER.writeValueAsString(hostOutput));
                         } catch (final JsonProcessingException e) {
-                            throw Throwables.propagate(e);
+                            throw new RuntimeException(e);
                         }
                     }
                     final String rawHostclass = hostOutput.getHostclass();
@@ -114,10 +114,10 @@ public class Config extends Proxy {
                     }
                     params.put("hosts_redirect", lockMappings);
 
-                    final List<Configuration> configList = Configuration.root().getConfigList("package.lock.replacements");
+                    final List<? extends com.typesafe.config.Config> configList = _config.getConfigList("package.lock.replacements");
 
-                    for (final Configuration configuration : configList) {
-                        final Map<String, Object> map = configuration.asMap();
+                    for (final com.typesafe.config.Config configuration : configList) {
+                        final Map<String, Object> map = configuration.root().unwrapped();
                         final HostRedirect redirect = new HostRedirect(
                                 (String) map.get("src_host"),
                                 Optional.ofNullable((Integer) map.getOrDefault("src_port", null)),
@@ -125,7 +125,7 @@ public class Config extends Proxy {
                                 Optional.ofNullable((Integer) map.getOrDefault("dst_port", null)));
 
                         if (lockMappings.stream().filter(
-                                (k) ->
+                                k ->
                                         redirect._sourceHost.equals(k._sourceHost) && redirect._sourcePort.equals(k._sourcePort))
                                 .count() == 0) {
                             lockMappings.add(redirect);
@@ -135,7 +135,7 @@ public class Config extends Proxy {
                     try {
                         return ok(YAML_MAPPER.writeValueAsString(hostOutput));
                     } catch (final JsonProcessingException e) {
-                        throw Throwables.propagate(e);
+                        throw new RuntimeException(e);
                     }
                 }
         );
@@ -179,7 +179,7 @@ public class Config extends Proxy {
                     try {
                         return ok(YAML_MAPPER.writeValueAsString(hostclassOutput));
                     } catch (final JsonProcessingException e) {
-                        throw Throwables.propagate(e);
+                        throw new RuntimeException(e);
                     }
                 }
         );
@@ -216,7 +216,7 @@ public class Config extends Proxy {
             }
         }
         if (stages.size() > 0) {
-            Configuration.root()
+            _config
                     .getStringList("package.overlay")
                     .stream()
                     .map(HostclassOutput.Package::new)
@@ -247,6 +247,7 @@ public class Config extends Proxy {
     }
 
     private final ConfigServerClient _configClient;
+    private final com.typesafe.config.Config _config;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Config.class);
     private static final ObjectMapper YAML_MAPPER;

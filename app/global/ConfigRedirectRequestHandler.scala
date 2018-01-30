@@ -15,13 +15,13 @@
  */
 package global
 
-import java.security.cert.X509Certificate
 import java.util.Locale
 import javax.inject.Inject
 
 import play.Logger
 import play.api.http._
-import play.api.mvc.{Handler, Headers, RequestHeader}
+import play.api.mvc.request.RequestTarget
+import play.api.mvc.{Handler, RequestHeader}
 import play.api.routing.Router
 import play.core.j.{JavaHandler, JavaHandlerComponents}
 
@@ -40,7 +40,7 @@ class ConfigRedirectRequestHandler @Inject() (defaultRouter: Router,
 
   override def routeRequest(request: RequestHeader): Option[Handler] = {
     val handler: Option[Handler] = if (request.host.toLowerCase(Locale.ENGLISH).startsWith("config")) {
-      configRouter.handlerFor(new PrefixRequest(request, configRouter.prefix))
+      configRouter.handlerFor(request.withTarget(RequestTarget.apply(request.uri, request.path.replaceFirst("/", configRouter.prefix), request.queryString)))
     } else {
        super.routeRequest(request)
     }
@@ -55,18 +55,4 @@ class ConfigRedirectRequestHandler @Inject() (defaultRouter: Router,
   def printRouter(router: Router): Unit = {
     Logger.info(router.documentation.map(x => x._1 + " " + x._2).fold("")((x, y) => x + "\n" + y))
   }
-
-  class PrefixRequest(wrapped: RequestHeader, prefix: String) extends RequestHeader {
-      override def headers: Headers = wrapped.headers
-      override def secure: Boolean = wrapped.secure
-      override def uri: String = wrapped.uri.replaceFirst("/", prefix)
-      override def remoteAddress: String = wrapped.remoteAddress
-      override def queryString: Map[String, Seq[String]] = wrapped.queryString
-      override def method: String = wrapped.method
-      override def path: String = wrapped.path.replaceFirst("/", prefix)
-      override def version: String = wrapped.version
-      override def tags: Map[String, String] = wrapped.tags
-      override def id: Long = wrapped.id
-      override def clientCertificateChain: Option[Seq[X509Certificate]] = wrapped.clientCertificateChain
-    }
 }

@@ -15,7 +15,7 @@
  */
 package models;
 
-import com.avaje.ebean.Model;
+import io.ebean.Model;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;

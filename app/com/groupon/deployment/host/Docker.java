@@ -15,8 +15,8 @@
  */
 package com.groupon.deployment.host;
 
+import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
-import akka.actor.UntypedActor;
 import akka.dispatch.Futures;
 import akka.dispatch.OnComplete;
 import client.DockerDeploymentClient;
@@ -26,7 +26,6 @@ import client.docker.inspectionbeans.ImageInspection;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.AssistedInject;
@@ -54,7 +53,7 @@ import java.util.stream.Collectors;
  *
  * @author Matthew Hayter (mhayter at groupon dot com)
  */
-public class Docker extends UntypedActor {
+public class Docker extends AbstractActor {
     /**
      * Public constructor.
      *
@@ -68,17 +67,15 @@ public class Docker extends UntypedActor {
     }
 
     @Override
-    public void onReceive(final Object message) throws Exception {
-        if (message instanceof HostDeploymentCommands.StartDeployment) {
-            final HostDeploymentCommands.StartDeployment deployStage = (HostDeploymentCommands.StartDeployment) message;
-            deploy(deployStage.getManifest(), deployStage.getHost(), deployStage.getStage());
-
-        } else if (message instanceof RunningContainersMsg) {
-            final List<ContainerDescription> containerDescriptions = ((RunningContainersMsg) message)._containerDescriptions;
-            containerDescriptions.forEach(d -> LOGGER.info().setMessage("Running container").addData("name", d.getName()).log());
-        } else {
-            unhandled(message);
-        }
+    public Receive createReceive() {
+        return receiveBuilder()
+                .match(HostDeploymentCommands.StartDeployment.class, deployStage ->
+                        deploy(deployStage.getManifest(), deployStage.getHost(), deployStage.getStage()))
+                .match(RunningContainersMsg.class, message -> {
+                    final List<ContainerDescription> containerDescriptions = message._containerDescriptions;
+                    containerDescriptions.forEach(d -> LOGGER.info().setMessage("Running container").addData("name", d.getName()).log());
+                })
+                .build();
     }
 
     @Override
@@ -169,11 +166,11 @@ public class Docker extends UntypedActor {
     private static final class DockerDeployFailureException extends RuntimeException {
         private static final long serialVersionUID = 1L;
 
-        public DockerDeployFailureException(final String message) {
+        DockerDeployFailureException(final String message) {
             super(message);
         }
 
-        public DockerDeployFailureException(final String message, final Throwable cause) {
+        DockerDeployFailureException(final String message, final Throwable cause) {
             super(message, cause);
         }
     }
@@ -215,7 +212,7 @@ public class Docker extends UntypedActor {
                 try {
                     runCommandBuilder.doRun();
                 } catch (final DockerDeploymentClient.DockerDeploymentClientException e) {
-                    throw Throwables.propagate(e);
+                    throw new RuntimeException(e);
                 }
             }
             return null;
@@ -233,7 +230,7 @@ public class Docker extends UntypedActor {
     private class RmContainersCb implements JFunction1<List<ContainerDescription>, Void> {
         private final LoggerToParent _logger;
 
-        public RmContainersCb(final LoggerToParent logger) {
+        RmContainersCb(final LoggerToParent logger) {
             _logger = logger;
         }
 
@@ -277,7 +274,7 @@ public class Docker extends UntypedActor {
             try {
                 inspections = _deploymentClient.inspectImages(imageReferences);
             } catch (final DockerDeploymentClient.DockerDeploymentClientException e) {
-                throw Throwables.propagate(e);
+                throw new RuntimeException(e);
             }
 
             final Map<PackageVersion, List<PortMapping>> packageToPortsMap = Maps.newHashMapWithExpectedSize(packageVersions.size());

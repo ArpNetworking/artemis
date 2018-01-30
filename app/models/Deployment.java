@@ -15,12 +15,12 @@
  */
 package models;
 
-import com.avaje.ebean.Ebean;
-import com.avaje.ebean.Expr;
-import com.avaje.ebean.Model;
-import com.avaje.ebean.Transaction;
-import com.avaje.ebean.TxIsolation;
-import com.google.common.base.Throwables;
+import io.ebean.Ebean;
+import io.ebean.Expr;
+import io.ebean.Finder;
+import io.ebean.Model;
+import io.ebean.Transaction;
+import io.ebean.annotation.TxIsolation;
 import org.joda.time.DateTime;
 
 import java.io.IOException;
@@ -57,7 +57,7 @@ public class Deployment extends Model {
     private DateTime start;
     private DateTime finished;
 
-    private static final Find<Long, Deployment> FINDER = new Find<Long, Deployment>(){};
+    private static final Finder<Long, Deployment> FINDER = new Finder<>(Deployment.class);
 
     public String getDeploymentOwner() {
         return deploymentOwner;
@@ -151,7 +151,14 @@ public class Deployment extends Model {
      * @return a list of deployments
      */
     public static List<Deployment> getByStage(final Stage stage, final int limit, final int offset) {
-        return FINDER.where().eq("manifestHistory.stage", stage).orderBy().desc("start").setMaxRows(limit).setFirstRow(offset).findList();
+        return FINDER.query()
+                .where()
+                .eq("manifestHistory.stage", stage)
+                .orderBy()
+                .desc("start")
+                .setMaxRows(limit)
+                .setFirstRow(offset)
+                .findList();
     }
 
     /**
@@ -164,7 +171,7 @@ public class Deployment extends Model {
         if (Ebean.currentTransaction() != null) {
             throw new IllegalStateException("Must not be in a transaction.  getAndLockStuckDeployment requires creating a new transaction");
         }
-        try (final Transaction transaction = Ebean.beginTransaction(TxIsolation.SERIALIZABLE)) {
+        try (Transaction transaction = Ebean.beginTransaction(TxIsolation.SERIALIZABLE)) {
             final Deployment deployment = Ebean.createQuery(Deployment.class)
                     .setForUpdate(true)
                     .where()
@@ -178,7 +185,7 @@ public class Deployment extends Model {
                             Expr.isNull("deploymentOwner")
                     )
                     .setMaxRows(1)
-                    .findUnique();
+                    .findOne();
             if (deployment == null) {
                 return null;
             }
@@ -190,7 +197,7 @@ public class Deployment extends Model {
             transaction.commit();
             return deployment;
         } catch (final IOException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -201,13 +208,13 @@ public class Deployment extends Model {
         if (Ebean.currentTransaction() != null) {
             throw new IllegalStateException("Must not be in a transaction.  getAndLockStuckDeployment requires creating a new transaction");
         }
-        try (final Transaction transaction = Ebean.beginTransaction(TxIsolation.SERIALIZABLE)) {
+        try (Transaction transaction = Ebean.beginTransaction(TxIsolation.SERIALIZABLE)) {
             final String myName = InetAddress.getLocalHost().getCanonicalHostName();
             final Deployment toHeartbeat = Ebean.createQuery(Deployment.class)
                     .setForUpdate(true)
                     .where()
                     .eq("id", getId())
-                    .findUnique();
+                    .findOne();
             // Verify that we still own the deployment
             if (!myName.equals(toHeartbeat.getDeploymentOwner())) {
                 throw new IllegalStateException("cannot heartbeat, we no longer own the deployment");
@@ -216,7 +223,7 @@ public class Deployment extends Model {
             toHeartbeat.save();
             transaction.commit();
         } catch (final IOException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
     }
 }

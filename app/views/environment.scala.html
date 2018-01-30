@@ -50,11 +50,9 @@
                             <a class="icon-close"></a>
                             <p>Save Failed!</p>
                             <ul>
-                                @for(key  <- configForm.errors.values) {
-                                    @for(entry <- key) {
-                                        @for(message <- entry.messages) {
-                                            <li>@message</li>
-                                        }
+                                @for(entry  <- configForm.allErrors) {
+                                    @for(message <- entry.messages) {
+                                        <li>@message</li>
                                     }
                                 }
                             </ul>

@@ -15,7 +15,8 @@
  */
 package models;
 
-import com.avaje.ebean.Model;
+import io.ebean.Finder;
+import io.ebean.Model;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -64,5 +65,5 @@ public class Bundle extends Model {
         owner = value;
     }
 
-    private static final Find<Long, Bundle> FINDER = new Find<Long, Bundle>(){};
+    private static final Finder<Long, Bundle> FINDER = new Finder<>(Bundle.class);
 }

@@ -29,5 +29,5 @@ public interface DeploymentClientFactory {
      * @param client the ssh client
      * @return a new {@link DockerDeploymentClient}
      */
-    DockerDeploymentClient createDockerClient(final SSHClient client);
+    DockerDeploymentClient createDockerClient(SSHClient client);
 }

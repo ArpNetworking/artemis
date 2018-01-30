@@ -15,12 +15,13 @@
  */
 package models;
 
-import com.avaje.ebean.Ebean;
-import com.avaje.ebean.Model;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigParseOptions;
 import com.typesafe.config.ConfigRenderOptions;
+import io.ebean.Ebean;
+import io.ebean.Finder;
+import io.ebean.Model;
 import org.joda.time.DateTime;
 import utils.NoIncluder;
 
@@ -98,7 +99,7 @@ public class Stage extends Model {
      */
     @Nullable
     public static Stage getByEnvironmentNameAndName(final String environmentName, final String name) {
-        return FINDER.where().eq("environment.name", environmentName).eq("name", name).findUnique();
+        return FINDER.query().where().eq("environment.name", environmentName).eq("name", name).findOne();
     }
 
     /**
@@ -108,7 +109,7 @@ public class Stage extends Model {
      * @return a list of stages
      */
     public static List<Stage> getStagesForHostclass(final Hostclass hostclass) {
-        return FINDER.where().eq("hostclasses", hostclass).findList();
+        return FINDER.query().where().eq("hostclasses", hostclass).findList();
     }
 
     /**
@@ -118,7 +119,7 @@ public class Stage extends Model {
      * @return the stage, or null if it doesn't exist
      */
     public static Stage getById(final Long id) {
-        return FINDER.where().eq("id", id).findUnique();
+        return FINDER.query().where().eq("id", id).findOne();
     }
 
     /**
@@ -178,6 +179,6 @@ public class Stage extends Model {
     private Set<Hostclass> hostclasses;
     private String config;
 
-    private static final Find<Long, Stage> FINDER = new Find<Long, Stage>(){};
+    private static final Finder<Long, Stage> FINDER = new Finder<>(Stage.class);
 
 }

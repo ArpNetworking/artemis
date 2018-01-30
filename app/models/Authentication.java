@@ -15,7 +15,8 @@
  */
 package models;
 
-import com.avaje.ebean.Model;
+import io.ebean.Finder;
+import io.ebean.Model;
 
 import javax.annotation.Nullable;
 import javax.persistence.Entity;
@@ -72,8 +73,8 @@ public class Authentication extends Model {
      */
     @Nullable
     public static Authentication findByUserName(final String userName) {
-        return FINDER.where().eq("user_name", userName).findUnique();
+        return FINDER.query().where().eq("user_name", userName).findOne();
     }
 
-    private static final Find<Long, Authentication> FINDER = new Find<Long, Authentication>(){};
+    private static final Finder<Long, Authentication> FINDER = new Finder<>(Authentication.class);
 }

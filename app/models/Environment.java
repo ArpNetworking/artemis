@@ -15,7 +15,8 @@
  */
 package models;
 
-import com.avaje.ebean.Model;
+import io.ebean.Finder;
+import io.ebean.Model;
 
 import java.util.List;
 import javax.annotation.Nullable;
@@ -111,7 +112,7 @@ public class Environment extends Model {
      * @return a list of environments
      */
     public static List<Environment> getEnvironmentsForOrgs(final List<Owner> orgs, final int maxRows) {
-        return FINDER.where().in("owner", orgs).orderBy("name").setMaxRows(maxRows).findList();
+        return FINDER.query().where().in("owner", orgs).orderBy("name").setMaxRows(maxRows).findList();
     }
 
     /**
@@ -122,7 +123,7 @@ public class Environment extends Model {
      */
     @Nullable
     public static Environment getByName(final String name) {
-        return FINDER.where().eq("name", name).findUnique();
+        return FINDER.query().where().eq("name", name).findOne();
     }
 
     /**
@@ -143,7 +144,7 @@ public class Environment extends Model {
      * @return a list of environment results
      */
     public static List<Environment> searchByPartialName(final String query, final int limit) {
-        return FINDER.where().ilike("name", String.format("%%%s%%", query)).setMaxRows(limit).findList();
+        return FINDER.query().where().ilike("name", String.format("%%%s%%", query)).setMaxRows(limit).findList();
     }
 
     @Version
@@ -165,5 +166,5 @@ public class Environment extends Model {
     private EnvironmentType environmentType;
     private String config;
 
-    private static final Find<Long, Environment> FINDER = new Find<Long, Environment>(){};
+    private static final Finder<Long, Environment> FINDER = new Finder<>(Environment.class);
 }

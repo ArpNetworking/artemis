@@ -15,7 +15,8 @@
  */
 package models;
 
-import com.avaje.ebean.Model;
+import io.ebean.Finder;
+import io.ebean.Model;
 
 import java.util.List;
 import javax.annotation.Nullable;
@@ -58,7 +59,7 @@ public class Package extends Model {
      */
     @Nullable
     public static Package getByName(final String name) {
-        return FINDER.where().eq("name", name).findUnique();
+        return FINDER.query().where().eq("name", name).findOne();
     }
 
     /**
@@ -69,7 +70,7 @@ public class Package extends Model {
      * @return a list of packages
      */
     public static List<Package> searchByPartialName(final String query, final int limit) {
-        return FINDER.where().ilike("name", String.format("%%%s%%", query)).setMaxRows(limit).findList();
+        return FINDER.query().where().ilike("name", String.format("%%%s%%", query)).setMaxRows(limit).findList();
     }
 
     @Id
@@ -77,5 +78,5 @@ public class Package extends Model {
     private long id;
     private String name;
 
-    private static final Find<Long, Package> FINDER = new Find<Long, Package>(){};
+    private static final Finder<Long, Package> FINDER = new Finder<>(Package.class);
 }

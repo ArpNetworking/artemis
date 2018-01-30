@@ -1,19 +1,33 @@
-sudo: false
 cache:
   directories:
   - "$HOME/.ivy2"
   - "$HOME/.jdk"
-install: true
-before_script:
-- gpg --import groupon-api.key
-script:
-- curl -s ${JDKW} | bash /dev/stdin ./activator clean compile checkstyle findbugs test stage
-- if [ \( -n "${TRAVIS_TAG}" \) -a  "${TRAVIS_PULL_REQUEST}" = "false" ]; then curl -s ${JDKW} | bash /dev/stdin ./activator publishSigned sonatypeRelease; fi;
+sudo: false
+addons:
+  apt:
+    packages:
+    - rpm
 env:
   global:
+  - TARGET="compile checkstyle findbugs test stage"
   - JDKW=https://raw.githubusercontent.com/vjkoskela/jdk-wrapper/master/jdk-wrapper.sh
-  - JDKW_VERSION=8u65
-  - JDKW_BUILD=b17
-  - secure: tsVLcMZ4N2vw9myV99ytZWhuifI2T18VSOMeDy0/hJdRt3WBlyM4abv3eWCLzeVaHmaezA1YXXvkeh7ly99UrK4cFtjk7rkDLdk1XYkvTqMmSs1HeH1QtVgIKwk3eZzKV16AhuoZWvIj+qKFcxBr1ONjpKS0G0+Zx/OI356I0NEhm3PJiQjGiUdgIjREa9uyuZV+5caax5poqPJ4evEE0+g6WT+/UswOBd0IqlraPB/7aE1v4zpdqGdvAZxH+RsovQ6GHkFVX3T/bCL+R7bjdav4Emoh1cl4WcrleZw7r0CAhDWslwaLqeLkzgaz4KJDxSfQG7rbbFo4DrcCN7Ds/NiiwTqlVcMbkMWoRRvjKsEe3Xg8XAChnJCaXDJj4pEWKdSXaUesm87tLmvEn7ILz8lBcgm4bl6GxswHndwBk3ej+aDlMknJhwuvd+pRzWZO9S/W4D6/ATxSS5hnCxR2YzzWXZSEWJ6Xin15ElyfsW9QZv1TNhBYVjvX1TNuNUQDPZf4R/EEre/EQVWEvKVvDIGTdAS3qSvwEe4rN9AIxbXh3q89Bk3/8EVJSTtx2okWh9msIMwfvDIFW2dQ2KCYCNA8ZhBC+1qVsP7qQSBIoc+Z26hLzb/OZfBb7PSuK8NqiJtfZezCVGjk2VIxoKmOclZ/Hafh4BOS2am+m1w0O6c=
-  - secure: J4TFU2xlW7lPPC3sVoXxsof1hB7+8HB0EzvTUcsECii3jQhHfpw98XNYl7+eXYBpMvAEoehVV39O+qseiMxgRlaX0Lnv+tyJtPttxYfqEteRiYnbzxMW0aw7uK1A302yQ9aUYWV+ZG6f0gSGvWuG5pw7LnyGe607eBBNJ7eLL2jm+b6zRyUeappEn3n6czIBRgH6/vvc5iE6Nu59WAkCYEA1qS8cIfus8zW5pKB2+f90cEzI6q9w19cngZhcf0AWwSji/EBhg/AjNt1+xzDBasqtr+ZgzQOxiGNIrriJbTsNVlBlkj13T+mNzC5gd6H3/cihkXCq34usWlWyI5By9tPsFCT3CcAnZcT7RQ3OuDBIbdPGuWxtqJI6iEySMbsWPeD1uHqr/JIU6dJQSEFlBw2H1UaWc31L/VVS3KAWkAtTWUo25g6CR3Plj+5SEyOAYA2WVPaW5lmEiFnLZtGdnoMMAgu5WtAZeKg8YR8/h52+0CyZFm/IWiy15NdI3QPRT2DGIsqvY4I3pY8Jk+HLb4xoFu1mCvL34wQovYXRQWJvBX15tKM9TbrhpTwyyi+NtxIF0IqX91pTcldGhk/uW4OsdLGxI02q1syL1f6vCRzUtCZQIeAlhFgNBttdb+J5sJRxw9Ez5IYSYuwgKYQoZtGVxikkBeO4pEhY1N+ORQU=
-  - secure: kYiffsK0/xRbF1lKXoPPCZNvetIOS+PzvuLig8A9F5ZjcG/kyNmeXjeFaOrm5dGr9J3gTafkxTbsHzRlIBTQa2wRshsU8MLEcqe6mPUGdiN7WGZo7RoU0A1LA/ldM4fmTVSDzFv/0xlc7KQ0StdaknFOn9T8KZNc/SV9wjLn9gtvQMcLLRn2CgLIGnD5YRvbsQ/Bt3A0NH8EiCbmEmBACxJkagx4aoLaxhMkzqzpeJi1aTBNIIoDT25J36FRA80OB4S5Hgsev4mirv8uF9KPAK2JCo6ImEeNcEPy6t2Gaa5BqZiKwvX7uaIwE9UqBs2bV7k1lbkZv64+iq244q4Y0HyVL4y+fMO4OHZjKacaFIuujjQ841Z4t2iggtsO5pyPz28TwgABRJoyQ+3mwA8ecGEfhd3Yl0eueLXkiflNB1sAF0ZOVNwCi3xgPPwia/udKdfbzRdR0S6BLOvNwRFIaQ9br8EqN7s/iBIQDtt2zvphvpJRm5jblyDZYv8A77oNdnAteqbZNh2xgsotGz2QnsbU7VZdZSpHn90C+ymLbxUS+mlgz2Mpm8BOJpQV3lK9lSIcIiPHUlskPt6h78RM/s/I3DvQ/yq9/BsB4A+c5GY2tDk1wPF7mW2q1T3BtjVqixz5NAntQQgbKuvBBSCcKbsB35ItDnzD3ZzKPXxq598=
+  - secure: t1zhSaUKGmLRlnmfzQJYG2ZNfQoyJjQc1pgILOMMMsxFv3EEj0UILGtiC9vY0VJ3vJ3x4SMlkaaWQuxtCmv1/CjKNkBIIWYd5Oa5pcyuOFpawavhwuWOqD0Xn9mkaXzsB5hd46duWjFhpg67ZPiv60xf13pEiIc23u2SwB5wo8/BYBXWobbKDtPQKMIVIbgsU9eeQn//ewaWRpaM51z9qBwGLPuHNR714BJqSWvrI0TNAsrxKfGDm+eMIfkF/1tzFEYsQIbTydYniuvF8wFpJszXK+PYQxQtjO/GfIoAFlhkFA8eA+X13Qdk7TT4/nkKdm93MD5iTqzVF3INSDSSdXyTUOViMQK5vOihAKAAFS4pZdeBHFoCY00W3ABVGm+hnGRv9K7WbqAcWzUOvlFa7wIc5my+tXQrDmUVHfEHR4NCa/YHEnxgPPxU2rqlgn1PjY8X/m3Ex38VDJhFeNcSKaltD5wBGtPEOyfRdM6nGlcbPEMBd+3uCca9OMZbm5Jdh5GXMjeG8zDCrZ69AZBFHAbNe8+zhl4jk/7pKxpIA+6S8OFcwro4Dqd/nn5FTJ3G4LRUW41FH+Q+X5qV+c7+Jv9v+FL5CCcQjVNIMyAAmodnDf4slX+k6IpCDeDP95Ws4vuR08JjDxF20js02has7aS5T9IK/RIL/7T9+EogRyY=
+  - secure: LjCTI432XX4Ir91gT8terShKhLg+myQlS9ziBCujKBc9cV/TVaXTnLLWJjKmsnbViAcn6FKvR0gXD6kYesHnfB5L6TQB9Gl1j+CCvk8/TaJA1pLth5VUu7c4zdYuHrbO09cTkY4G7o13/24zGoNlvzCMMHD3aJvwTNXuAf0YOjQNnvT30Xp5flKiig/E1qt6pZPBo71q1ysicS+NBhBSW08JFxLsQWuUyhSyTopVqDPDNzrg82zh+6ffS636h27YldjjgC3KWKeDiM+ZAisR0aWD/PGYddr6kCVuFXptr7GXg4MXfy5ucfwSJIpB5p3ZOhbzVg5u6OGJXNydW9i01aInMpTAdq7u3y/eHnepW/kBKNpP5HE4rbT9gd8Gc9EdV3G29/JBcR+GT4m9Vmr/08m0WtZc+DU8HY/IoYD8zdxTv8j0l4j/SmjLNpUu0FDWK1y+vnqBWbMkrxdKnl2b+PIf17ttuCnszFTjpGeDtPmRnEzAZ9QJFZLKcYoV45BGyJzScKn+YPkdZo7uZFgonBiylNXNBkVtb+TrJt+FGruECKv/oa6mNasRYEQGuyDjNKKzNFz8mFaLVNqaELVLlmysSQJd7ZeOaHaCR1JZx6PpSo8kycJbfY2iOt4KTJrnIP35EuO0AhWOcCjyuyE8zsTCexXm0ZtOI0SUZQBb0fA=
+  - secure: UGGy6YFkjwb+NmBemuIRNCVq0O4MxL/vUVAPYSSnWfb510Z8N+wRNdfEWR6N1rNrdG2EvDlc+ZXTJppcMVXODE7rdP2ZqM+HdsXOT54HfkrZ9Zd8P9yf7P9rZl2VWJQv6aFJCSZ/v/FDmcipmRIaaD33QFXQJtZjxUgohNbmBaP4SvRqRv4ap55ULUg77/atsJYpWI1IdxjYQm13CRqNOM7R+GJ0sm/FTPpvQaysjHCffR5Zkc+qcrJ0v1fGoxdSWIB6NHVXh/mSm5eOaABPcS848V0VHgYJFZTOW160NnfJ1yB+Z0yQydaWYzOrB9rZZdskJsJgEOMGR+wrrtyiGCDf+by1hnEz1IbqWpmr+y6Y42Qw6M4uVwkSYqU6bi7Njq50gv283pJa/D5y5VDUj9Z0TCa1HVpBz3o52bc7lL6rY9FhPSZ1gGBNxExcHFuicvHatP4v0VD8y2ObgOgHOo3IFO+0JD8sNLhYb/z/BGRufjtECYyQCfBKN78+2/BYpNtzToHEchpAljdnUAq7Wj8GSvKMD4vMLTyMhDIcDUamVluOje5JPF+Qm/V7nSgwDPjGTQnpojLVMCoCqh/MHzX/K+Z6UTZAij3icUUWxwVKIL3nD0WYt8ZPkc9ni/Ar1LdZ2nlUdEamHTtPv/eoEzP+YewtxhEksOQaz5X4UH4=
+install: true
+before_script:
+- gpg --import arpnetworking.key
+- if [ \( -n "${TRAVIS_TAG}" \) -a  "${TRAVIS_PULL_REQUEST}" = "false" ]; then export
+  TARGET="${TARGET} publishSigned sonatypeRelease rpm:packageBin"; fi;
+script:
+- curl -s ${JDKW} | bash /dev/stdin ./sbt clean ${TARGET}
+deploy:
+  provider: releases
+  api_key:
+    secure: rZgYpr8X4Bzc4XSam6mVwWtWEfcg8e1oOGILoxGDy9uWnZawK7HAO/g+E7nOGKhJCOsyeLN4X66HXGTAGlaT40T33rKW8pmsvcMNqLQaaBTH38+NyP8WBroVHI2qhRxtf1cdpwqREw5i+k5FoDCj2itEegbQHuHXAY+Eudax0xlFHL4PhsUP0/zkNQ2/JTCcbWcJO1SPQ1XpaIxq1iDlcre84oNu0TsUiU7jvOJLofxiFmM35BBUTgJxuJEMmrvol3/MxncPQlYUze1DViEmlvq5cBpJXGlLlrfKQ0KVYC0NcJO5EMkFfNjpCYrp/cVmOkOTfTHOImodRCrqNYYy2XX56UQ1QjA5EWCmkTidTI5FPC+2zUSgWWDlwuErmOPbBcZZZo/KDxFUR8AnUh4EDovzs0DcQ1hHADoq0+a74XkxT9KWr5vC2MNumsQwqLBCVqJ2GK5wEV+lU28C47vvNHzUdWcsR7M0F7k6BXGFXzK9Wmb/fo2kL/ed2rRbrGF1+fQVsTim1189Ara9wrP3Yyc0xx5hSn6FdeTXqOdPsP9LLP0Z3Rn2apsCgbnAd8HuxcM2L8K4LYvRYpKtZHjZ0cwaKxA/4eDk7GBRnCvLYX641Ma3iPSqCfkK530pEN1dapRnQDd6Y+qikXSWSs2qWKC4Qoud5XPYAo4HJJP6jp8=
+  file: target/rpm/RPMS/noarch/artemis*.rpm
+  file_glob: true
+  skip_cleanup: true
+  on:
+    repo: ArpNetworking/artemis
+    tags: true

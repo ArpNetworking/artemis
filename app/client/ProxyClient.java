@@ -18,15 +18,14 @@ package client;
 import akka.util.ByteString;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.AssistedInject;
-import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.RequestBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import play.libs.ws.WSClient;
-import play.mvc.Http;
+import play.shaded.ahc.org.asynchttpclient.AsyncHandler;
+import play.shaded.ahc.org.asynchttpclient.RequestBuilder;
 
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -61,7 +60,6 @@ public class ProxyClient extends ClientBase {
 
         final ByteString body = request.body().asBytes();
         final URI uri = uri(path);
-        LOGGER.info(String.format("Proxy url: %s", uri));
 
         final RequestBuilder builder = new RequestBuilder();
         for (final Map.Entry<String, String[]> entry : request.queryString().entrySet()) {
@@ -72,7 +70,7 @@ public class ProxyClient extends ClientBase {
 
         builder.setUrl(uri.toString());
         builder.setMethod(request.method());
-        for (final Map.Entry<String, String[]> entry : request.headers().entrySet()) {
+        for (final Map.Entry<String, List<String>> entry : request.getHeaders().toMap().entrySet()) {
             for (final String val : entry.getValue()) {
                 builder.setHeader(entry.getKey(), val);
             }
@@ -82,9 +80,12 @@ public class ProxyClient extends ClientBase {
         }
 
         final Object underlying = client().getUnderlying();
-        if (underlying instanceof AsyncHttpClient) {
-            final AsyncHttpClient client = (AsyncHttpClient) underlying;
+        if (underlying instanceof play.shaded.ahc.org.asynchttpclient.AsyncHttpClient) {
+            final play.shaded.ahc.org.asynchttpclient.AsyncHttpClient client =
+                    (play.shaded.ahc.org.asynchttpclient.AsyncHttpClient) underlying;
             client.executeRequest(builder.build(), handler);
+        } else {
+            throw new RuntimeException("Unknown AsyncHttpClient '" + underlying.getClass().getCanonicalName() + "'");
         }
     }
 

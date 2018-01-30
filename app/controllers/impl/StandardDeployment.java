@@ -25,12 +25,14 @@ import utils.AuthN;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import javax.inject.Singleton;
 
 /**
  * Deployment controller.
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
+@Singleton
 @Security.Authenticated(AuthN.class)
 public class StandardDeployment extends Controller implements Deployment {
     @Override

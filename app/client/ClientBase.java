@@ -15,7 +15,6 @@
  */
 package client;
 
-import com.google.common.base.Throwables;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.AssistedInject;
 import org.apache.http.client.utils.URIBuilder;
@@ -54,7 +53,7 @@ public class ClientBase {
         try {
             return new URI(_baseUrl).resolve(relativePath);
         } catch (final URISyntaxException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -79,7 +78,7 @@ public class ClientBase {
             tokenUri = new URI(_baseUrl).resolve(relativePath);
         } catch (final URISyntaxException e) {
             LOGGER.error(String.format("Unable to parse baseURL; baseURL=%s", _baseUrl), e);
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
         return new URIBuilder(tokenUri);
     }

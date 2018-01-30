@@ -15,7 +15,7 @@
  */
 package models;
 
-import com.avaje.ebean.annotation.EnumValue;
+import io.ebean.annotation.EnumValue;
 
 /**
  * Describes the state of a host during deployment.

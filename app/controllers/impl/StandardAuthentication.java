@@ -17,17 +17,17 @@ package controllers.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.google.common.base.Throwables;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
+import com.typesafe.config.Config;
 import controllers.Authentication;
 import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import play.Configuration;
 import play.libs.ws.WSClient;
 import play.mvc.Controller;
+import play.mvc.Http;
 import play.mvc.Result;
 import utils.AuthN;
 
@@ -41,28 +41,32 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 /**
  * Holds methods for authentication.
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
+@Singleton
 public class StandardAuthentication extends Controller implements Authentication {
+
     /**
      * Public constructor.
      *
      * @param client ws client to use
+     * @param config Play configuration
      */
     @Inject
-    public StandardAuthentication(final WSClient client) {
+    public StandardAuthentication(final WSClient client, final Config config) {
         _client = client;
+        _config = config;
     }
 
     @Override
     public CompletionStage<Result> auth(final String redirectUrl) {
-        final Configuration config = Configuration.root();
-        final String baseURL = config.getString("auth.ghe.baseURL");
-        final String clientId = config.getString("auth.ghe.clientId");
+        final String baseURL = _config.getString("auth.ghe.baseURL");
+        final String clientId = _config.getString("auth.ghe.clientId");
 
         final String state = new BigInteger(160, RANDOM).toString(32);
         // TODO(barp): This should go in the database or memcached
@@ -87,10 +91,9 @@ public class StandardAuthentication extends Controller implements Authentication
 
     @Override
     public CompletionStage<Result> finishAuth(final String code, final String state) {
-        final Configuration config = Configuration.root();
-        final String baseURL = config.getString("auth.ghe.baseURLApi");
-        final String clientId = config.getString("auth.ghe.clientId");
-        final String clientSecret = config.getString("auth.ghe.clientSecret");
+        final String baseURL = _config.getString("auth.ghe.baseURLApi");
+        final String clientId = _config.getString("auth.ghe.clientId");
+        final String clientSecret = _config.getString("auth.ghe.clientSecret");
         final String redirect = URL_CACHE.getIfPresent(state);
         LOGGER.info(String.format("Got an auth callback; code=%s, state=%s", code, state));
 
@@ -113,7 +116,7 @@ public class StandardAuthentication extends Controller implements Authentication
             }
             return _client
                     .url(tokenPostUri.toString())
-                    .setHeader("Accept", "application/json")
+                    .addHeader(Http.HeaderNames.ACCEPT, "application/json")
                     .post("")
                     .thenCompose(wsResponse -> {
                         final String response = wsResponse.getBody();
@@ -145,8 +148,8 @@ public class StandardAuthentication extends Controller implements Authentication
     private CompletionStage<String> lookupUsername(final String baseURL, final String token) {
         return _client
                 .url(apiUri(baseURL, "user").toString())
-                .setHeader("Accept", "application/json")
-                .setHeader("Authorization", String.format("token %s", token))
+                .addHeader(Http.HeaderNames.ACCEPT, "application/json")
+                .addHeader(Http.HeaderNames.AUTHORIZATION, String.format("token %s", token))
                 .get()
                 .thenApply(wsResponse -> {
                         //We have the user details, but still need to fetch the organizations
@@ -159,8 +162,8 @@ public class StandardAuthentication extends Controller implements Authentication
     private CompletionStage<List<String>> lookupUserOrgs(final String baseURL, final String token) {
         return _client
                 .url(apiUri(baseURL, "user/orgs").toString())
-                .setHeader("Authorization", String.format("token %s", token))
-                .setHeader("Accept", "application/json")
+                .addHeader(Http.HeaderNames.ACCEPT, "application/json")
+                .addHeader(Http.HeaderNames.AUTHORIZATION, String.format("token %s", token))
                 .get()
                 .thenApply(wsResponse -> {
                         final ArrayNode orgs = (ArrayNode) wsResponse.asJson();
@@ -179,7 +182,7 @@ public class StandardAuthentication extends Controller implements Authentication
         try {
             return apiUriBuilder(baseURL, relativePath).build();
         } catch (final URISyntaxException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -189,7 +192,7 @@ public class StandardAuthentication extends Controller implements Authentication
             tokenUri = new URI(baseURL).resolve(relativePath);
         } catch (final URISyntaxException e) {
             LOGGER.error(String.format("Unable to parse baseURL for GHE authentication; baseURL=%s", baseURL), e);
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
         return new URIBuilder(tokenUri);
     }
@@ -201,6 +204,7 @@ public class StandardAuthentication extends Controller implements Authentication
     }
 
     private final WSClient _client;
+    private final Config _config;
 
     private static final Cache<String, String> URL_CACHE = CacheBuilder.newBuilder().expireAfterWrite(90, TimeUnit.SECONDS).build();
     private static final Logger LOGGER = LoggerFactory.getLogger(StandardAuthentication.class);

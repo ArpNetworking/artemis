@@ -1,3 +1,18 @@
+/**
+ * Copyright 2017 Brandon Arp
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package client;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
@@ -24,7 +39,7 @@ public final class MultiHostProvider implements HostProvider {
         final AtomicInteger outstanding = new AtomicInteger(_providers.size());
         final Set<String> hosts = Sets.newConcurrentHashSet();
 
-        final Consumer<Set<String>> action = (results) -> {
+        final Consumer<Set<String>> action = results -> {
             final int remaining = outstanding.decrementAndGet();
             hosts.addAll(results);
             if (remaining == 0) {
@@ -64,8 +79,9 @@ public final class MultiHostProvider implements HostProvider {
          * @param value List of providers
          * @return this {@link Builder}
          */
-        public void setProviders(final ImmutableList<HostProvider> value) {
+        public Builder setProviders(final ImmutableList<HostProvider> value) {
             _providers = value;
+            return this;
         }
 
         @NotNull

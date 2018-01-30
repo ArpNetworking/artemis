@@ -53,9 +53,8 @@ public class DeploymentDiff {
      */
     List<PackageChange> getPackageChanges(final Manifest oldManifest, final Manifest newManifest) {
         final List<PackageVersion> oldPackages = oldManifest.getPackages();
-        final ImmutableMap<String, PackageVersion> oldMap = Maps.uniqueIndex(oldPackages, (v) -> v.getPkg().getName());
-        final ImmutableMap<String, PackageVersion> newMap = Maps.uniqueIndex(newManifest.getPackages(),
-                                                                             (v) -> v.getPkg().getName());
+        final ImmutableMap<String, PackageVersion> oldMap = Maps.uniqueIndex(oldPackages, v -> v.getPkg().getName());
+        final ImmutableMap<String, PackageVersion> newMap = Maps.uniqueIndex(newManifest.getPackages(), v -> v.getPkg().getName());
         final MapDifference<String, PackageVersion> mapDifference = Maps.difference(oldMap, newMap);
 
         final List<PackageChange> changes = Lists.newArrayList();

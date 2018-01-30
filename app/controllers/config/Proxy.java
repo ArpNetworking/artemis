@@ -15,33 +15,33 @@
  */
 package controllers.config;
 
+import akka.stream.javadsl.StreamConverters;
 import client.ProxyClient;
-import com.google.common.base.Throwables;
-import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.inject.Singleton;
 import com.google.inject.assistedinject.AssistedInject;
-import io.netty.handler.codec.http.HttpHeaders;
-import org.asynchttpclient.AsyncCompletionHandler;
-import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.HttpResponseHeaders;
-import org.asynchttpclient.HttpResponseStatus;
-import org.asynchttpclient.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import play.http.HttpEntity;
 import play.libs.ws.WSClient;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Results;
+import play.shaded.ahc.io.netty.handler.codec.http.HttpHeaders;
+import play.shaded.ahc.org.asynchttpclient.AsyncCompletionHandler;
+import play.shaded.ahc.org.asynchttpclient.HttpResponseBodyPart;
+import play.shaded.ahc.org.asynchttpclient.HttpResponseHeaders;
+import play.shaded.ahc.org.asynchttpclient.HttpResponseStatus;
+import play.shaded.ahc.org.asynchttpclient.Response;
 
 import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
-import java.util.ArrayList;
-import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.stream.Collectors;
 
 /**
  * A generic proxy controller.
@@ -74,17 +74,11 @@ public class Proxy extends Controller {
         final Http.Request request = request();
         final boolean isHttp10 = request.version().equals("HTTP/1.0");
         LOGGER.info(String.format("Version=%s", request.version()));
-        try {
-            final PipedOutputStream outputStream = new PipedOutputStream();
-            final PipedInputStream inputStream = new PipedInputStream(outputStream);
-            final Http.Response configResponse = response();
-                    _client.proxy(
-                            path.startsWith("/") ? path : "/" + path,
-                            request,
-                            new ResponseHandler(outputStream, configResponse, inputStream, promise, isHttp10));
-        } catch (final IOException e) {
-            throw Throwables.propagate(e);
-        }
+        final Http.Response configResponse = response();
+                _client.proxy(
+                        path.startsWith("/") ? path : "/" + path,
+                        request,
+                        new ResponseHandler(configResponse, promise, isHttp10));
         return promise;
     }
 
@@ -94,21 +88,23 @@ public class Proxy extends Controller {
     private static final Logger LOGGER = LoggerFactory.getLogger(Proxy.class);
 
     private static class ResponseHandler extends AsyncCompletionHandler<Void> {
-        public ResponseHandler(
-                final PipedOutputStream outputStream,
-                final Http.Response configResponse,
-                final PipedInputStream inputStream,
+        ResponseHandler(
+                final Http.Response response,
                 final CompletableFuture<Result> promise,
                 final boolean isHttp10) {
-            _outputStream = outputStream;
-            _configResponse = configResponse;
-            _inputStream = inputStream;
-            _promise = promise;
-            _isHttp10 = isHttp10;
+            try {
+                _outputStream = new PipedOutputStream();
+                _inputStream = new PipedInputStream(_outputStream);
+                _response = response;
+                _promise = promise;
+                _isHttp10 = isHttp10;
+            } catch (final IOException ex) {
+                throw new RuntimeException(ex);
+            }
         }
 
         @Override
-        public State onStatusReceived(final HttpResponseStatus status) throws Exception {
+        public State onStatusReceived(final HttpResponseStatus status) {
             _status = status.getStatusCode();
             return State.CONTINUE;
         }
@@ -125,47 +121,40 @@ public class Proxy extends Controller {
         }
 
         @Override
-        public State onHeadersReceived(final HttpResponseHeaders headers) throws Exception {
+        public State onHeadersReceived(final HttpResponseHeaders headers) {
             try {
                 final HttpHeaders entries = headers.getHeaders();
-                long length = -1;
+                Optional<Long> length = Optional.empty();
                 if (entries.contains(CONTENT_LENGTH)) {
                     final String clen = entries.get(CONTENT_LENGTH);
-                    length = Long.parseLong(clen);
+                    length = Optional.of(Long.parseLong(clen));
                 }
+                final String contentType;
                 if (entries.get(CONTENT_TYPE) != null) {
-                    _configResponse.setHeader(CONTENT_TYPE, entries.get(CONTENT_TYPE));
-                } else if (length == 0) {
-                    _configResponse.setHeader(CONTENT_TYPE, "text/html");
+                    contentType = entries.get(CONTENT_TYPE);
+                } else if (length.isPresent() && length.get() == 0) {
+                    contentType = "text/html";
+                } else {
+                    contentType = null;
                 }
 
-                final Map<String, ArrayList<String>> mapped = entries.entries().stream().collect(
-                        Collectors.toMap(
-                                Map.Entry::getKey,
-                                entry -> Lists.newArrayList(entry.getValue()),
-                                (a, b) -> {
-                                    a.addAll(b);
-                                    return a;
-                                }));
+                entries.entries()
+                        .stream()
+                        .filter(entry -> !FILTERED_HEADERS.contains(entry.getKey()))
+                        .forEach(entry -> _response.setHeader(entry.getKey(), entry.getValue()));
 
-                for (final Map.Entry<String, ArrayList<String>> entry : mapped.entrySet()) {
-                    for (final String val : entry.getValue()) {
-                        _configResponse.setHeader(entry.getKey(), val);
-                    }
-                }
                 if (_isHttp10) {
                     // Strip the transfer encoding header as chunked isn't supported in 1.0
-                    _configResponse.getHeaders().remove(TRANSFER_ENCODING);
+                    _response.getHeaders().remove(TRANSFER_ENCODING);
                     // Strip the connection header since we don't support keep-alives in 1.0
-                    _configResponse.getHeaders().remove(CONNECTION);
+                    _response.getHeaders().remove(CONNECTION);
                 }
 
-                final play.mvc.Result result;
-                if (length >= 0) {
-                    result = Results.status(_status, _inputStream, length);
-                } else {
-                    result = Results.status(_status, _inputStream);
-                }
+                final play.mvc.Result result = Results.status(_status).sendEntity(
+                        new HttpEntity.Streamed(
+                                StreamConverters.fromInputStream(() -> _inputStream, DEFAULT_CHUNK_SIZE),
+                                length,
+                                Optional.ofNullable(contentType)));
 
                 _promise.complete(result);
                 return State.CONTINUE;
@@ -183,7 +172,7 @@ public class Proxy extends Controller {
                 _outputStream.close();
                 _promise.completeExceptionally(t);
             } catch (final IOException e) {
-                throw Throwables.propagate(e);
+                throw new RuntimeException(e);
             }
             super.onThrowable(t);
         }
@@ -194,17 +183,18 @@ public class Proxy extends Controller {
                 _outputStream.flush();
                 _outputStream.close();
             } catch (final IOException e) {
-                throw Throwables.propagate(e);
+                throw new RuntimeException(e);
             }
             return null;
         }
 
         private int _status;
         private final PipedOutputStream _outputStream;
-        private final Http.Response _configResponse;
+        private final Http.Response _response;
         private final PipedInputStream _inputStream;
         private final CompletableFuture<Result> _promise;
         private final boolean _isHttp10;
-
+        private static final int DEFAULT_CHUNK_SIZE = 8 * 1024;
+        private static final Set<String> FILTERED_HEADERS = Sets.newHashSet(CONTENT_TYPE, CONTENT_LENGTH);
     }
 }

@@ -18,6 +18,7 @@ package global;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.name.Named;
+import com.typesafe.config.Config;
 import controllers.Admin;
 import controllers.Api;
 import controllers.Application;
@@ -36,7 +37,6 @@ import controllers.impl.proxy.ProxyDeployment;
 import controllers.impl.proxy.ProxyEnvironment;
 import controllers.impl.proxy.ProxyHostclass;
 import controllers.impl.proxy.ProxyStage;
-import play.Configuration;
 
 /**
  * A module that proxies API calls and falls back to ProdModule for non-controller classes.
@@ -59,7 +59,7 @@ public class ProxyRoutesModule extends AbstractModule {
 
     @Provides
     @Named("ArtemisProxyBaseUrl")
-    String provideArtemisUrl(final Configuration config) {
+    String provideArtemisUrl(final Config config) {
         return config.getString("proxy.artemis");
     }
 }

@@ -23,12 +23,14 @@ import play.mvc.Result;
 import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Singleton;
 
 /**
  * JSON REST Apis.
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
+@Singleton
 public class ProxyApi extends ArtemisProxy implements Api {
     /**
      * Public constructor.

@@ -15,11 +15,11 @@
  */
 package actors;
 
+import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.actor.Terminated;
-import akka.actor.UntypedActor;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -27,7 +27,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import models.Deployment;
@@ -36,6 +35,7 @@ import models.Host;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -43,7 +43,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
-public class DeployLogRelay extends UntypedActor {
+public class DeployLogRelay extends AbstractActor {
     /**
      * Creates a {@link Props} to create this actor.
      *
@@ -75,34 +75,36 @@ public class DeployLogRelay extends UntypedActor {
     }
 
     @Override
-    public void onReceive(final Object message) throws Exception {
-        if ("check".equals(message)) {
-            final List<DeploymentLog> logs = DeploymentLog.getLogsSince(_deployment, DeploymentLog.ref(_lastId));
+    public Receive createReceive() {
+        return receiveBuilder()
+                .matchEquals("check", check -> {
+                    final List<DeploymentLog> logs = DeploymentLog.getLogsSince(_deployment, DeploymentLog.ref(_lastId));
 
-            final ObjectNode node = JsonNodeFactory.instance.objectNode();
-            final ArrayNode messages = node.putArray("messages");
-            logs.forEach((logLine) -> messages.addObject()
-                    .put("line", logLine.getMessage())
-                    .put("timestamp", logLine.getLogTime().toString())
-                    .put("host", Optional.fromNullable(logLine.getHost()).transform(Host::getName).or("Deployment")));
-            pushLog(node);
-            _lastId = Optional.fromNullable(Iterables.getLast(logs, null)).transform(DeploymentLog::getId).or(_lastId);
-            _deployment.refresh();
-            _logger.info("Refreshed the deploy, finished=" + _deployment.getFinished());
-            if (_deployment.getFinished() != null) {
-                pushEnd();
-                context().system().scheduler().scheduleOnce(FiniteDuration.apply(10, TimeUnit.SECONDS),
-                                                            self(),
-                                                            "close",
-                                                            context().dispatcher(),
-                                                            self());
-            }
-        } else if (message instanceof Terminated) {
-            final Terminated terminated = (Terminated) message;
-            if (terminated.actor().equals(_subscriber)) {
-                self().tell(PoisonPill.getInstance(), self());
-            }
-        }
+                    final ObjectNode node = JsonNodeFactory.instance.objectNode();
+                    final ArrayNode messages = node.putArray("messages");
+                    logs.forEach(logLine -> messages.addObject()
+                            .put("line", logLine.getMessage())
+                            .put("timestamp", logLine.getLogTime().toString())
+                            .put("host", Optional.ofNullable(logLine.getHost()).map(Host::getName).orElse("Deployment")));
+                    pushLog(node);
+                    _lastId = Optional.ofNullable(Iterables.getLast(logs, null)).map(DeploymentLog::getId).orElse(_lastId);
+                    _deployment.refresh();
+                    _logger.info("Refreshed the deploy, finished=" + _deployment.getFinished());
+                    if (_deployment.getFinished() != null) {
+                        pushEnd();
+                        context().system().scheduler().scheduleOnce(FiniteDuration.apply(10, TimeUnit.SECONDS),
+                                self(),
+                                "close",
+                                context().dispatcher(),
+                                self());
+                    }
+                })
+                .match(Terminated.class, terminated -> {
+                    if (terminated.actor().equals(_subscriber)) {
+                        self().tell(PoisonPill.getInstance(), self());
+                    }
+                })
+                .build();
     }
 
     private void pushLog(final JsonNode node) {
