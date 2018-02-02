@@ -131,8 +131,8 @@ findbugsExcludeFilters := Some(
   </FindBugsFilter>
 )
 
-organization := "com.arpnetowrking"
-organizationName := "ArpNetworking"
+organization := "com.arpnetworking"
+organizationName := "ArpNetworking, Inc"
 organizationHomepage := Some(new URL("https://github.com/ArpNetworking"))
 
 publishMavenStyle := true
