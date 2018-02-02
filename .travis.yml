@@ -18,14 +18,16 @@ install: true
 before_script:
 - gpg --import arpnetworking.key
 - if [ \( -n "${TRAVIS_TAG}" \) -a  "${TRAVIS_PULL_REQUEST}" = "false" ]; then export
-  TARGET="${TARGET} publishSigned sonatypeRelease rpm:packageBin"; fi;
+  TARGET="${TARGET} publishSigned sonatypeRelease rpm:packageBin universal:package-zip-tarball"; fi;
 script:
 - curl -s ${JDKW} | bash /dev/stdin ./sbt clean ${TARGET}
 deploy:
   provider: releases
   api_key:
     secure: rZgYpr8X4Bzc4XSam6mVwWtWEfcg8e1oOGILoxGDy9uWnZawK7HAO/g+E7nOGKhJCOsyeLN4X66HXGTAGlaT40T33rKW8pmsvcMNqLQaaBTH38+NyP8WBroVHI2qhRxtf1cdpwqREw5i+k5FoDCj2itEegbQHuHXAY+Eudax0xlFHL4PhsUP0/zkNQ2/JTCcbWcJO1SPQ1XpaIxq1iDlcre84oNu0TsUiU7jvOJLofxiFmM35BBUTgJxuJEMmrvol3/MxncPQlYUze1DViEmlvq5cBpJXGlLlrfKQ0KVYC0NcJO5EMkFfNjpCYrp/cVmOkOTfTHOImodRCrqNYYy2XX56UQ1QjA5EWCmkTidTI5FPC+2zUSgWWDlwuErmOPbBcZZZo/KDxFUR8AnUh4EDovzs0DcQ1hHADoq0+a74XkxT9KWr5vC2MNumsQwqLBCVqJ2GK5wEV+lU28C47vvNHzUdWcsR7M0F7k6BXGFXzK9Wmb/fo2kL/ed2rRbrGF1+fQVsTim1189Ara9wrP3Yyc0xx5hSn6FdeTXqOdPsP9LLP0Z3Rn2apsCgbnAd8HuxcM2L8K4LYvRYpKtZHjZ0cwaKxA/4eDk7GBRnCvLYX641Ma3iPSqCfkK530pEN1dapRnQDd6Y+qikXSWSs2qWKC4Qoud5XPYAo4HJJP6jp8=
-  file: target/rpm/RPMS/noarch/artemis*.rpm
+  file:
+  - target/rpm/RPMS/noarch/artemis*.rpm
+  - target/universal/artemis*.tgz
   file_glob: true
   skip_cleanup: true
   on:

@@ -17,7 +17,6 @@ package client;
 
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.AssistedInject;
-import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import play.libs.ws.WSClient;
@@ -64,23 +63,6 @@ public class ClientBase {
      */
     protected WSClient client() {
         return _client;
-    }
-
-    /**
-     * Creates a URIBuilder with the base path and a relative path resolved.
-     *
-     * @param relativePath the relative path
-     * @return a new {@link URIBuilder}
-     */
-    protected URIBuilder uriBuilder(final String relativePath) {
-        final URI tokenUri;
-        try {
-            tokenUri = new URI(_baseUrl).resolve(relativePath);
-        } catch (final URISyntaxException e) {
-            LOGGER.error(String.format("Unable to parse baseURL; baseURL=%s", _baseUrl), e);
-            throw new RuntimeException(e);
-        }
-        return new URIBuilder(tokenUri);
     }
 
     private final String _baseUrl;

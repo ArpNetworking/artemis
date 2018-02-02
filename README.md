@@ -60,9 +60,9 @@ actually deployed to a host.
 Running the app
 ===============
 
-`./activator run` to run in dev mode
+`./sbt run` to run in dev mode
 
-`./activator start` to run in prod mode
+`./sbt start` to run in prod mode
 
 Prerequisites
 -------------
@@ -74,7 +74,7 @@ There are several things Artemis needs to be able to function properly:
 
 Configuration
 -------------
-See the [sample config](conf/application-base.conf) for available configuration options.
+See the [sample config](conf/reference.conf) for available configuration options.
 
 Aside from the JVM command line arguments, you may provide two additional configuration files. The first is the
 [LogBack](http://logback.qos.ch/) configuration file.  To use a custom logging configuration simply add the following
@@ -91,14 +91,14 @@ The second configuration is for the application. To use a custom configuration s
     -Dconfig.file=/usr/local/lib/artemis/application.custom.conf
 
 Where */usr/local/lib/artemis/application.custom.conf* is the path to your application configuration file.  The included
-[default application configuration file](conf/application-base.conf) in the project documents and demonstrates many of the
+[default application configuration file](conf/reference.conf) in the project documents and demonstrates many of the
 configuration options available. To use the default application configuration file it needs to be specified on start-up:
 
-    -Dconfig.resource=conf/application-base.conf
+    -Dconfig.resource=conf/application.custom.conf
 
 To author a custom application configuration it is recommended you inherit from the default application configuration file
 and provide any desired configuration as overrides. Please refer to
-[Play Framework](https://www.playframework.com/documentation/2.4.x/ProductionConfiguration) documentation for more information
+[Play Framework](https://www.playframework.com/documentation/2.6.x/ProductionConfiguration) documentation for more information
 on how to author a configuration file.
 
 Extension
@@ -128,4 +128,4 @@ License
 =======
 Published under Apache Software License 2.0, see LICENSE
 
-(c) Groupon, Inc., 2015
+(c) Arpnetworking, Inc., 2018
