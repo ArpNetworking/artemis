@@ -15,16 +15,15 @@
  */
 package actors;
 
+import akka.actor.AbstractActor;
 import akka.actor.Props;
-import akka.actor.UntypedActor;
-import com.avaje.ebean.Ebean;
-import com.avaje.ebean.Transaction;
-import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.groupon.deployment.FleetDeploymentCommands;
 import com.groupon.deployment.fleet.FleetDeploymentFactory;
 import com.groupon.deployment.fleet.Sequential;
+import io.ebean.Ebean;
+import io.ebean.Transaction;
 import models.Deployment;
 import models.DeploymentState;
 import models.HostDeployment;
@@ -47,7 +46,7 @@ import javax.inject.Singleton;
  * @author Brandon Arp (barp at groupon dot com)
  */
 @Singleton
-public class DeployManager extends UntypedActor {
+public class DeployManager extends AbstractActor {
     /**
      * Public constructor.
      *
@@ -64,13 +63,11 @@ public class DeployManager extends UntypedActor {
     }
 
     @Override
-    public void onReceive(final Object message) throws Exception {
-        if (message instanceof FleetDeploymentCommands.DeployStage) {
-            final FleetDeploymentCommands.DeployStage deployStage = (FleetDeploymentCommands.DeployStage) message;
-            deployStage(deployStage);
-        } else if (message instanceof DeploymentSweep) {
-            sweepForStuckDeployments();
-        }
+    public Receive createReceive() {
+        return receiveBuilder()
+                .match(FleetDeploymentCommands.DeployStage.class, this::deployStage)
+                .match(DeploymentSweep.class, sweep -> sweepForStuckDeployments())
+                .build();
     }
 
     private void sweepForStuckDeployments() {
@@ -91,7 +88,7 @@ public class DeployManager extends UntypedActor {
         final Manifest manifest = deployStageMessage.getDeployment();
         final Stage stage = deployStageMessage.getStage();
 
-        try (final Transaction transaction = Ebean.beginTransaction()) {
+        try (Transaction transaction = Ebean.beginTransaction()) {
             final ManifestHistory history = Stage.applyManifestToStage(stage, manifest);
             final Deployment deployment = new Deployment();
             deployment.setStart(DateTime.now());
@@ -120,7 +117,7 @@ public class DeployManager extends UntypedActor {
             startDeployment(deployment);
             sender().tell(deployment, self());
         } catch (final IOException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
     }
 

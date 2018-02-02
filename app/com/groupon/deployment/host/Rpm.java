@@ -15,7 +15,7 @@
  */
 package com.groupon.deployment.host;
 
-import akka.actor.UntypedActor;
+import akka.actor.AbstractActor;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -23,12 +23,12 @@ import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.AssistedInject;
 import com.groupon.deployment.HostDeploymentNotifications;
 import com.groupon.deployment.SshSessionFactory;
+import com.typesafe.config.Config;
 import models.Deployment;
 import models.Host;
 import models.PackageVersion;
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.connection.channel.direct.Session;
-import play.Configuration;
 import play.Logger;
 import utils.RpmVersionComparator;
 
@@ -44,7 +44,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author Brandon Arp (brandon dot arp at inscopemetrics dot com)
  */
-public class Rpm extends UntypedActor {
+public class Rpm extends AbstractActor {
     /**
      * Public constructor.
      *
@@ -58,7 +58,7 @@ public class Rpm extends UntypedActor {
             @Assisted final Host host,
             @Assisted final Deployment deployment,
             final SshSessionFactory sshFactory,
-            final Configuration config) {
+            final Config config) {
         _host = host;
         _deployment = deployment;
         _sshFactory = sshFactory;
@@ -68,16 +68,14 @@ public class Rpm extends UntypedActor {
     }
 
     @Override
-    public void onReceive(final Object message) {
-        if ("start".equals(message)) {
-            deploy();
-        } else {
-            unhandled(message);
-        }
+    public Receive createReceive() {
+        return receiveBuilder()
+                .matchEquals("start", msg -> deploy())
+                .build();
     }
 
     private void deploy() {
-        try (final SSHClient sshClient = _sshFactory.create(_host.getName())) {
+        try (SSHClient sshClient = _sshFactory.create(_host.getName())) {
             final Map<String, PackageVersion> deploymentMap = _deployment.getManifestHistory().getManifest().asPackageMap();
             // Yum install
             final Map<String, String> installedPackages = getInstalledPackages(sshClient, deploymentMap);
@@ -148,12 +146,12 @@ public class Rpm extends UntypedActor {
     private Integer executeCommand(final SSHClient sshClient, final String commandString) throws IOException {
         context().parent().tell(new HostDeploymentNotifications.DeploymentLog(_host, "Executing '" + commandString + "'"), self());
         final Integer exitStatus;
-        try (final Session session = sshClient.startSession()) {
+        try (Session session = sshClient.startSession()) {
             session.allocateDefaultPTY();
             try (
-                final Session.Command command = session.exec(commandString);
-                final BufferedReader error = new BufferedReader(new InputStreamReader(command.getErrorStream(), Charsets.UTF_8));
-                final BufferedReader reader = new BufferedReader(new InputStreamReader(command.getInputStream(), Charsets.UTF_8))) {
+                Session.Command command = session.exec(commandString);
+                BufferedReader error = new BufferedReader(new InputStreamReader(command.getErrorStream(), Charsets.UTF_8));
+                BufferedReader reader = new BufferedReader(new InputStreamReader(command.getInputStream(), Charsets.UTF_8))) {
                 String line = reader.readLine();
                 while (line != null) {
                     Logger.info("***" + line);
@@ -176,10 +174,10 @@ public class Rpm extends UntypedActor {
         final Map<String, String> versions = Maps.newHashMap();
         context().parent().tell(new HostDeploymentNotifications.DeploymentLog(_host, "Executing '" + commandString + "'"), self());
         final Integer exitStatus;
-        try (final Session session = sshClient.startSession();
-             final Session.Command command = session.exec(commandString);
-             final BufferedReader error = new BufferedReader(new InputStreamReader(command.getErrorStream(), Charsets.UTF_8));
-             final BufferedReader reader = new BufferedReader(new InputStreamReader(command.getInputStream(), Charsets.UTF_8))) {
+        try (Session session = sshClient.startSession();
+             Session.Command command = session.exec(commandString);
+             BufferedReader error = new BufferedReader(new InputStreamReader(command.getErrorStream(), Charsets.UTF_8));
+             BufferedReader reader = new BufferedReader(new InputStreamReader(command.getInputStream(), Charsets.UTF_8))) {
             String line = reader.readLine();
             while (line != null) {
                 final String[] split = line.split(" ", 3);

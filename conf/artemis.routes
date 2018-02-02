@@ -14,63 +14,64 @@
 # ~~~~~
 
 # Home page
-GET         /                                                                 @controllers.Application.main()
-GET         /auth                                                             @controllers.Authentication.auth(redirect_url ?= "")
-GET         /authComplete                                                     @controllers.Authentication.finishAuth(code ?= "", state ?="")
-GET         /logout                                                           @controllers.Authentication.logout()
-GET         /loggedout                                                        @controllers.LoggedOut.index()
+GET         /                                                                 controllers.Application.main()
+GET         /auth                                                             controllers.Authentication.auth(redirect_url ?= "")
+GET         /authComplete                                                     controllers.Authentication.finishAuth(code ?= "", state ?="")
+GET         /logout                                                           controllers.Authentication.logout()
+GET         /loggedout                                                        controllers.LoggedOut.index()
 
 # Environment
-GET         /environment/new                                                  @controllers.Environment.newEnvironment(parent ?= null)
-GET         /environment/:envName/stage/:stageName                            @controllers.Stage.detail(envName, stageName)
-POST        /environment/:envName/stage/:stageName                            @controllers.Stage.save(envName, stageName)
-POST        /environment/:envName/stage/:stageName/addHostClass               @controllers.Stage.addHostclass(envName, stageName)
-POST        /environment/:envName/stage/:stageName/removeHostClass/:hc        @controllers.Stage.removeHostclass(envName, stageName, hc)
-POST        /environment/:envName/stage                                       @controllers.Stage.create(envName)
-GET         /environment/:name                                                @controllers.Environment.detail(name)
-POST        /environment/create                                               @controllers.Environment.create()
-GET         /environment/:envName/release/create                              @controllers.Environment.prepareRelease(envName)
-POST        /environment/:envName/release/create                              @controllers.Environment.createRelease(envName)
-POST        /environment/:envName/stage/:stageName/promote                    @controllers.Stage.promote(envName, stageName)
-POST        /environment/:envName/stage/:stageName/synchronize                @controllers.Stage.synchronize(envName, stageName)
-POST         /environment/:name                                               @controllers.Environment.save(name)
+GET         /environment/new                                                  controllers.Environment.newEnvironment(parent ?= null)
+GET         /environment/:envName/stage/:stageName                            controllers.Stage.detail(envName, stageName)
+POST        /environment/:envName/stage/:stageName                            controllers.Stage.save(envName, stageName)
+POST        /environment/:envName/stage/:stageName/addHostClass               controllers.Stage.addHostclass(envName, stageName)
+POST        /environment/:envName/stage/:stageName/removeHostClass/:hc        controllers.Stage.removeHostclass(envName, stageName, hc)
+POST        /environment/:envName/stage                                       controllers.Stage.create(envName)
+GET         /environment/:name                                                controllers.Environment.detail(name)
+POST        /environment/create                                               controllers.Environment.create()
+GET         /environment/:envName/release/create                              controllers.Environment.prepareRelease(envName)
+POST        /environment/:envName/release/create                              controllers.Environment.createRelease(envName)
+POST        /environment/:envName/stage/:stageName/promote                    controllers.Stage.promote(envName, stageName)
+POST        /environment/:envName/stage/:stageName/synchronize                controllers.Stage.synchronize(envName, stageName)
+POST         /environment/:name                                               controllers.Environment.save(name)
 
 # Hocon
-POST        /hocon/validate                                                   @controllers.impl.proxy.api.Hocon.isValid()
-POST        /hocon/viewCombinedHocon                                          @controllers.impl.proxy.api.Hocon.viewCombinedHocon()
+POST        /hocon/validate                                                   controllers.impl.proxy.api.Hocon.isValid()
+POST        /hocon/viewCombinedHocon                                          controllers.impl.proxy.api.Hocon.viewCombinedHocon()
 
 # Hostclass
-GET         /hostclass/new                                                    @controllers.Hostclass.newHostclass(parent ?= null)
-POST        /hostclass/create                                                 @controllers.Hostclass.create()
-GET         /hostclass/:name                                                  @controllers.Hostclass.detail(name)
-POST        /hostclass/:hostclassName/addHost                                 @controllers.Hostclass.addHost(hostclassName)
+GET         /hostclass/new                                                    controllers.Hostclass.newHostclass(parent ?= null)
+POST        /hostclass/create                                                 controllers.Hostclass.create()
+GET         /hostclass/:name                                                  controllers.Hostclass.detail(name)
+POST        /hostclass/:hostclassName/addHost                                 controllers.Hostclass.addHost(hostclassName)
 
 # Bundle
-GET         /bundle/new                                                       @controllers.Bundle.newBundle()
+GET         /bundle/new                                                       controllers.Bundle.newBundle()
 
 # Deployment
-GET         /deploy/:envName/stage/:stageName                                 @controllers.Stage.prepareDeploy(envName, stageName)
-GET         /deploy/:envName/stage/:stageName/:manifestId                     @controllers.Stage.prepareDeployManifest(envName, stageName, manifestId: Long)
-POST        /deploy/:envName/stage/:stageName/preview                         @controllers.Stage.previewDeploy(envName, stageName)
-POST        /deploy/:envName/stage/:stageName/confirm                         @controllers.Stage.confirmDeploy(envName, stageName, version: Long, manifestId: Long)
-GET         /deploy/:id/details                                               @controllers.Deployment.detail(id: Long)
-GET         /deploy/:id/log                                                   @controllers.Deployment.log(id: Long)
-GET         /deploy/:id/diff                                                  @controllers.Deployment.diff(id: Long)
+GET         /deploy/:envName/stage/:stageName                                 controllers.Stage.prepareDeploy(envName, stageName)
+GET         /deploy/:envName/stage/:stageName/:manifestId                     controllers.Stage.prepareDeployManifest(envName, stageName, manifestId: Long)
+POST        /deploy/:envName/stage/:stageName/preview                         controllers.Stage.previewDeploy(envName, stageName)
+POST        /deploy/:envName/stage/:stageName/confirm                         controllers.Stage.confirmDeploy(envName, stageName, version: Long, manifestId: Long)
+GET         /deploy/:id/details                                               controllers.Deployment.detail(id: Long)
+GET         /deploy/:id/log                                                   controllers.Deployment.log(id: Long)
+GET         /deploy/:id/diff                                                  controllers.Deployment.diff(id: Long)
 
-GET         /admin                                                            @controllers.Admin.index()
-GET         /admin/refreshPackages                                            @controllers.Admin.refreshPackages()
+GET         /admin                                                            controllers.Admin.index()
+GET         /admin/refreshPackages                                            controllers.Admin.refreshPackages()
 
 # REST API
-GET         /api/hostclasses                                                  @controllers.Api.hostclassSearch(query ?= "")
-GET         /api/packages                                                     @controllers.Api.packageSearch(query ?= "")
-GET         /api/environment                                                  @controllers.Api.environmentSearch(query ?= "")
-GET         /api/:envName/stages                                              @controllers.Api.getStages(envName)
-POST        /api/:envName/:stageName/packages                                 @controllers.Api.updateStagePackageVersions(envName, stageName)
-GET         /api/:envName/manifest                                            @controllers.Api.getReleasePreview(envName, version: String)
-GET         /api/deployLog/:deployId                                          @controllers.Api.deploymentLog(deployId: Long)
+GET         /api/hostclasses                                                  controllers.Api.hostclassSearch(query ?= "")
+GET         /api/packages                                                     controllers.Api.packageSearch(query ?= "")
+GET         /api/environment                                                  controllers.Api.environmentSearch(query ?= "")
+GET         /api/:envName/stages                                              controllers.Api.getStages(envName)
+POST        /api/:envName/:stageName/packages                                 controllers.Api.updateStagePackageVersions(envName, stageName)
+GET         /api/:envName/manifest                                            controllers.Api.getReleasePreview(envName, version: String)
+GET         /api/deployLog/:deployId                                          controllers.Api.deploymentLog(deployId: Long)
 
 # Map static resources from the /public folder to the /assets URL path
-GET         /assets/*file                                                     controllers.Assets.at(path="/public", file)
+GET         /assets/*file                                                     controllers.Assets.at(file)
+GET         /versionedAssets/*file                                            controllers.Assets.versioned(file)
 
 # Config server proxying and wrapping
 ->          /roller/config                                                    config.Routes

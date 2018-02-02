@@ -15,9 +15,10 @@
  */
 package models;
 
-import com.avaje.ebean.Model;
 import com.google.common.base.Function;
 import com.google.common.collect.FluentIterable;
+import io.ebean.Finder;
+import io.ebean.Model;
 
 import java.util.List;
 import javax.annotation.Nullable;
@@ -44,7 +45,7 @@ public class UserMembership extends Model {
     @ManyToOne
     private Owner org;
 
-    private static final Find<Long, UserMembership> FINDER = new Find<Long, UserMembership>(){};
+    private static final Finder<Long, UserMembership> FINDER = new Finder<>(UserMembership.class);
 
     public long getId() {
         return id;
@@ -77,7 +78,7 @@ public class UserMembership extends Model {
      * @return a list of organizations
      */
     public static List<Owner> getOrgsForUser(final String userName) {
-        final List<UserMembership> memberships = FINDER.fetch("org").where().eq("user_name", userName).findList();
+        final List<UserMembership> memberships = FINDER.query().fetch("org").where().eq("user_name", userName).findList();
         return FluentIterable.from(memberships)
                 .transform(
                         new Function<UserMembership, Owner>() {
@@ -99,6 +100,6 @@ public class UserMembership extends Model {
      */
     @Nullable
     public static UserMembership getByUserAndOrg(final String userName, final String org) {
-        return FINDER.fetch("org").where().eq("userName", userName).eq("org.orgName", org).findUnique();
+        return FINDER.query().fetch("org").where().eq("userName", userName).eq("org.orgName", org).findOne();
     }
 }

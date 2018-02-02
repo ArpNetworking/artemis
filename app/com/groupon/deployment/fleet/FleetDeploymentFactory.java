@@ -29,5 +29,5 @@ public interface FleetDeploymentFactory {
      * @param deployment the deployment
      * @return a new fleet deployment
      */
-    Sequential create(final Deployment deployment);
+    Sequential create(Deployment deployment);
 }

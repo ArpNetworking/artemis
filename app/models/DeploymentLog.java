@@ -15,7 +15,8 @@
  */
 package models;
 
-import com.avaje.ebean.Model;
+import io.ebean.Finder;
+import io.ebean.Model;
 import org.joda.time.DateTime;
 
 import java.util.List;
@@ -80,7 +81,7 @@ public class DeploymentLog extends Model {
      * @return a list of log messages
      */
     public static List<DeploymentLog> getLogsSince(final Deployment deployment, final DeploymentLog lastSeen) {
-        return FINDER.where().eq("deployment", deployment).gt("id", lastSeen.getId()).order().asc("id").findList();
+        return FINDER.query().where().eq("deployment", deployment).gt("id", lastSeen.getId()).order().asc("id").findList();
     }
 
     /**
@@ -101,5 +102,5 @@ public class DeploymentLog extends Model {
     @ManyToOne
     private Deployment deployment;
     private DateTime logTime;
-    private static final Find<Long, DeploymentLog> FINDER = new Find<Long, DeploymentLog>(){};
+    private static final Finder<Long, DeploymentLog> FINDER = new Finder<>(DeploymentLog.class);
 }

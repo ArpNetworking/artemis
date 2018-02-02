@@ -15,8 +15,8 @@
  */
 package actors;
 
+import akka.actor.AbstractActor;
 import akka.actor.Props;
-import akka.actor.UntypedActor;
 import akka.pattern.PatternsCS;
 import client.HostProvider;
 import com.google.common.base.CharMatcher;
@@ -24,11 +24,11 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+import com.typesafe.config.Config;
 import models.Host;
 import models.Hostclass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import play.Configuration;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.util.Collections;
@@ -45,7 +45,7 @@ import javax.persistence.PersistenceException;
  * @author Brandon Arp (barp at groupon dot com)
  */
 @Singleton
-public class HostclassRefresher extends UntypedActor {
+public class HostclassRefresher extends AbstractActor {
     private static final Logger LOGGER = LoggerFactory.getLogger(HostclassRefresher.class);
     private final HostProvider _hostProvider;
 
@@ -53,10 +53,11 @@ public class HostclassRefresher extends UntypedActor {
      * Creates a {@link Props} to create this actor.
      *
      * @param config The configuration to use
+     * @param hostProvider Provider to lookup hosts
      * @return a new {@link Props}
      */
-    public static Props props(final Configuration config) {
-        return Props.create(HostclassRefresher.class, config);
+    public static Props props(final Config config, final HostProvider hostProvider) {
+        return Props.create(() -> new HostclassRefresher(config, hostProvider));
     }
 
     /**
@@ -66,7 +67,7 @@ public class HostclassRefresher extends UntypedActor {
      * @param hostProvider The host provider to get host data from
      */
     @Inject
-    public HostclassRefresher(final Configuration config, final HostProvider hostProvider) {
+    public HostclassRefresher(final Config config, final HostProvider hostProvider) {
         context().system().scheduler().schedule(
                 FiniteDuration.apply(3, TimeUnit.SECONDS),
                 FiniteDuration.apply(12, TimeUnit.HOURS),
@@ -78,41 +79,40 @@ public class HostclassRefresher extends UntypedActor {
     }
 
     @Override
-    public void onReceive(final Object message) throws Exception {
-        if (message instanceof RefreshHostclassesMessage) {
-            final CompletionStage<HostclassListMessage> messagePromise = _hostProvider.getHosts()
-                    .exceptionally(this::recoverHostclassListLookupFailure)
-                    .thenApply(HostclassListMessage::new);
-            PatternsCS.pipe(messagePromise, context().dispatcher()).to(self(), self());
-        } else if (message instanceof HostclassListMessage) {
-            final HostclassListMessage listMessage = (HostclassListMessage) message;
-            final Set<String> hosts = listMessage.getHosts();
-            for (final String name : hosts) {
-                final String hostclassName = hostclassFromHost(name);
-                Hostclass hostclass = Hostclass.getByName(hostclassName);
-                if (hostclass == null) {
-                    try {
-                        hostclass = new Hostclass();
-                        hostclass.setName(hostclassName);
-                        hostclass.setParent(null);
-                        hostclass.save();
-                    } catch (final PersistenceException e) {
-                        LOGGER.warn(String.format("Problem creating hostclass; name=%s", name), e);
-                    }
-                }
+    public Receive createReceive() {
+        return receiveBuilder()
+                .match(RefreshHostclassesMessage.class, refresh -> {
+                    final CompletionStage<HostclassListMessage> messagePromise = _hostProvider.getHosts()
+                            .exceptionally(this::recoverHostclassListLookupFailure)
+                            .thenApply(HostclassListMessage::new);
+                    PatternsCS.pipe(messagePromise, context().dispatcher()).to(self(), self());
+                })
+                .match(HostclassListMessage.class, listMessage -> {
+                    final Set<String> hosts = listMessage.getHosts();
+                    for (final String name : hosts) {
+                        final String hostclassName = hostclassFromHost(name);
+                        Hostclass hostclass = Hostclass.getByName(hostclassName);
+                        if (hostclass == null) {
+                            try {
+                                hostclass = new Hostclass();
+                                hostclass.setName(hostclassName);
+                                hostclass.setParent(null);
+                                hostclass.save();
+                            } catch (final PersistenceException e) {
+                                LOGGER.warn(String.format("Problem creating hostclass; name=%s", name), e);
+                            }
+                        }
 
-                Host host = Host.getByName(name);
-                if (host == null) {
-                    host = new Host();
-                    host.setHostclass(hostclass);
-                    host.setName(name);
-                    host.save();
-                }
-            }
-        } else {
-            LOGGER.warn(String.format("Unhandled message; message=%s", message));
-            unhandled(message);
-        }
+                        Host host = Host.getByName(name);
+                        if (host == null) {
+                            host = new Host();
+                            host.setHostclass(hostclass);
+                            host.setName(name);
+                            host.save();
+                        }
+                    }
+                })
+                .build();
     }
 
     private Set<String> recoverHostclassListLookupFailure(final Throwable throwable) {
@@ -149,7 +149,7 @@ public class HostclassRefresher extends UntypedActor {
     private static class HostclassListMessage {
         private final Set<String> _hosts;
 
-        public HostclassListMessage(final Set<String> hosts) {
+        HostclassListMessage(final Set<String> hosts) {
             _hosts = hosts;
         }
 

@@ -15,10 +15,7 @@
  */
 package controllers.impl;
 
-import com.avaje.ebean.Ebean;
-import com.avaje.ebean.Transaction;
 import com.google.common.base.Strings;
-import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -27,6 +24,8 @@ import controllers.routes;
 import forms.ConfigForm;
 import forms.NewEnvironment;
 import forms.NewStage;
+import io.ebean.Ebean;
+import io.ebean.Transaction;
 import models.EnvironmentType;
 import models.Manifest;
 import models.ManifestHistory;
@@ -38,15 +37,11 @@ import org.joda.time.DateTime;
 import play.Logger;
 import play.data.Form;
 import play.data.FormFactory;
-import play.data.validation.ValidationError;
 import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
 
-import javax.inject.Inject;
-import javax.persistence.PersistenceException;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -55,12 +50,16 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import javax.persistence.PersistenceException;
 
 /**
  * Controller for Environments.
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
+@Singleton
 @Security.Authenticated(AuthN.class)
 public class StandardEnvironment extends Controller implements Environment {
     /**
@@ -94,7 +93,7 @@ public class StandardEnvironment extends Controller implements Environment {
             env.setParent(parent.getId());
             form = form.fill(env);
         }
-        final List<Owner> owners = UserMembership.getOrgsForUser(request().username());
+        final List<Owner> owners = UserMembership.getOrgsForUser(request().attrs().get(Security.USERNAME));
         final List<EnvironmentType> envTypes = Arrays.asList(EnvironmentType.values());
         return CompletableFuture.completedFuture(ok(views.html.newEnvironment.render(form, owners, envTypes)));
     }
@@ -201,11 +200,11 @@ public class StandardEnvironment extends Controller implements Environment {
 
         final Form<NewEnvironment> bound = NewEnvironment.form(_formFactory).bindFromRequest();
         if (bound.hasErrors()) {
-            final List<Owner> owners = UserMembership.getOrgsForUser(request().username());
+            final List<Owner> owners = UserMembership.getOrgsForUser(request().attrs().get(Security.USERNAME));
             final List<EnvironmentType> envTypes = Arrays.asList(EnvironmentType.values());
             return CompletableFuture.completedFuture(badRequest(views.html.newEnvironment.render(bound, owners, envTypes)));
         } else {
-            try (final Transaction transaction = Ebean.beginTransaction()) {
+            try (Transaction transaction = Ebean.beginTransaction()) {
                 final models.Environment environment = new models.Environment();
                 final NewEnvironment env = bound.get();
 
@@ -223,7 +222,7 @@ public class StandardEnvironment extends Controller implements Environment {
                 environment.save();
 
                 final Manifest manifest = new Manifest();
-                manifest.setCreatedBy(request().username());
+                manifest.setCreatedBy(request().attrs().get(Security.USERNAME));
                 manifest.setEnvironment(environment);
                 manifest.setVersion("0");
                 manifest.save();
@@ -234,8 +233,6 @@ public class StandardEnvironment extends Controller implements Environment {
 
                 transaction.commit();
                 return CompletableFuture.completedFuture(redirect(controllers.routes.Environment.detail(environment.getName())));
-            } catch (final IOException e) {
-                throw Throwables.propagate(e);
             }
         }
     }
@@ -257,14 +254,12 @@ public class StandardEnvironment extends Controller implements Environment {
     public CompletionStage<Result> save(final String envName) {
         final models.Environment environment = models.Environment.getByName(envName);
         final Form<NewStage> newStageForm = NewStage.form(_formFactory);
-        final Form<ConfigForm> configForm = ConfigForm.form(_formFactory).bindFromRequest();
-        final Map<String, String> configData = configForm.data();
+        Form<ConfigForm> configForm = ConfigForm.form(_formFactory).bindFromRequest();
+        final Map<String, String> configData = configForm.rawData();
         final String config = configData.get("config");
         final Long version = Long.parseLong(configData.get("version"));
         if (version != environment.getVersion()) {
-            final ArrayList<ValidationError> errorList = new ArrayList<>();
-            errorList.add(new ValidationError("VersionConflict", "There was a version conflict. Please try saving again."));
-            configForm.errors().put("VersionConflict", errorList);
+            configForm = configForm.withError("VersionConflict", "There was a version conflict. Please try saving again.");
         }
 
         if (configForm.hasErrors()) {
@@ -284,14 +279,14 @@ public class StandardEnvironment extends Controller implements Environment {
 
 
     private boolean validateAuth(final models.Environment environment) {
-        final Set<Owner> userGroups = Sets.newHashSet(UserMembership.getOrgsForUser(request().username()));
+        final Set<Owner> userGroups = Sets.newHashSet(UserMembership.getOrgsForUser(request().attrs().get(Security.USERNAME)));
         if (!userGroups.contains(environment.getOwner())) {
             Logger.warn(
                     String.format(
                             "Attempt at unauthorized deployment; environment=%s, owner=%s, user=%s, users_orgs=%s",
                             environment.getName(),
                             environment.getOwner().getOrgName(),
-                            request().username(),
+                            request().attrs().get(Security.USERNAME),
                             userGroups));
             return false;
         }
@@ -322,7 +317,7 @@ public class StandardEnvironment extends Controller implements Environment {
         }
         final Manifest manifest = new Manifest();
         manifest.setPackages(newPackages);
-        manifest.setCreatedBy(request().username());
+        manifest.setCreatedBy(request().attrs().get(Security.USERNAME));
         manifest.save();
         return manifest;
     }

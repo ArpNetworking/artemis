@@ -19,13 +19,13 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import com.google.inject.Singleton;
+import com.typesafe.config.Config;
 import models.Authentication;
 import models.Owner;
 import models.UserMembership;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import play.Application;
-import play.Configuration;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Security;
@@ -48,14 +48,14 @@ public class AuthN extends Security.Authenticator {
      * @param configuration application configuration
      */
     @Inject
-    public AuthN(final Application application, final Configuration configuration) {
+    public AuthN(final Application application, final Config configuration) {
         _application = application;
         _configuration = configuration;
     }
 
     @Override
     public String getUsername(final Http.Context ctx) {
-        final boolean useDefaultLogin = _application.isDev() && _configuration.getBoolean("auth.useDefaultLogin", false);
+        final boolean useDefaultLogin = _application.isDev() && _configuration.getBoolean("auth.useDefaultLogin");
         if (ctx.session().containsKey("auth-id")) {
             LOGGER.debug("Found auth id in session cookie");
             final String authId = ctx.session().get("auth-id");
@@ -181,7 +181,7 @@ public class AuthN extends Security.Authenticator {
     }
 
     private final Application _application;
-    private final Configuration _configuration;
+    private final Config _configuration;
 
     private static final Cache<String, String> TOKEN_CACHE = CacheBuilder.newBuilder().build();
     private static final Cache<String, List<Owner>> USER_ORGS = CacheBuilder.newBuilder().build();

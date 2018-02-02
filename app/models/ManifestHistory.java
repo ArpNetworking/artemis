@@ -15,8 +15,9 @@
  */
 package models;
 
-import com.avaje.ebean.Ebean;
-import com.avaje.ebean.Model;
+import io.ebean.Ebean;
+import io.ebean.Finder;
+import io.ebean.Model;
 import org.joda.time.DateTime;
 
 import java.util.List;
@@ -89,7 +90,7 @@ public class ManifestHistory extends Model {
      */
     @Nullable
     public ManifestHistory getPrevious() {
-        return FINDER.where().eq("stage", stage).lt("start", start).order().desc("start").setMaxRows(1).findUnique();
+        return FINDER.query().where().eq("stage", stage).lt("start", start).order().desc("start").setMaxRows(1).findOne();
     }
 
     /**
@@ -101,7 +102,7 @@ public class ManifestHistory extends Model {
     @Nullable
     public static ManifestHistory getCurrentForStage(final Stage stage) {
         //TODO(barp): why is this locking? [Artemis-?]
-        return Ebean.createQuery(ManifestHistory.class).setForUpdate(true).where().eq("stage", stage).isNull("finish").findUnique();
+        return Ebean.createQuery(ManifestHistory.class).setForUpdate(true).where().eq("stage", stage).isNull("finish").findOne();
     }
 
     /**
@@ -113,7 +114,7 @@ public class ManifestHistory extends Model {
      * @return a list of {@link ManifestHistory}
      */
     public static List<ManifestHistory> getByStage(final Stage stage, final int limit, final int offset) {
-        return FINDER.where().eq("stage", stage).orderBy().desc("start").setMaxRows(limit).setFirstRow(offset).findList();
+        return FINDER.query().where().eq("stage", stage).orderBy().desc("start").setMaxRows(limit).setFirstRow(offset).findList();
     }
 
     /**
@@ -139,5 +140,5 @@ public class ManifestHistory extends Model {
     private DateTime finish;
     private String config;
 
-    private static final Find<Long, ManifestHistory> FINDER = new Find<Long, ManifestHistory>(){};
+    private static final Finder<Long, ManifestHistory> FINDER = new Finder<>(ManifestHistory.class);
 }

@@ -65,7 +65,7 @@ public interface Environment {
      * @param envName the environment name
      * @return a {@link Result}
      */
-    CompletionStage<Result> createRelease(final String envName);
+    CompletionStage<Result> createRelease(String envName);
 
     /**
      * Prepare a release.
@@ -73,5 +73,5 @@ public interface Environment {
      * @param envName the environment name
      * @return a {@link Result}
      */
-    CompletionStage<Result> prepareRelease(final String envName);
+    CompletionStage<Result> prepareRelease(String envName);
 }

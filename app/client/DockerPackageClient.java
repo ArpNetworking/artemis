@@ -123,7 +123,7 @@ public class DockerPackageClient extends ClientBase {
         for (final WSRequest next : reqs) {
             final int concurrentIndex = concurrentCount % concurrency;
             final CompletionStage<WSResponse> prev = concurrentReqs.get(concurrentIndex);
-            final CompletionStage<WSResponse> responsePromise = prev.thenCompose((ignored) -> next.execute());
+            final CompletionStage<WSResponse> responsePromise = prev.thenCompose(ignored -> next.execute());
             results.add(responsePromise);
             concurrentReqs.add(concurrentIndex, responsePromise);
 

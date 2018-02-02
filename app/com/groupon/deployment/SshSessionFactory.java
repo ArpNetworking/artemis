@@ -29,5 +29,5 @@ public interface SshSessionFactory {
      * @param host the host to connect to
      * @return a new SSHClient
      */
-    SSHClient create(final String host);
+    SSHClient create(String host);
 }

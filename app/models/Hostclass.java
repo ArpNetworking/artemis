@@ -15,9 +15,10 @@
  */
 package models;
 
-import com.avaje.ebean.Model;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import io.ebean.Finder;
+import io.ebean.Model;
 
 import java.util.List;
 import java.util.Set;
@@ -86,7 +87,7 @@ public class Hostclass extends Model {
      * @return the hostclass, or null if it doesn't exist
      */
     public static Hostclass getByName(final String name) {
-        return FINDER.where().eq("name", name).findUnique();
+        return FINDER.query().where().eq("name", name).findOne();
     }
 
     /**
@@ -107,7 +108,7 @@ public class Hostclass extends Model {
      * @return a list of hostclasses
      */
     public static List<Hostclass> searchByPartialName(final String query, final int limit) {
-        return FINDER.where().ilike("name", String.format("%%%s%%", query)).setMaxRows(limit).findList();
+        return FINDER.query().where().ilike("name", String.format("%%%s%%", query)).setMaxRows(limit).findList();
     }
 
     /**
@@ -147,5 +148,5 @@ public class Hostclass extends Model {
     @ManyToMany
     private Set<Stage> stages;
 
-    private static final Find<Long, Hostclass> FINDER = new Find<Long, Hostclass>(){};
+    private static final Finder<Long, Hostclass> FINDER = new Finder<>(Hostclass.class);
 }

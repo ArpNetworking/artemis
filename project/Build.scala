@@ -14,10 +14,10 @@
   * limitations under the License.
   */
 import com.typesafe.sbt.pgp.PgpKeys._
-import de.johoop.findbugs4sbt.FindBugs._
-import de.johoop.findbugs4sbt.{Effort, Priority, ReportType}
 import play.ebean.sbt.PlayEbean
 import play.routes.compiler.InjectedRoutesGenerator
+import uk.co.josephearl.sbt.findbugs.FindBugsPlugin.autoImport._
+import SbtCheckstyle._
 import play.sbt.PlayImport._
 import play.sbt.PlayImport.PlayKeys._
 import play.sbt.PlayJava
@@ -32,57 +32,54 @@ object ApplicationBuild extends Build {
   val appName = "artemis"
   name := appName
 
-  val jacksonVersion = "2.8.4"
-  val guiceVersion = "4.0"
+  val jacksonVersion = "2.9.2"
 
-  val s = findbugsSettings ++ CheckstyleSettings.checkstyleTask
+  val s = checkstyleSettings
 
   lazy val root = Project(appName, file("."), settings = s).enablePlugins(PlayJava, PlayEbean).settings(
 
-  scalaVersion := "2.11.8",
+  scalaVersion := "2.11.11",
 
   libraryDependencies ++= Seq(
     javaJdbc,
     javaWs,
+    guice,
     "cglib" % "cglib" % "3.2.4",
-    "com.arpnetworking.build" % "build-resources" % "1.0.6",
-    "com.arpnetworking.commons" % "commons" % "1.7.3",
-    "com.arpnetworking.logback" % "logback-steno" % "1.16.1",
-    "com.arpnetworking.metrics.extras" % "jvm-extra" % "0.4.2",
-    "com.arpnetworking.metrics" % "metrics-client" % "0.5.0",
+    "com.arpnetworking.build" % "build-resources" % "1.2.0",
+    "com.arpnetworking.commons" % "commons" % "1.13.2",
+    "com.arpnetworking.logback" % "logback-steno" % "1.18.0",
+    "com.arpnetworking.metrics.extras" % "jvm-extra" % "0.9.0",
+    "com.arpnetworking.metrics" % "metrics-client" % "0.10.0",
     "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % jacksonVersion,
     "com.fasterxml.jackson.datatype" % "jackson-datatype-guava" % jacksonVersion,
     "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8" % jacksonVersion,
     "com.fasterxml.jackson.datatype" % "jackson-datatype-joda" % jacksonVersion,
     "com.fasterxml.jackson.module" % "jackson-module-guice" % jacksonVersion,
-    "com.github.tomakehurst" % "wiremock" % "2.2.2" % "test",
+    "com.github.tomakehurst" % "wiremock-standalone" % "2.14.0" % "test",
     "com.google.code.findbugs" % "jsr305" % "3.0.1",
     "com.google.code.findbugs" % "annotations" % "3.0.1",
     "com.google.guava" % "guava" % "19.0",
-    "com.google.inject" % "guice" % guiceVersion,
-    "com.google.inject.extensions" % "guice-assistedinject" % guiceVersion,
-    "com.h2database" % "h2" % "1.4.186",
-    "com.hierynomus" % "sshj" % "0.18.0",
+    "com.h2database" % "h2" % "1.4.192",
+    "com.hierynomus" % "sshj" % "0.23.0",
     "net.sf.oval" % "oval" % "1.86",
     "org.apache.httpcomponents" % "httpclient" % "4.3.1",
-    "org.flywaydb" % "flyway-play_2.11" % "3.0.1",
-    "org.mockito" % "mockito-all" % "1.10.19",
+    "org.flywaydb" %% "flyway-play" % "4.0.0",
+    "org.mockito" % "mockito-core" % "1.10.19" % "test",
     "org.postgresql" % "postgresql" % "9.4-1202-jdbc42",
-    "org.scala-lang.modules" %% "scala-java8-compat" % "0.7.0",
     "org.webjars" % "bootstrap" % "3.3.7",
     "org.webjars" % "jquery" % "3.1.1",
     "org.webjars" % "knockout" % "3.4.0"
   ),
 
   // Extract build resources
-  compile in Compile <<= (compile in Compile).dependsOn(Def.task {
+  compile in Compile := (compile in Compile).dependsOn(Def.task {
     val jar = (update in Compile).value
       .select(configurationFilter("compile"))
       .filter(_.name.contains("build-resources"))
       .head
     IO.unzip(jar, (target in Compile).value / "build-resources")
     Seq.empty[File]
-  }),
+  }).value,
 
   javaOptions += "-Dconfig.file=conf/artemis-application.conf",
 
@@ -91,14 +88,18 @@ object ApplicationBuild extends Build {
     "-Xlint:all",
     "-Werror",
     "-Xlint:-path",
-    "-Xlint:-try"
+    "-Xlint:-try",
+    // Needed because there is an annotation processor and the JUnit annotations
+    // are not processed by it. See https://github.com/playframework/playframework/issues/1922#issuecomment-52884818
+    // and https://bugs.openjdk.java.net/browse/JDK-6999068
+    "-Xlint:-processing"
   ),
 
   // Findbugs
-  findbugsReportType := Some(ReportType.Html),
+  findbugsReportType := Some(FindBugsReportType.Html),
   findbugsReportPath := Some(target.value / "findbugs" / "findbugs.html"),
-  findbugsPriority := Priority.Low,
-  findbugsEffort := Effort.Maximum,
+  findbugsPriority := FindBugsPriority.Low,
+  findbugsEffort := FindBugsEffort.Maximum,
   findbugsExcludeFilters := Some(
     <FindBugsFilter>
       <Match>
@@ -145,13 +146,13 @@ object ApplicationBuild extends Build {
   organizationHomepage := Some(new URL("https://github.com/Groupon")),
 
   publishMavenStyle := true,
-  publishTo <<= version { v: String =>
+  publishTo := version { v: String =>
     val nexus = "https://oss.sonatype.org/"
     if (v.trim.endsWith("SNAPSHOT"))
       Some("snapshots" at nexus + "content/repositories/snapshots")
     else
       Some("releases" at nexus + "service/local/staging/deploy/maven2")
-  },
+  }.value,
   publishTo in publishLocal := Some(Resolver.file("file",  new File(Path.userHome.absolutePath+"/.m2/repository"))),
   pomIncludeRepository := { _ => false },
   pomExtra := (

@@ -16,8 +16,8 @@
 package utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.typesafe.config.Config;
 import com.typesafe.config.ConfigRenderOptions;
-import play.Configuration;
 
 import java.io.IOException;
 
@@ -40,8 +40,8 @@ public final class JsonConfigBridge {
      * @return deserialized object from config
      * @throws IOException if serialization fails
      */
-    public static <T> T load(final Configuration configuration, final Class<T> clazz, final ObjectMapper mapper) throws IOException {
-        final String json = configuration.underlying().root().render(ConfigRenderOptions.concise());
+    public static <T> T load(final Config configuration, final Class<T> clazz, final ObjectMapper mapper) throws IOException {
+        final String json = configuration.root().render(ConfigRenderOptions.concise());
         return mapper.readValue(json, clazz);
     }
 }

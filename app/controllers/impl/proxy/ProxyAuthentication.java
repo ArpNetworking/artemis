@@ -23,12 +23,14 @@ import play.mvc.Result;
 import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Singleton;
 
 /**
  * Holds methods for authentication.
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
+@Singleton
 public class ProxyAuthentication extends ArtemisProxy implements Authentication {
     /**
      * Public constructor.

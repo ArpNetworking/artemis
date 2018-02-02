@@ -34,12 +34,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import javax.inject.Singleton;
 
 /**
  * JSON REST Apis for Hocon related services.
  *
  * @author Nabin Timsina (ntimsina at groupon dot com)
  */
+@Singleton
 public class Hocon extends Controller {
     /**
      *

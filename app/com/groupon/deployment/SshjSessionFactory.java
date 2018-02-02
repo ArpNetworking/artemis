@@ -15,9 +15,9 @@
  */
 package com.groupon.deployment;
 
-import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+import com.typesafe.config.Config;
 import net.schmizz.sshj.DefaultConfig;
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.common.Factory;
@@ -25,7 +25,6 @@ import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 import net.schmizz.sshj.userauth.keyprovider.FileKeyProvider;
 import net.schmizz.sshj.userauth.keyprovider.KeyProvider;
 import net.schmizz.sshj.userauth.keyprovider.PKCS5KeyFile;
-import play.Configuration;
 
 import java.io.IOException;
 import java.util.List;
@@ -42,7 +41,7 @@ public class SshjSessionFactory implements SshSessionFactory {
      * @param config Artemis configuration
      */
     @Inject
-    public SshjSessionFactory(final Configuration config) {
+    public SshjSessionFactory(final Config config) {
         _userName = config.getString("ssh.user");
         _keyPath = config.getString("ssh.keyFile");
     }
@@ -62,7 +61,7 @@ public class SshjSessionFactory implements SshSessionFactory {
             client.authPublickey(_userName, keys);
             return client;
         } catch (final IOException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
     }
 

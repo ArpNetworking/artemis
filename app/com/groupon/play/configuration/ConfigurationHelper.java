@@ -17,9 +17,8 @@ package com.groupon.play.configuration;
 
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.google.common.base.Throwables;
+import com.typesafe.config.Config;
 import play.Application;
-import play.Configuration;
 import play.Environment;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
@@ -39,12 +38,13 @@ public final class ConfigurationHelper {
      * @param configuration Play <code>Configuration</code> instance.
      * @param key The name of the configuration key to interpret as a <code>File</code> reference.
      * @param app Instance of Play <code>Application</code>.
+     * @param environment The environment
      * @return Instance of <code>File</code> as defined by key in configuration.
      */
-    public static File getFile(final Configuration configuration, final String key, final Application app) {
+    public static File getFile(final Config configuration, final String key, final Application app, final Environment environment) {
         final String pathAsString = configuration.getString(key);
         if (!pathAsString.startsWith("/")) {
-            return app.getFile(pathAsString);
+            return environment.getFile(pathAsString);
         }
         return new File(pathAsString);
     }
@@ -56,7 +56,7 @@ public final class ConfigurationHelper {
      * @param key The name of the configuration key to interpret as a <code>FiniteDuration</code> reference.
      * @return Instance of <code>FiniteDuration</code> as defined by key in configuration.
      */
-    public static FiniteDuration getFiniteDuration(final Configuration configuration, final String key) {
+    public static FiniteDuration getFiniteDuration(final Config configuration, final String key) {
         final Duration duration = Duration.create(configuration.getString(key));
         return new FiniteDuration(
                 duration.length(),
@@ -74,7 +74,7 @@ public final class ConfigurationHelper {
      */
     public static <T> Class<? extends T> getType(
             final Environment environment,
-            final Configuration configuration,
+            final Config configuration,
             final String key) {
         final String className = configuration.getString(key);
         try {
@@ -87,7 +87,7 @@ public final class ConfigurationHelper {
                     .log();
             return clazz;
         } catch (final ClassNotFoundException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
     }
 

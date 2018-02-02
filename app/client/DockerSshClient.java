@@ -22,7 +22,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.base.Charsets;
-import com.google.common.base.Throwables;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.AssistedInject;
 import net.schmizz.sshj.SSHClient;
@@ -97,7 +96,7 @@ public class DockerSshClient implements DockerDeploymentClient, DockerDeployment
             _sshClient.disconnect();
             _sshClient.close();
         } catch (final IOException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
     }
 

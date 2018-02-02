@@ -29,7 +29,6 @@ import client.HostProvider;
 import client.PackageProvider;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.metrics.MetricsFactory;
-import com.arpnetworking.metrics.impl.TsdLogSink;
 import com.arpnetworking.metrics.impl.TsdMetricsFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.introspect.AnnotationIntrospectorPair;
@@ -47,13 +46,11 @@ import com.groupon.deployment.SshjSessionFactory;
 import com.groupon.deployment.fleet.FleetDeploymentFactory;
 import com.groupon.deployment.host.HostDeploymentFactory;
 import com.groupon.guice.akka.RootActorProvider;
+import com.typesafe.config.Config;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import play.Configuration;
 import utils.JsonConfigBridge;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
 import javax.inject.Singleton;
 
 /**
@@ -92,15 +89,15 @@ public class ProdModule extends AbstractModule {
 
     @Provides
     @Singleton
-    HostProvider provideHostProvider(final Configuration configuration, final ObjectMapper objectMapper) throws IOException {
-        final Configuration providerConfig = configuration.getConfig("hostProvider");
+    HostProvider provideHostProvider(final Config configuration, final ObjectMapper objectMapper) throws IOException {
+        final Config providerConfig = configuration.getConfig("hostProvider");
         return JsonConfigBridge.load(providerConfig, HostProvider.class, objectMapper);
     }
 
     @Provides
     @Singleton
-    PackageProvider providePackageProvider(final Configuration configuration, final ObjectMapper objectMapper) throws IOException {
-        final Configuration providerConfig = configuration.getConfig("packageProvider");
+    PackageProvider providePackageProvider(final Config configuration, final ObjectMapper objectMapper) throws IOException {
+        final Config providerConfig = configuration.getConfig("packageProvider");
         return JsonConfigBridge.load(providerConfig, PackageProvider.class, objectMapper);
     }
 
@@ -121,38 +118,32 @@ public class ProdModule extends AbstractModule {
 
 
     @Provides @Named("ConfigServerBaseUrl")
-    String provideConfigServerBaseURL(final Configuration config) {
+    String provideConfigServerBaseURL(final Config config) {
         return config.getString("artemis.roller.configServer");
     }
 
     @Provides @Named("DockerRegistryUrl")
-    String provideDockerRegistryUrl(final Configuration config) {
+    String provideDockerRegistryUrl(final Config config) {
         return config.getString("artemis.dockerRegistry");
     }
 
     @Provides
     @Singleton
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
-    private MetricsFactory getMetricsFactory(final Configuration configuration) {
+    private MetricsFactory getMetricsFactory(final Config configuration) {
         return new TsdMetricsFactory.Builder()
                 .setClusterName(configuration.getString("metrics.cluster"))
                 .setServiceName(configuration.getString("metrics.service"))
-                .setSinks(Collections.singletonList(
-                        new TsdLogSink.Builder()
-                                .setName(configuration.getString("metrics.name"))
-                                .setDirectory(new File(configuration.getString("metrics.path")))
-                                .build()
-                ))
                 .build();
     }
 
     @Provides @Named("DockerRegistryName")
-    String provideDockerRegistryName(final Configuration config) {
+    String provideDockerRegistryName(final Config config) {
         return config.getString("artemis.dockerRegistryName");
     }
 
     @Provides @Named("DockerCmd")
-    String provideDockerCmd(final Configuration config) {
+    String provideDockerCmd(final Config config) {
         return config.getString("artemis.dockerCmd");
     }
 

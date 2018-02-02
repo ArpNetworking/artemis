@@ -31,7 +31,7 @@ public interface HostDeploymentFactory {
      * @param host the host to deploy to
      * @return a new host deployment strategy
      */
-    Roller createRoller(final Host host);
+    Roller createRoller(Host host);
 
     /**
      * Create a docker deployment.
@@ -48,5 +48,5 @@ public interface HostDeploymentFactory {
      * @param deployment the deployment spec
      * @return a new host deployment strategy
      */
-    Rpm createRpm(final Host host, final Deployment deployment);
+    Rpm createRpm(Host host, Deployment deployment);
 }

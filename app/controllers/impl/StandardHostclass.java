@@ -15,13 +15,12 @@
  */
 package controllers.impl;
 
-import com.avaje.ebean.Ebean;
-import com.avaje.ebean.Transaction;
-import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import controllers.Hostclass;
 import forms.AddHostToHostclass;
 import forms.NewHostclass;
+import io.ebean.Ebean;
+import io.ebean.Transaction;
 import models.Host;
 import play.data.Form;
 import play.data.FormFactory;
@@ -30,17 +29,18 @@ import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 /**
  * Controller for Environments.
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
+@Singleton
 @Security.Authenticated(AuthN.class)
 public class StandardHostclass extends Controller implements Hostclass {
     /**
@@ -104,7 +104,7 @@ public class StandardHostclass extends Controller implements Hostclass {
         if (bound.hasErrors()) {
             return CompletableFuture.completedFuture(badRequest(views.html.newHostclass.render(bound)));
         } else {
-            try (final Transaction transaction = Ebean.beginTransaction()) {
+            try (Transaction transaction = Ebean.beginTransaction()) {
                 final models.Hostclass hostclass = new models.Hostclass();
                 final NewHostclass newHostclass = bound.get();
                 hostclass.setName(newHostclass.getName());
@@ -125,8 +125,6 @@ public class StandardHostclass extends Controller implements Hostclass {
 
                 transaction.commit();
                 return CompletableFuture.completedFuture(redirect(controllers.routes.Hostclass.detail(hostclass.getName())));
-            } catch (final IOException e) {
-                throw Throwables.propagate(e);
             }
         }
     }

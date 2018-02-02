@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 
 /**
@@ -38,6 +39,7 @@ import javax.inject.Inject;
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
+@Singleton
 @Security.Authenticated(AuthN.class)
 public class StandardApplication extends Controller implements controllers.Application {
 
@@ -50,7 +52,7 @@ public class StandardApplication extends Controller implements controllers.Appli
 
     @Override
     public CompletionStage<Result> main() {
-        final List<Owner> orgs = AuthN.getOrganizations(request().username());
+        final List<Owner> orgs = AuthN.getOrganizations(request().attrs().get(Security.USERNAME));
         final List<Environment> environments = Environment.getEnvironmentsForOrgs(orgs, 10);
         final List<Bundle> bundles = Lists.newArrayList();
         final List<Hostclass> hostclasses = Hostclass.getHostclassesForEnvironments(environments, 10);

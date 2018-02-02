@@ -39,8 +39,8 @@
                     }
                 </select>
             }
-            @if(form("parent").value != null) {
-                <input type="hidden" name="parent" value="@form("parent").value">
+            @if(form("parent").getValue.isPresent) {
+                <input type="hidden" name="parent" value="@form("parent").getValue.get">
             }
             <input type="submit" name="submit" class="btn btn-primary" value="Add">
         }

@@ -43,7 +43,7 @@ public interface PackageProvider {
     /**
      * A response for a list of packages.
      */
-    public static class PackageListResponse {
+    class PackageListResponse {
         /**
          * Public constructor.
          *
@@ -63,7 +63,7 @@ public interface PackageProvider {
     /**
      * Metadata for a package version.
      */
-    public static class PackageVersionMetadata {
+    class PackageVersionMetadata {
         /**
          * Public constructor.
          *

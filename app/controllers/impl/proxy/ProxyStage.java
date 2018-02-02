@@ -25,12 +25,14 @@ import play.mvc.Security;
 import utils.AuthN;
 
 import java.util.concurrent.CompletionStage;
+import javax.inject.Singleton;
 
 /**
  * Holds stage actions.
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
+@Singleton
 @Security.Authenticated(AuthN.class)
 public class ProxyStage extends ArtemisProxy implements Stage {
     /**

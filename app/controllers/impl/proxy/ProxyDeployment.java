@@ -25,12 +25,14 @@ import utils.AuthN;
 import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Singleton;
 
 /**
  * Deployment controller.
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
+@Singleton
 @Security.Authenticated(AuthN.class)
 public class ProxyDeployment extends ArtemisProxy implements Deployment {
     /**

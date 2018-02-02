@@ -31,7 +31,7 @@ public interface Api {
      * @param query the query
      * @return an http response
      */
-    CompletionStage<Result> hostclassSearch(final String query);
+    CompletionStage<Result> hostclassSearch(String query);
 
     /**
      * Performs a search for a package.
@@ -39,7 +39,7 @@ public interface Api {
      * @param query the query
      * @return an http response
      */
-    CompletionStage<Result> packageSearch(final String query);
+    CompletionStage<Result> packageSearch(String query);
 
     /**
      * Performs a search for an environment.
@@ -47,7 +47,7 @@ public interface Api {
      * @param query the query
      * @return an http response
      */
-    CompletionStage<Result> environmentSearch(final String query);
+    CompletionStage<Result> environmentSearch(String query);
 
     /**
      * Gets a list of stages in an environment.
@@ -55,7 +55,7 @@ public interface Api {
      * @param envName the environment name
      * @return an http response
      */
-    CompletionStage<Result> getStages(final String envName);
+    CompletionStage<Result> getStages(String envName);
 
     /**
      * Updates the packages and versions in a stage.
@@ -64,7 +64,7 @@ public interface Api {
      * @param stageName the stage name
      * @return an http response
      */
-    CompletionStage<Result> updateStagePackageVersions(final String envName, final String stageName);
+    CompletionStage<Result> updateStagePackageVersions(String envName, String stageName);
 
     /**
      * Streams the log of a deployment.
@@ -72,7 +72,7 @@ public interface Api {
      * @param deploymentId the deployment id
      * @return an http response
      */
-    CompletionStage<Result> deploymentLog(final long deploymentId);
+    CompletionStage<Result> deploymentLog(long deploymentId);
 
     /**
      * Gets a list of packages in a manifest version.
@@ -81,5 +81,5 @@ public interface Api {
      * @param version the version of the manifest
      * @return an http response
      */
-    CompletionStage<Result> getReleasePreview(final String envName, final String version);
+    CompletionStage<Result> getReleasePreview(String envName, String version);
 }

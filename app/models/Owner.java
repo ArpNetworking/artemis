@@ -15,7 +15,8 @@
  */
 package models;
 
-import com.avaje.ebean.Model;
+import io.ebean.Finder;
+import io.ebean.Model;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -55,7 +56,7 @@ public class Owner extends Model {
      * @return an Owner or null if it doesn't exist
      */
     public static Owner getByName(final String name) {
-        return FINDER.where().eq("orgName", name).findUnique();
+        return FINDER.query().where().eq("orgName", name).findOne();
     }
 
     /**
@@ -73,5 +74,5 @@ public class Owner extends Model {
     private long id;
     private String orgName;
 
-    private static final Find<Long, Owner> FINDER = new Find<Long, Owner>(){};
+    private static final Finder<Long, Owner> FINDER = new Finder<>(Owner.class);
 }
