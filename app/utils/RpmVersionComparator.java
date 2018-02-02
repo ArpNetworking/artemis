@@ -50,29 +50,29 @@ public class RpmVersionComparator implements Comparator<String> {
                 return 0;
             }
 
-            if (leftString.equals(rightString)) {
-                continue;
-            } else if (leftString.charAt(0) == '~' && rightString.charAt(0) == '~') {
-                return Integer.compare(leftString.length(), rightString.length());
-            } else if (leftString.charAt(0) == '~') {
-                return -1;
-            } else if (rightString.charAt(0) == '~') {
-                return 1;
-            } else if (Character.isDigit(leftString.charAt(0)) && Character.isDigit(rightString.charAt(0))) {
-                // Compare by numeric
-                final int compare = Integer.valueOf(leftString).compareTo(Integer.valueOf(rightString));
-                if (compare != 0) {
-                    return compare;
+            if (!leftString.equals(rightString)) {
+                if (leftString.charAt(0) == '~' && rightString.charAt(0) == '~') {
+                    return Integer.compare(leftString.length(), rightString.length());
+                } else if (leftString.charAt(0) == '~') {
+                    return -1;
+                } else if (rightString.charAt(0) == '~') {
+                    return 1;
+                } else if (Character.isDigit(leftString.charAt(0)) && Character.isDigit(rightString.charAt(0))) {
+                    // Compare by numeric
+                    final int compare = Integer.valueOf(leftString).compareTo(Integer.valueOf(rightString));
+                    if (compare != 0) {
+                        return compare;
+                    }
+                } else if (Character.isLetter(leftString.charAt(0)) && Character.isLetter(rightString.charAt(0))) {
+                    final int compare = leftString.compareTo(rightString);
+                    if (compare != 0) {
+                        return compare;
+                    }
+                } else if (Character.isLetter(leftString.charAt(0))) {
+                    return -1;
+                } else if (Character.isLetter(rightString.charAt(0))) {
+                    return 1;
                 }
-            } else if (Character.isLetter(leftString.charAt(0)) && Character.isLetter(rightString.charAt(0))) {
-                final int compare = leftString.compareTo(rightString);
-                if (compare != 0) {
-                    return compare;
-                }
-            } else if (Character.isLetter(leftString.charAt(0))) {
-                return -1;
-            } else if (Character.isLetter(rightString.charAt(0))) {
-                return 1;
             }
         }
 
@@ -90,50 +90,47 @@ public class RpmVersionComparator implements Comparator<String> {
     private int getNextChunk(final int initialIndex, final String string, final StringBuilder builder) {
         int index = initialIndex;
         builder.setLength(0);
-        while (index < string.length()) {
-            char character = string.charAt(index);
+        char character = string.charAt(index);
 
-            // Strip all the non-alphanumeric and ~ characters
-            while (!(Character.isLetterOrDigit(character) || character == '~')) {
+        // Strip all the non-alphanumeric and ~ characters
+        while (!(Character.isLetterOrDigit(character) || character == '~')) {
+            index++;
+            if (index >= string.length()) {
+                return index;
+            }
+            character = string.charAt(index);
+        }
+
+        if (Character.isLetter(character)) {
+            // Consume until non-alpha
+            while (Character.isLetter(character)) {
+                builder.append(character);
                 index++;
                 if (index >= string.length()) {
                     return index;
                 }
                 character = string.charAt(index);
             }
-
-            if (Character.isLetter(character)) {
-                // Consume until non-alpha
-                while (Character.isLetter(character)) {
-                    builder.append(character);
-                    index++;
-                    if (index >= string.length()) {
-                        return index;
-                    }
-                    character = string.charAt(index);
+        } else if (Character.isDigit(character)) {
+            // Consume until non-numeric
+            while (Character.isDigit(character)) {
+                builder.append(character);
+                index++;
+                if (index >= string.length()) {
+                    return index;
                 }
-            } else if (Character.isDigit(character)) {
-                // Consume until non-numeric
-                while (Character.isDigit(character)) {
-                    builder.append(character);
-                    index++;
-                    if (index >= string.length()) {
-                        return index;
-                    }
-                    character = string.charAt(index);
-                }
-            } else if (character == '~') {
-                // Consume until non-numeric
-                while (character == '~') {
-                    builder.append(character);
-                    index++;
-                    if (index >= string.length()) {
-                        return index;
-                    }
-                    character = string.charAt(index);
-                }
+                character = string.charAt(index);
             }
-            return index;
+        } else if (character == '~') {
+            // Consume until non-numeric
+            while (character == '~') {
+                builder.append(character);
+                index++;
+                if (index >= string.length()) {
+                    return index;
+                }
+                character = string.charAt(index);
+            }
         }
         return index;
     }
