@@ -258,8 +258,8 @@ credentials += Credentials("Sonatype Nexus Repository Manager",
 System.getenv("OSSRH_USER"),
 System.getenv("OSSRH_PASS"))
 
-useGpg := true
-pgpPassphrase in Global := Option(System.getenv("GPG_PASS")).map(_.toCharArray)
+pgpPassphrase := Option(System.getenv("GPG_PASS")).map(_.toCharArray)
+pgpSecretRing := file("./arpnetworking.key")
 
 releaseProcess := Seq[ReleaseStep](
   checkSnapshotDependencies,
