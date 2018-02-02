@@ -131,10 +131,9 @@ public class ProdModule extends AbstractModule {
     @Singleton
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private MetricsFactory getMetricsFactory(final Config configuration) {
-        return new TsdMetricsFactory.Builder()
-                .setClusterName(configuration.getString("metrics.cluster"))
-                .setServiceName(configuration.getString("metrics.service"))
-                .build();
+        return TsdMetricsFactory.newInstance(
+                configuration.getString("metrics.service"),
+                configuration.getString("metrics.cluster"));
     }
 
     @Provides @Named("DockerRegistryName")

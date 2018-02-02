@@ -22,7 +22,7 @@ name := "artemis"
 
 val jacksonVersion = "2.9.2"
 
-lazy val root = (project in file(".")).settings(SbtCheckstyle.checkstyleSettings).enablePlugins(PlayJava, PlayEbean, SbtCheckstyle, SbtPgp, SbtNativePackager)
+lazy val root = (project in file(".")).settings(SbtCheckstyle.checkstyleSettings).enablePlugins(PlayJava, PlayEbean, SbtCheckstyle, SbtPgp, SbtNativePackager, JavaServerAppPackaging, SystemVPlugin)
 
 scalaVersion := "2.11.11"
 
@@ -36,6 +36,7 @@ libraryDependencies ++= Seq(
   "com.arpnetworking.logback" % "logback-steno" % "1.18.0",
   "com.arpnetworking.metrics.extras" % "jvm-extra" % "0.9.0",
   "com.arpnetworking.metrics" % "metrics-client" % "0.10.0",
+  "com.arpnetworking.metrics.extras" % "apache-http-sink-extra" % "0.9.1",
   "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % jacksonVersion,
   "com.fasterxml.jackson.datatype" % "jackson-datatype-guava" % jacksonVersion,
   "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8" % jacksonVersion,
@@ -134,6 +135,12 @@ findbugsExcludeFilters := Some(
 organization := "com.arpnetworking"
 organizationName := "ArpNetworking, Inc"
 organizationHomepage := Some(new URL("https://github.com/ArpNetworking"))
+
+javaOptions in Test += "-Dconfig.file=conf/artemis-application.conf"
+javaOptions in Universal ++= Seq(s"-Dpidfile.path=/dev/null", s"-Dconfig.file=/etc/artemis/artemis.conf")
+
+linuxPackageMappings += packageTemplateMapping(s"/usr/share/${name.value}/data")() withUser(name.value) withGroup(name.value)
+linuxPackageMappings += packageTemplateMapping(s"/usr/share/${name.value}/data/h2")() withUser(name.value) withGroup(name.value)
 
 publishMavenStyle := true
 publishTo := version { v: String =>
