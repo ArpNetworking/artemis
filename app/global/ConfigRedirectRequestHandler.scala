@@ -36,7 +36,7 @@ class ConfigRedirectRequestHandler @Inject() (defaultRouter: Router,
                                               filters: HttpFilters,
                                               components: JavaHandlerComponents,
                                               configRouter: config.Routes)
-  extends DefaultHttpRequestHandler(defaultRouter, errorHandler, configuration, filters) {
+  extends JavaCompatibleHttpRequestHandler(defaultRouter, errorHandler, configuration, filters, components) {
 
   override def routeRequest(request: RequestHeader): Option[Handler] = {
     val handler: Option[Handler] = if (request.host.toLowerCase(Locale.ENGLISH).startsWith("config")) {

@@ -72,7 +72,7 @@ compile in Compile := (compile in Compile).dependsOn(Def.task {
   Seq.empty[File]
 }).value
 
-javaOptions += "-Dconfig.file=conf/artemis-application.conf"
+javaOptions += "-Dconfig.file=conf/artemis.conf"
 
 // Compiler warnings as errors
 javacOptions ++= Seq(
@@ -233,8 +233,8 @@ pomExtra :=
 
 
 releasePublishArtifactsAction := PgpKeys.publishSigned.value
-devSettings := Seq(("config.resource", "artemis-application.conf"))
-javaOptions in Test += "-Dconfig.file=conf/artemis-application.conf"
+devSettings := Seq(("config.resource", "artemis-dev.conf"))
+javaOptions in Test += "-Dconfig.file=conf/application-base.conf"
 routesGenerator := InjectedRoutesGenerator
 
 scalaVersion := "2.11.6"
