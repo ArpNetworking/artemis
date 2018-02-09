@@ -17,6 +17,7 @@
 @main("New Hostclass", true) {
     <h2>Create a new hostclass</h2>
     @helper.form(action = routes.Hostclass.create()) {
+        @helper.CSRF.formField
         @tsinputText(form("name"), '_label -> "Name")
         @if(form("parent").getValue.isPresent) {
             <input type="hidden" name="parent" value="@form("parent").getValue.get">

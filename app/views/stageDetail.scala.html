@@ -13,7 +13,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *@
-@(stage: models.Stage, deployments: List[models.Deployment], snapshots: List[models.ManifestHistory], currentManifest: models.Manifest, hcForm: Form[forms.AddHostclassToStage], configForm: Form[forms.ConfigForm], isPost: Boolean)
+@(stage: models.Stage, deployments: List[models.Deployment], snapshots: List[models.ManifestHistory], currentManifest: models.Manifest, hcForm: Form[forms.AddHostclassToStage], configForm: Form[forms.ConfigForm], isPost: Boolean, scriptNonce: String)
 @main(stage.getEnvironment.getName + " " + stage.getName, true) {
     <div class="row">
         <div class="col-md-4 col-md-push-8 text-right">
@@ -22,6 +22,7 @@
                     <h5>Promote stage to: </h5>
                     <div class="sublist">
                         @helper.form(action = routes.Stage.promote(stage.getEnvironment.getName, stage.getName)) {
+                            @helper.CSRF.formField
                             <div class="form-group">
                                 <input type="text" class="form-control" id="promote_env_input" name="envName" placeholder="Select environment">
                             </div>
@@ -40,6 +41,7 @@
                     <h5>Synchronize stage with: </h5>
                     <div class="sublist">
                         @helper.form(action = routes.Stage.synchronize(stage.getEnvironment.getName, stage.getName)) {
+                            @helper.CSRF.formField
                             <div class="form-group">
                                 <input type="text" class="form-control" id="synchronize_env_input" name="envName" placeholder="Select environment">
                             </div>
@@ -81,6 +83,7 @@
             </div>
             @helper.form(action = routes.Stage.save(stage.getEnvironment.getName(), stage.getName()),
             args = 'class -> "hocon-config-form", 'id -> "env-config-form", Symbol("data-is-post") -> isPost.toString()) {
+                @helper.CSRF.formField
                 @tsinputArea(configForm("config"), '_label -> "Config", '_class -> "config", 'id -> "config-text")
                 <div id="preview-config" class="json-viewer">
                     Loading...
@@ -119,6 +122,7 @@
                     @for(hostclass <- stage.getHostclasses) {
                         <li>
                         @helper.form(action = routes.Stage.removeHostclass(stage.getEnvironment.getName, stage.getName, hostclass.getName)) {
+                            @helper.CSRF.formField
                             <a href="@routes.Hostclass.detail(hostclass.getName)">@hostclass.getName</a>
                             <input type="submit" name="submit" class="btn btn-danger btn-xs" value="Remove">
                         }
@@ -292,6 +296,6 @@
     </div>
 }
 <script src="@routes.Assets.at("javascripts/stage.js")" type="text/javascript"></script>
-<script type="text/javascript">
+<script type="text/javascript" nonce="@scriptNonce">
     $(Stage.init());
 </script>

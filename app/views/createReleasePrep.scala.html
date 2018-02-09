@@ -13,7 +13,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *@
-@(environment: models.Environment, manifest: Manifest, nextVersion: String)
+@(environment: models.Environment, manifest: Manifest, nextVersion: String, scriptNonce: String)
 @main(environment.getName, true) {
     <h3>Create release of @environment.getName</h3>
     @helper.form(action = routes.Environment.createRelease(environment.getName), 'class -> "form-horizontal") {
@@ -32,6 +32,7 @@
                 <a href="#" data-bind="click: addPackage"><span class="btn btn-primary btn-sm">Add</span></a>
             </div>
         </div>
+        @helper.CSRF.formField
         <div class="form-group col-md-12">
             <div class="col-md-2">
                 <input type="submit" name="submit" class="btn btn-primary" value="Create">
@@ -49,7 +50,7 @@
             <a href="#" data-bind="click: $parent.removePackage"><span class="btn btn-danger btn-sm">Remove</span></a>
         </div>
     </script>
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="@scriptNonce">
         @views.html.editReleasePackagesJs(manifest)
     </script>
 }

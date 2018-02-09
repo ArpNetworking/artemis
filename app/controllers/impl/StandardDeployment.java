@@ -22,6 +22,7 @@ import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
+import utils.PageUtils;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -53,7 +54,9 @@ public class StandardDeployment extends Controller implements Deployment {
             return CompletableFuture.completedFuture(notFound());
         }
 
-        return CompletableFuture.completedFuture(ok(views.html.deployLog.render(deployment)));
+        final String nonce = PageUtils.createNonce();
+        response().setHeader("Content-Security-Policy", String.format("script-src 'nonce-%s'", nonce));
+        return CompletableFuture.completedFuture(ok(views.html.deployLog.render(deployment, nonce)));
     }
 
     @Override

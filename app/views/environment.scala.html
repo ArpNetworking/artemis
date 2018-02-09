@@ -13,7 +13,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *@
-@(environment: models.Environment, newStageForm: Form[forms.NewStage], configForm: Form[forms.ConfigForm], isPost: Boolean)
+@(environment: models.Environment, newStageForm: Form[forms.NewStage], configForm: Form[forms.ConfigForm], isPost: Boolean, scriptNonce: String)
 @main(environment.getName, true) {
     <div class="row">
         <div class="col-md-8">
@@ -31,6 +31,7 @@
 
             @helper.form(action = routes.Environment.save(environment.getName()),
                 args = 'class -> "hocon-config-form", 'id -> "env-config-form", Symbol("data-is-post") -> isPost.toString()) {
+                @helper.CSRF.formField
                 @tsinputArea(configForm("config"), '_label -> "Config", 'id -> "config-text", '_class -> "config")
                 <div id="preview-config" class="json-viewer">
                     Loading...
@@ -93,13 +94,14 @@
     <h5>Add new stage</h5>
     <div class="col-md-3">
         @helper.form(action = routes.Stage.create(environment.getName()), args = 'class -> "new-stage-form") {
+          @helper.CSRF.formField
           @tsinputText(newStageForm("name"), '_label -> "Name")
           <input type="submit" name="submit" class="btn btn-primary" value="Add">
         }
     </div>
 }
 <script src="@routes.Assets.at("javascripts/environment.js")" type="text/javascript"></script>
-<script type="text/javascript">
+<script type="text/javascript" nonce="@scriptNonce">
     $(Environment.init());
 </script>
 

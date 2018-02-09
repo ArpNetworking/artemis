@@ -77,6 +77,7 @@
                 <p class="italics">None</p>
             }
             @helper.form(routes.Stage.confirmDeploy(stage.getEnvironment.getName, stage.getName, manifestHistory.getId, manifest.getId)) {
+                @helper.CSRF.formField
                 @if(packageConflicts.hasConflicts()) {
                     <button class="btn" disabled="disabled">Confirm</button>
                 } else {

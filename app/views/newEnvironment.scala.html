@@ -20,6 +20,7 @@
     <h3>Create a new environment</h3>
     <div class="col-md-4">
         @helper.form(action = routes.Environment.create()) {
+            @helper.CSRF.formField
             @tsinputText(form("name"), '_label -> "Name")
             @helper.input(form("owner"), '_label -> "Owner") { (id, name, value, filteredArgs) =>
                 <select class="form-control" name="@name" id="@id">

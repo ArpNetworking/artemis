@@ -41,6 +41,7 @@ import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
+import utils.PageUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -80,7 +81,9 @@ public class StandardEnvironment extends Controller implements Environment {
         } else {
             final Form<NewStage> newStageForm = NewStage.form(_formFactory);
             final Form<ConfigForm> configForm = ConfigForm.form(environment, _formFactory);
-            return CompletableFuture.completedFuture(ok(views.html.environment.render(environment, newStageForm, configForm, false)));
+            final String nonce = PageUtils.createNonce();
+            response().setHeader("Content-Security-Policy", String.format("script-src 'nonce-%s'", nonce));
+            return CompletableFuture.completedFuture(ok(views.html.environment.render(environment, newStageForm, configForm, false, nonce)));
         }
     }
 
@@ -113,8 +116,10 @@ public class StandardEnvironment extends Controller implements Environment {
             }
 
             final String nextVersion = incrementVersion(currentVersion);
+            final String nonce = PageUtils.createNonce();
+            response().setHeader("Content-Security-Policy", String.format("script-src 'nonce-%s'", nonce));
 
-            return CompletableFuture.completedFuture(ok(views.html.createReleasePrep.render(environment, manifest, nextVersion)));
+            return CompletableFuture.completedFuture(ok(views.html.createReleasePrep.render(environment, manifest, nextVersion, nonce)));
         }
     }
 
@@ -258,22 +263,24 @@ public class StandardEnvironment extends Controller implements Environment {
         final Map<String, String> configData = configForm.rawData();
         final String config = configData.get("config");
         final Long version = Long.parseLong(configData.get("version"));
+        final String nonce = PageUtils.createNonce();
+        response().setHeader("Content-Security-Policy", String.format("script-src 'nonce-%s'", nonce));
         if (version != environment.getVersion()) {
             configForm = configForm.withError("VersionConflict", "There was a version conflict. Please try saving again.");
         }
 
         if (configForm.hasErrors()) {
             return CompletableFuture.completedFuture(
-                    badRequest(views.html.environment.render(environment, newStageForm, configForm, true)));
+                    badRequest(views.html.environment.render(environment, newStageForm, configForm, true, nonce)));
         }
         environment.setConfig(config);
         try {
             environment.save();
             return CompletableFuture.completedFuture(
-                    ok(views.html.environment.render(environment, newStageForm, configForm, true)));
+                    ok(views.html.environment.render(environment, newStageForm, configForm, true, nonce)));
         } catch (final PersistenceException e) {
             return CompletableFuture.completedFuture(
-                    badRequest(views.html.environment.render(environment, newStageForm, configForm, true)));
+                    badRequest(views.html.environment.render(environment, newStageForm, configForm, true, nonce)));
         }
     }
 

@@ -13,7 +13,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *@
-@(environment: models.Environment, stage: models.Stage, newManifest: Manifest, manifestId: Long)
+@(environment: models.Environment, stage: models.Stage, newManifest: Manifest, manifestId: Long, scriptNonce: String)
 @main(environment.getName, true) {
 <h3>Deploy @environment.getName @stage.getName packages</h3>
 @helper.form(action = routes.Stage.previewDeploy(environment.getName, stage.getName)) {
@@ -24,6 +24,7 @@
 </ul>
 <br>
 <input type="hidden" name="version" value="@manifestId">
+@helper.CSRF.formField
 <input type="submit" name="submit" class="btn btn-primary" value="Deploy">
 }
 <script type="text/html" id="package-template">
@@ -31,7 +32,7 @@
     <input type="hidden" class="two" name="versions" readonly data-bind="value: version">
     <span class="two" name="packages" data-bind="text: packageName"></span> - <span class="two" name="versions" data-bind="text: version"></span>
 </script>
-<script type="text/javascript">
+<script type="text/javascript" nonce="@scriptNonce">
     @views.html.editStagePackagesJs(newManifest)
 </script>
 }

@@ -43,6 +43,7 @@
         <p class="unpadded italics">None</p>
     }
     @helper.form(action = routes.Hostclass.addHost(hostclass.getName)) {
+        @helper.CSRF.formField
         <input type="text" id="h_input" name="host">
         <input type="submit" name="submit" class="btn btn-primary btn-sm" value="Add">
     }

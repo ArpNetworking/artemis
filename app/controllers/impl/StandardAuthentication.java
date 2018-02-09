@@ -25,6 +25,7 @@ import controllers.Authentication;
 import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import play.libs.concurrent.HttpExecutionContext;
 import play.libs.ws.WSClient;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -39,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -58,9 +60,10 @@ public class StandardAuthentication extends Controller implements Authentication
      * @param config Play configuration
      */
     @Inject
-    public StandardAuthentication(final WSClient client, final Config config) {
+    public StandardAuthentication(final WSClient client, final Config config, final HttpExecutionContext ec) {
         _client = client;
         _config = config;
+        _ec = ec;
     }
 
     @Override
@@ -114,28 +117,28 @@ public class StandardAuthentication extends Controller implements Authentication
                 LOGGER.error("Unable to build URI for GHE authentication", e);
                 return CompletableFuture.completedFuture(internalServerError());
             }
+            final Executor httpContext = _ec.current();
             return _client
                     .url(tokenPostUri.toString())
                     .addHeader(Http.HeaderNames.ACCEPT, "application/json")
                     .post("")
-                    .thenCompose(wsResponse -> {
+                    .thenComposeAsync(wsResponse -> {
                         final String response = wsResponse.getBody();
                         LOGGER.info(response);
                         final JsonNode tokenJson = wsResponse.asJson();
                         final String accessToken = tokenJson.get("access_token").asText();
                         LOGGER.info(String.format("Got access token; token=%s", accessToken));
-                        return lookupUsername(baseURL, accessToken).thenCompose(userName -> {
-                                LOGGER.info(String.format("Found user name; name=%s", userName));
-                                return lookupUserOrgs(baseURL, accessToken).thenApply(orgs -> {
+                        return lookupUsername(baseURL, accessToken)
+                                .thenComposeAsync(userName -> {
+                                    LOGGER.info(String.format("Found user name; name=%s", userName));
+                                    return lookupUserOrgs(baseURL, accessToken).thenApplyAsync(orgs -> {
                                         LOGGER.info(String.format("Found orgs for user; user=%s, orgs=%s", userName, orgs));
                                         AuthN.initializeAuthenticatedSession(ctx(), userName, orgs);
                                         AuthN.storeToken(userName, accessToken);
                                         return redirect(redirect);
-                                    }
-                                );
-                            }
-                        );
-                    });
+                                    }, httpContext);
+                            }, httpContext);
+                    }, httpContext);
         } else {
             LOGGER.info("URL_CACHE: " + URL_CACHE);
             for (final Map.Entry<String, String> entry : URL_CACHE.asMap().entrySet()) {
@@ -205,6 +208,7 @@ public class StandardAuthentication extends Controller implements Authentication
 
     private final WSClient _client;
     private final Config _config;
+    private HttpExecutionContext _ec;
 
     private static final Cache<String, String> URL_CACHE = CacheBuilder.newBuilder().expireAfterWrite(90, TimeUnit.SECONDS).build();
     private static final Logger LOGGER = LoggerFactory.getLogger(StandardAuthentication.class);

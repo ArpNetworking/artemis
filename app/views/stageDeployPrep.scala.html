@@ -14,7 +14,7 @@
 * limitations under the License.
 *@
 @(environment: models.Environment, stage: models.Stage, manifestHistory: ManifestHistory, form: Form[forms.DeployManifest], manifests:
-List[Manifest])
+List[Manifest], scriptNonce: String)
 @import views.html.helper.FieldConstructor
 @implicitField = @{ FieldConstructor(toolstrapFieldConstructor.f) }
 @main(environment.getName, true) {
@@ -24,6 +24,7 @@ List[Manifest])
 
     <h3>Deploy @environment.getName @stage.getName packages</h3>
     @helper.form(action = routes.Stage.previewDeploy(environment.getName, stage.getName)) {
+        @helper.CSRF.formField
         <input type="hidden" name="version" value="@form.get.getVersion">
             <div class="row">
                 <div class="col-md-4">
@@ -46,7 +47,7 @@ List[Manifest])
             </div>
         </div>
     }
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="@scriptNonce">
         @views.html.editStagePackagesJs(manifestHistory.getManifest)
     </script>
 }
