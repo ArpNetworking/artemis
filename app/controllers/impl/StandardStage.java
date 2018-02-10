@@ -343,6 +343,7 @@ public class StandardStage extends Controller implements Stage {
 
                 final Manifest manifest = new Manifest();
                 manifest.setCreatedBy(request().attrs().get(Security.USERNAME));
+                manifest.setEnvironment(environment);
                 manifest.save();
 
                 models.Stage.applyManifestToStage(newStage, manifest);
@@ -419,14 +420,15 @@ public class StandardStage extends Controller implements Stage {
             }
             final ManifestHistory currentOnDest = ManifestHistory.getCurrentForStage(destStage);
             transaction.commit();
+
+
+
+            final ConflictedPackages packageConflicts = StageUtil.getConflictedPackages(destStage, manifestToCopy);
+
+            final RollerDeploymentPrep deploymentPrep = new RollerDeploymentPrep();
+            final DeploymentDescription description = deploymentPrep.getDeploymentDescription(destStage, manifestToCopy);
             return CompletableFuture.completedFuture(
-                    ok(
-                            views.html.copyStageDeployPrep.render(
-                                    destStage.getEnvironment(),
-                                    destStage,
-                                    manifestToCopy,
-                                    currentOnDest.getId(),
-                                    nonce)));
+                    ok(views.html.stageDeployConfirm.render(destStage, currentOnDest, manifestToCopy, description, packageConflicts)));
         }
     }
 
