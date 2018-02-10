@@ -30,6 +30,7 @@ import models.Hostclass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.concurrent.duration.FiniteDuration;
+import utils.HostClassifier;
 
 import java.util.Collections;
 import java.util.List;
@@ -46,8 +47,6 @@ import javax.persistence.PersistenceException;
  */
 @Singleton
 public class HostclassRefresher extends AbstractActor {
-    private static final Logger LOGGER = LoggerFactory.getLogger(HostclassRefresher.class);
-    private final HostProvider _hostProvider;
 
     /**
      * Creates a {@link Props} to create this actor.
@@ -56,8 +55,8 @@ public class HostclassRefresher extends AbstractActor {
      * @param hostProvider Provider to lookup hosts
      * @return a new {@link Props}
      */
-    public static Props props(final Config config, final HostProvider hostProvider) {
-        return Props.create(() -> new HostclassRefresher(config, hostProvider));
+    public static Props props(final Config config, final HostProvider hostProvider, final HostClassifier hostClassifier) {
+        return Props.create(() -> new HostclassRefresher(config, hostProvider, hostClassifier));
     }
 
     /**
@@ -67,7 +66,7 @@ public class HostclassRefresher extends AbstractActor {
      * @param hostProvider The host provider to get host data from
      */
     @Inject
-    public HostclassRefresher(final Config config, final HostProvider hostProvider) {
+    public HostclassRefresher(final Config config, final HostProvider hostProvider, final HostClassifier hostClassifier) {
         context().system().scheduler().schedule(
                 FiniteDuration.apply(3, TimeUnit.SECONDS),
                 FiniteDuration.apply(12, TimeUnit.HOURS),
@@ -76,6 +75,7 @@ public class HostclassRefresher extends AbstractActor {
                 context().dispatcher(),
                 self());
         _hostProvider = hostProvider;
+        _hostClassifier = hostClassifier;
     }
 
     @Override
@@ -90,7 +90,7 @@ public class HostclassRefresher extends AbstractActor {
                 .match(HostclassListMessage.class, listMessage -> {
                     final Set<String> hosts = listMessage.getHosts();
                     for (final String name : hosts) {
-                        final String hostclassName = hostclassFromHost(name);
+                        final String hostclassName = _hostClassifier.hostclassFor(name);
                         Hostclass hostclass = Hostclass.getByName(hostclassName);
                         if (hostclass == null) {
                             try {
@@ -120,30 +120,10 @@ public class HostclassRefresher extends AbstractActor {
         return Collections.emptySet();
     }
 
-    private String hostclassFromHost(final String name) {
-        // First strip off the colo suffix
-        final int index = name.indexOf('.');
-        if (index == -1) {
-            return name;
-        }
+    private final HostClassifier _hostClassifier;
+    private final HostProvider _hostProvider;
 
-        final String colo = name.substring(index + 1);
-        final String noColo = name.substring(0, index);
-        final List<String> split = Lists.newArrayList(
-                Splitter.on(new HostclassSplitterMatcher())
-                        .omitEmptyStrings()
-                        .trimResults()
-                        .split(noColo));
-        split.add(colo);
-        return Joiner.on("_").skipNulls().join(split);
-    }
-
-    private static class HostclassSplitterMatcher extends CharMatcher {
-        @Override
-        public boolean matches(final char c) {
-            return Character.isDigit(c) || c == '-' || c == '_' || c == '.';
-        }
-    }
+    private static final Logger LOGGER = LoggerFactory.getLogger(HostclassRefresher.class);
 
     private static class RefreshHostclassesMessage {}
     private static class HostclassListMessage {

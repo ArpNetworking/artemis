@@ -48,6 +48,7 @@ import com.groupon.deployment.host.HostDeploymentFactory;
 import com.groupon.guice.akka.RootActorProvider;
 import com.typesafe.config.Config;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import utils.HostClassifier;
 import utils.JsonConfigBridge;
 
 import java.io.IOException;
@@ -92,6 +93,13 @@ public class ProdModule extends AbstractModule {
     HostProvider provideHostProvider(final Config configuration, final ObjectMapper objectMapper) throws IOException {
         final Config providerConfig = configuration.getConfig("hostProvider");
         return JsonConfigBridge.load(providerConfig, HostProvider.class, objectMapper);
+    }
+
+    @Provides
+    @Singleton
+    HostClassifier provideHostClassifier(final Config configuration, final ObjectMapper objectMapper) throws IOException {
+        final Config providerConfig = configuration.getConfig("hostClassifier");
+        return JsonConfigBridge.load(providerConfig, HostClassifier.class, objectMapper);
     }
 
     @Provides
