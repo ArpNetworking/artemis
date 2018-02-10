@@ -85,9 +85,9 @@
             args = 'class -> "hocon-config-form", 'id -> "env-config-form", Symbol("data-is-post") -> isPost.toString()) {
                 @helper.CSRF.formField
                 @tsinputArea(configForm("config"), '_label -> "Config", '_class -> "config", 'id -> "config-text")
-                <div id="preview-config" class="json-viewer">
+                <pre id="preview-config" class="json-viewer">
                     Loading...
-                </div>
+                </pre>
                 <input type="hidden" name="id" value="@stage.getId()">
                 <input type="hidden" name="version" value="@stage.getVersion()">
                 <input type="hidden" name="type" value="stage">

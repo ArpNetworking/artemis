@@ -37,9 +37,9 @@
         }
       }
 
-      var previewConfigSuccessHandler = function(json) {
+      var previewConfigSuccessHandler = function(rendered) {
         var configHolder = $("#preview-config");
-        configHolder.css({display: 'block'}).html(JSON.stringify(json));
+        configHolder.css({display: 'block'}).html(rendered);
         return false;
       };
 

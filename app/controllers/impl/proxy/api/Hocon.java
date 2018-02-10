@@ -24,6 +24,7 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigParseOptions;
+import com.typesafe.config.ConfigRenderOptions;
 import com.typesafe.config.ConfigValue;
 import play.libs.Json;
 import play.mvc.Controller;
@@ -80,39 +81,19 @@ public class Hocon extends Controller {
     }
 
     /**
-     * Most specific config at the front.
-     */
-    private Config combineHocons(final List<String> configs) {
-        Config finalHocon = ConfigFactory.empty();
-        final ConfigParseOptions parseOptions = ConfigParseOptions.defaults().setIncluder(new NoIncluder()).setAllowMissing(false);
-        for (final String config: Lists.reverse(configs)) {
-            finalHocon = ConfigFactory.parseString(config, parseOptions).withFallback(finalHocon);
-        }
-        return finalHocon;
-    }
-
-    private ObjectNode hoconToJson(final Config  hocon) {
-        final ObjectNode resultJson =  JsonNodeFactory.instance.objectNode();
-        for (final Map.Entry<String, ConfigValue> entry : hocon.entrySet()) {
-            resultJson.put(entry.getKey(), entry.getValue().unwrapped().toString());
-        }
-        return  resultJson;
-    }
-
-    /**
      * List of config for an environment with its parents.
      */
-    private List<String> hoconConfigsForEnv(final models.Environment environment) {
-        final List<String> finalConfigs = new ArrayList<>();
+    private Config hoconConfigsForEnv(final models.Environment environment, final Config config) {
+        Config returnConfig = config;
         models.Environment currentEnv = environment;
         while (currentEnv != null) {
-            final String config = currentEnv.getConfig();
-            if (!Strings.isNullOrEmpty(config)) {
-                finalConfigs.add(config);
+            final String configString = currentEnv.getConfig();
+            if (!Strings.isNullOrEmpty(configString)) {
+                returnConfig = addBackupHoconString(configString, String.format("Environment %s", currentEnv.getName()), returnConfig);
             }
             currentEnv = currentEnv.getParent();
         }
-        return finalConfigs;
+        return returnConfig;
     }
 
     /**
@@ -135,24 +116,38 @@ public class Hocon extends Controller {
         final String hoconText = postJson.get("hocon").asText();
         final String type = postJson.get("type").asText();
         final Long id = postJson.get("id").asLong();
-        List<String> hoconsToCombine = new ArrayList<>();
-        if (type.equals("environment")) {
-            final models.Environment startEnv = models.Environment.getById(id);
-            if (startEnv == null) {
-                return CompletableFuture.completedFuture(badRequest());
-            }
-            hoconsToCombine = hoconConfigsForEnv(startEnv.getParent());
-        } else if (type.equals("stage")) {
-            final models.Stage stage = models.Stage.getById(id);
-            if (stage == null) {
-                return CompletableFuture.completedFuture(badRequest());
-            }
-            hoconsToCombine = hoconConfigsForEnv(stage.getEnvironment());
+
+
+        Config finalHocon = ConfigFactory.empty();
+
+        final models.Environment startEnv;
+        switch (type) {
+            case "environment":
+                startEnv = models.Environment.getById(id);
+                if (startEnv == null) {
+                    return CompletableFuture.completedFuture(badRequest());
+                }
+                break;
+            case "stage":
+                final models.Stage stage = models.Stage.getById(id);
+                if (stage == null) {
+                    return CompletableFuture.completedFuture(badRequest());
+                }
+                startEnv = stage.getEnvironment();
+                finalHocon = addBackupHoconString(hoconText, String.format("Environment %s, Stage %s", startEnv.getName(), stage.getName()), finalHocon);
+                break;
+            default:
+                throw new RuntimeException("unknown hocon level type");
         }
-        hoconsToCombine.add(0, hoconText);
-        final Config finalHocon = combineHocons(hoconsToCombine);
-        final ObjectNode resultJson = hoconToJson(finalHocon);
-        return CompletableFuture.completedFuture(ok(resultJson));
+        finalHocon = hoconConfigsForEnv(startEnv, finalHocon);
+
+        final String rendered = finalHocon.root().render(ConfigRenderOptions.defaults().setFormatted(true).setJson(false).setComments(true));
+        return CompletableFuture.completedFuture(ok(rendered));
     }
 
+    private Config addBackupHoconString(final String hoconText, final String location, final Config original) {
+        final ConfigParseOptions parseOptions = ConfigParseOptions.defaults().setIncluder(new NoIncluder()).setAllowMissing(false);
+        final Config parsed = ConfigFactory.parseString(hoconText, parseOptions.setOriginDescription(location));
+        return original.withFallback(parsed);
+    }
 }
