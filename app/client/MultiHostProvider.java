@@ -16,6 +16,8 @@
 package client;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import net.sf.oval.constraint.NotEmpty;
@@ -25,6 +27,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
@@ -39,16 +42,23 @@ public final class MultiHostProvider implements HostProvider {
         final AtomicInteger outstanding = new AtomicInteger(_providers.size());
         final Set<String> hosts = Sets.newConcurrentHashSet();
 
-        final Consumer<Set<String>> action = results -> {
-            final int remaining = outstanding.decrementAndGet();
-            hosts.addAll(results);
-            if (remaining == 0) {
-                future.complete(hosts);
+        final BiConsumer<Set<String>, Throwable> action = (results, ex) -> {
+            if (ex == null) {
+                final int remaining = outstanding.decrementAndGet();
+                hosts.addAll(results);
+                if (remaining == 0) {
+                    future.complete(hosts);
+                }
+            } else {
+                LOGGER.warn()
+                        .setMessage("Error getting hosts from host provider")
+                        .setThrowable(ex)
+                        .log();
             }
         };
 
         for (final HostProvider provider : _providers) {
-            provider.getHosts().thenAccept(action);
+            provider.getHosts().whenComplete(action);
         }
 
         return future;
@@ -59,6 +69,8 @@ public final class MultiHostProvider implements HostProvider {
     }
 
     private ImmutableList<HostProvider> _providers;
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(MultiHostProvider.class);
 
     /**
      * Implementation of the builder pattern for {@link MultiHostProvider}.

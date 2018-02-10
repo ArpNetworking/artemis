@@ -18,9 +18,36 @@
 
   <conversionRule conversionWord="coloredLevel" converterClass="play.api.Logger$ColoredLevel"/>
 
+  <!-- IMPORTANT: This logger should only used when debugging and testing -->
+  <appender name="ArtemisLogger" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>logs/artemis.log</file>
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <timeBasedFileNamingAndTriggeringPolicy class="com.arpnetworking.logback.SizeAndRandomizedTimeBasedFNATP">
+        <maxOffsetInMillis>900000</maxOffsetInMillis>
+        <maxFileSize>2gb</maxFileSize>
+      </timeBasedFileNamingAndTriggeringPolicy>
+      <fileNamePattern>logs/metrics-portal.%d{yyyy-MM-dd_HH}.%i.log.gz</fileNamePattern>
+      <maxHistory>5</maxHistory>
+      <cleanHistoryOnStart>true</cleanHistoryOnStart>
+    </rollingPolicy>
+    <encoder class="com.arpnetworking.logback.KeyValueEncoder">
+      <layout class="ch.qos.logback.classic.PatternLayout">
+        <pattern>%date %t [%level] %logger : %message %ex%n</pattern>
+      </layout>
+    </encoder>
+  </appender>
+
+  <appender name="ArtemisAsync" class="ch.qos.logback.classic.AsyncAppender">
+    <appender-ref ref="MetricsPortalLogger"/>
+    <discardingThreshold>0</discardingThreshold>
+    <queueSize>500</queueSize>
+  </appender>
+
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-    <encoder>
-      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+    <encoder class="com.arpnetworking.logback.KeyValueEncoder">
+      <layout class="ch.qos.logback.classic.PatternLayout">
+        <pattern>%date %t [%level] %logger : %message %ex%n</pattern>
+      </layout>
     </encoder>
   </appender>
 
@@ -32,6 +59,7 @@
   <logger name="org.reflections.Reflections" level="ERROR"/>
   <!--<logger name="org.avaje.ebean.SQL" level="TRACE"/>-->
   <root level="DEBUG">
+    <appender-ref ref="STDOUT"/>
     <appender-ref ref="STDOUT"/>
   </root>
 

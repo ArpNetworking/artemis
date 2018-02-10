@@ -116,7 +116,7 @@ public class HostclassRefresher extends AbstractActor {
     }
 
     private Set<String> recoverHostclassListLookupFailure(final Throwable throwable) {
-        LOGGER.warn("Error while trying to lookup hostclass list, skipping this run");
+        LOGGER.warn("Error while trying to lookup hostclass list, skipping this run", throwable);
         return Collections.emptySet();
     }
 
