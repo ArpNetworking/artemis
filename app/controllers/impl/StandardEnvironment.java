@@ -19,6 +19,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.typesafe.config.Config;
 import controllers.Environment;
 import controllers.routes;
 import forms.ConfigForm;
@@ -69,8 +70,9 @@ public class StandardEnvironment extends Controller implements Environment {
      * @param formFactory form factory to create forms
      */
     @Inject
-    public StandardEnvironment(final FormFactory formFactory) {
+    public StandardEnvironment(final FormFactory formFactory, final Config config) {
         _formFactory = formFactory;
+        _config = config;
     }
 
     @Override
@@ -232,9 +234,8 @@ public class StandardEnvironment extends Controller implements Environment {
                 manifest.setVersion("0");
                 manifest.save();
 
-                createStage(environment, manifest, "Production");
-                createStage(environment, manifest, "Staging");
-                createStage(environment, manifest, "UAT");
+                List<String> stages = _config.getStringList("defaultStages");
+                stages.forEach(stage -> createStage(environment, manifest, stage));
 
                 transaction.commit();
                 return CompletableFuture.completedFuture(redirect(controllers.routes.Environment.detail(environment.getName())));
@@ -330,4 +331,5 @@ public class StandardEnvironment extends Controller implements Environment {
     }
 
     private final FormFactory _formFactory;
+    private final Config _config;
 }

@@ -18,6 +18,7 @@ package controllers.impl.proxy.api;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException;
@@ -106,7 +107,9 @@ public class Hocon extends Controller {
         models.Environment currentEnv = environment;
         while (currentEnv != null) {
             final String config = currentEnv.getConfig();
-            finalConfigs.add(config);
+            if (!Strings.isNullOrEmpty(config)) {
+                finalConfigs.add(config);
+            }
             currentEnv = currentEnv.getParent();
         }
         return finalConfigs;

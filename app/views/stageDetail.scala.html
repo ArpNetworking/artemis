@@ -133,6 +133,7 @@
                     <p class="italics">None</p>
                 }
                 @helper.form(action = routes.Stage.addHostclass(stage.getEnvironment.getName, stage.getName)) {
+                    @helper.CSRF.formField
                     <input type="text" id="hc_input" name="hostclass">
                     <input type="submit" name="submit" class="btn btn-primary btn-sm" value="Add">
                 }

@@ -57,6 +57,9 @@
         var config = $(data.configSelector).val();
         $.ajax("/hocon/viewCombinedHocon", {
          data : JSON.stringify({ hocon: config , type: type, id:id, version: version}),
+         beforeSend: function(request) {
+             request.setRequestHeader("Csrf-Token", $('input[name="csrfToken"]')[0].value);
+         },
          contentType : 'application/json',
          type : 'POST',
          success: previewConfigSuccessHandler,

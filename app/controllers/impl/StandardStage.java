@@ -325,7 +325,6 @@ public class StandardStage extends Controller implements Stage {
     @Override
     public CompletionStage<Result> create(final String envName) {
         final Form<NewStage> bound = NewStage.form(_formFactory).bindFromRequest();
-            final Form<ConfigForm> configFormBound = ConfigForm.form(_formFactory).bindFromRequest();
         final models.Environment environment = models.Environment.getByName(envName);
         if (environment == null) {
             return CompletableFuture.completedFuture(notFound());
@@ -333,7 +332,7 @@ public class StandardStage extends Controller implements Stage {
         if (bound.hasErrors()) {
             final String nonce = PageUtils.createNonce();
             response().setHeader("Content-Security-Policy", String.format("script-src 'nonce-%s'", nonce));
-            return CompletableFuture.completedFuture(badRequest(views.html.environment.render(environment, bound, configFormBound, false, nonce)));
+            return CompletableFuture.completedFuture(badRequest(views.html.environment.render(environment, bound, _formFactory.form(ConfigForm.class), false, nonce)));
         } else {
             try (Transaction transaction = Ebean.beginTransaction()) {
                 final NewStage newStageForm = bound.get();
