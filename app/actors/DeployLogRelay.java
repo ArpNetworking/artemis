@@ -19,6 +19,7 @@ import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
+import akka.actor.Status;
 import akka.actor.Terminated;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
@@ -98,6 +99,9 @@ public class DeployLogRelay extends AbstractActor {
                                 context().dispatcher(),
                                 self());
                     }
+                })
+                .matchEquals("close", msg -> {
+                    _subscriber.tell(PoisonPill.getInstance(), self());
                 })
                 .match(Terminated.class, terminated -> {
                     if (terminated.actor().equals(_subscriber)) {

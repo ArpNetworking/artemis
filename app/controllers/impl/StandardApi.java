@@ -216,11 +216,13 @@ public class StandardApi extends Controller implements Api {
         }
 
         final Source<ByteString, ?> source = Source.<String>actorRef(1024, OverflowStrategy.dropTail())
-                .map(ByteString::fromString)
+                .map(string -> {
+                    return ByteString.fromString(string);
+                })
                 .mapMaterializedValue(outRef -> {
                     final ActorRef relayActor = _actorSystem.actorOf(DeployLogRelay.props(outRef, deploymentId));
                     relayActor.tell(outRef, ActorRef.noSender());
-                    return null;
+                    return outRef;
                 });
         return CompletableFuture.completedFuture(Results.ok().chunked(source).as("text/event-stream"));
     }
