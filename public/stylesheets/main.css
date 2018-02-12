@@ -85,6 +85,13 @@ textarea.config {
     white-space: nowrap;
 }
 
+.log pre {
+    margin: 0;
+    border: 0;
+    border-radius: unset;
+    padding: 0 0 0 1em;
+}
+
 
 .tt-suggestion p {
     margin: 0;
