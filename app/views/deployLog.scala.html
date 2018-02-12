@@ -17,7 +17,9 @@
 
 @main("Deploy log", true) {
     <h2>Log</h2>
-    <div id="entries" class="col-md-12 log"></div>
+    <div class="col-md-12 log">
+        <pre id="entries"></pre>
+    </div>
 
     <script type="text/javascript" nonce="@scriptNonce">
         var deploymentId = @deployment.getId;

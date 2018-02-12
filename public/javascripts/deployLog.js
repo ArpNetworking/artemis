@@ -19,8 +19,7 @@ source.addEventListener("log", function(e) {
     var messages = JSON.parse(e.data).messages;
     console.log("messages", messages, e);
     messages.forEach(function(msg) {
-        $("#entries").append('<pre>' + msg.timestamp + " [" + msg.host + "] - " + msg.line + "</pre>");
-
+        $("#entries").append(msg.timestamp + " [" + msg.host + "] - " + msg.line + "\n");
     });
 });
 
