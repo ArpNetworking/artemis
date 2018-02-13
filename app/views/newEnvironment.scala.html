@@ -14,7 +14,8 @@
 * limitations under the License.
 *@
 @import views.html.helper.FieldConstructor
-@(form: Form[forms.NewEnvironment], orgs: List[Owner], envTypes: List[EnvironmentType])
+@import java.util
+@(form: Form[forms.NewEnvironment], orgs: List[Owner], envTypes: Collection[EnvironmentType])
 @implicitField = @{ FieldConstructor(toolstrapFieldConstructor.f) }
 @main("New Environment", true) {
     <h3>Create a new environment</h3>
@@ -31,14 +32,18 @@
                     }
                 </select>
             }
-            @helper.input(form("envType"), '_label -> "Environment Type") { (id, name, value, filteredArgs) =>
-                <select class="form-control" name="@name" id="@id">
+            @if(envTypes.size() > 1) {
+                @helper.input(form("envType"), '_label -> "Environment Type") { (id, name, value, filteredArgs) =>
+                    <select class="form-control" name="@name" id="@id">
                     @for(envType <- envTypes) {
-                        @defining(if (envType.name().equals(value.orNull)) "selected" else "") { selected =>
-                            <option @selected value="@envType.name()">@envType.name()</option>
+                        @defining(if(envType.name().equals(value.orNull)) "selected" else "") { selected =>
+                            <option @selected value="@envType.name()">@envType.getDisplayName()</option>
                         }
                     }
-                </select>
+                    </select>
+                }
+            } else {
+                <input type="hidden" value="@envTypes.head.name" name="envType">
             }
             @if(form("parent").getValue.isPresent) {
                 <input type="hidden" name="parent" value="@form("parent").getValue.get">

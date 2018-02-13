@@ -46,12 +46,14 @@ import utils.PageUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.persistence.PersistenceException;
@@ -99,7 +101,10 @@ public class StandardEnvironment extends Controller implements Environment {
             form = form.fill(env);
         }
         final List<Owner> owners = UserMembership.getOrgsForUser(request().attrs().get(Security.USERNAME));
-        final List<EnvironmentType> envTypes = Arrays.asList(EnvironmentType.values());
+        final Set<String> enabledEnvironmentTypes = new HashSet<>(_config.getStringList("enabledEnvironmentTypes"));
+        final List<EnvironmentType> envTypes = Arrays.stream(EnvironmentType.values())
+                .filter(environmentType -> enabledEnvironmentTypes.contains(environmentType.name().toLowerCase()))
+                .collect(Collectors.toList());
         return CompletableFuture.completedFuture(ok(views.html.newEnvironment.render(form, owners, envTypes)));
     }
 

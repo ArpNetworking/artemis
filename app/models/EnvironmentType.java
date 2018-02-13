@@ -27,15 +27,25 @@ public enum EnvironmentType {
      * Roller environment.
      */
     @EnumValue("ROLLER")
-    ROLLER,
+    ROLLER("Roller"),
     /**
      * Docker environment.
      */
     @EnumValue("DOCKER")
-    DOCKER,
+    DOCKER("Docker"),
     /**
      * RPM environment.
      */
     @EnumValue("RPM")
-    RPM
+    RPM("RPM");
+
+    EnvironmentType(final String displayName) {
+        _displayName = displayName;
+    }
+
+    public String getDisplayName() {
+        return _displayName;
+    }
+
+    private final String _displayName;
 }
