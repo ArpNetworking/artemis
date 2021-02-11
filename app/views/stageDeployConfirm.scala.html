@@ -13,7 +13,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *@
-@(stage: models.Stage, manifestHistory: models.ManifestHistory, manifest: models.Manifest, description: models.DeploymentDescription, packageConflicts: models.ConflictedPackages)
+@(stage: models.Stage, manifestHistory: models.ManifestHistory, manifest: models.Manifest, description: models.DeploymentDescription, packageConflicts: models.ConflictedPackages)(implicit request: Http.Request)
 @main("Confirm", true) {
     <div class="row">
         <div class="col-md-12">

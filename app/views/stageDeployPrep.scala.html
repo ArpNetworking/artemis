@@ -13,8 +13,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *@
-@(environment: models.Environment, stage: models.Stage, manifestHistory: ManifestHistory, form: Form[forms.DeployManifest], manifests:
-List[Manifest], scriptNonce: String)
+@(environment: models.Environment, stage: models.Stage, manifestHistory: ManifestHistory, form: Form[forms.DeployManifest], manifests: List[Manifest], scriptNonce: String)(implicit request: Http.Request, messages: play.i18n.Messages)
 @import views.html.helper.FieldConstructor
 @implicitField = @{ FieldConstructor(toolstrapFieldConstructor.f) }
 @main(environment.getName, true) {

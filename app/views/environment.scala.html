@@ -13,7 +13,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *@
-@(environment: models.Environment, newStageForm: Form[forms.NewStage], configForm: Form[forms.ConfigForm], isPost: Boolean, scriptNonce: String)
+@(environment: models.Environment, newStageForm: Form[forms.NewStage], configForm: Form[forms.ConfigForm], isPost: Boolean, scriptNonce: String)(implicit request: Http.Request, messages: play.i18n.Messages)
 @main(environment.getName, true) {
     <div class="row">
         <div class="col-md-8">
@@ -51,7 +51,7 @@
                             <a class="icon-close"></a>
                             <p>Save Failed!</p>
                             <ul>
-                                @for(entry  <- configForm.allErrors) {
+                                @for(entry  <- configForm.errors) {
                                     @for(message <- entry.messages) {
                                         <li>@message</li>
                                     }
