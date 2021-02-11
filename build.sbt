@@ -24,7 +24,7 @@ val jacksonVersion = "2.9.2"
 
 lazy val root = (project in file(".")).settings(SbtCheckstyle.checkstyleSettings).enablePlugins(PlayJava, PlayEbean, SbtCheckstyle, SbtPgp, SbtNativePackager, JavaServerAppPackaging, SystemVPlugin)
 
-scalaVersion := "2.11.11"
+scalaVersion := "2.12.10"
 
 libraryDependencies ++= Seq(
   javaJdbc,
@@ -237,7 +237,6 @@ devSettings := Seq(("config.resource", "artemis-dev.conf"))
 javaOptions in Test += "-Dconfig.file=conf/application-base.conf"
 routesGenerator := InjectedRoutesGenerator
 
-scalaVersion := "2.11.6"
 resolvers += Resolver.mavenLocal
 
 // Export assets artifact
