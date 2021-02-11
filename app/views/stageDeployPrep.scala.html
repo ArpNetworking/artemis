@@ -13,7 +13,8 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *@
-@(environment: models.Environment, stage: models.Stage, manifestHistory: ManifestHistory, form: Form[forms.DeployManifest], manifests: List[Manifest], scriptNonce: String)(implicit request: Http.Request, messages: play.i18n.Messages)
+@import org.webjars.play.WebJarsUtil
+@(environment: models.Environment, stage: models.Stage, manifestHistory: ManifestHistory, form: Form[forms.DeployManifest], manifests: List[Manifest], scriptNonce: String)(implicit request: Http.RequestHeader, messages: play.i18n.Messages, webJarsUtil: WebJarsUtil)
 @import views.html.helper.FieldConstructor
 @implicitField = @{ FieldConstructor(toolstrapFieldConstructor.f) }
 @main(environment.getName, true) {

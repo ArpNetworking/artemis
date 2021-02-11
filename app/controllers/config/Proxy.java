@@ -18,7 +18,6 @@ package controllers.config;
 import akka.stream.javadsl.StreamConverters;
 import client.ProxyClient;
 import com.google.common.collect.Sets;
-import com.google.inject.Singleton;
 import com.google.inject.assistedinject.AssistedInject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,6 +41,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import javax.inject.Singleton;
 
 /**
  * A generic proxy controller.

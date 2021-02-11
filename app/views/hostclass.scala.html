@@ -13,7 +13,8 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *@
-@(hostclass: models.Hostclass, hForm: Form[forms.AddHostToHostclass])(implicit request: Http.Request)
+@import org.webjars.play.WebJarsUtil
+@(hostclass: models.Hostclass, hForm: Form[forms.AddHostToHostclass])(implicit request: Http.Request, webJarsUtil: WebJarsUtil)
 @main(hostclass.getName, true) {
     <h3>Hostclass: @hostclass.getName</h3>
     @if(hostclass.getParent != null) {

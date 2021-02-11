@@ -15,6 +15,7 @@
  */
 package controllers;
 
+import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
@@ -101,7 +102,7 @@ public interface Stage {
      * @param envName the environment name
      * @return a {@link Result}
      */
-    CompletionStage<Result> create(String envName);
+    CompletionStage<Result> create(String envName, Http.Request request);
 
     /**
      * Update stage config.
@@ -110,7 +111,7 @@ public interface Stage {
      * @param stageName the stage name
      * @return a {@link Result}
      */
-    CompletionStage<Result> save(String envName, String stageName);
+    CompletionStage<Result> save(String envName, String stageName, Http.Request request);
 
     /**
      * Promote a stage to another.
@@ -119,7 +120,7 @@ public interface Stage {
      * @param sourceStageName the source stage name
      * @return a {@link Result}
      */
-    CompletionStage<Result> promote(String sourceEnvName, String sourceStageName);
+    CompletionStage<Result> promote(String sourceEnvName, String sourceStageName, Http.Request request);
 
     /**
      * Synchronize this stage from another.
@@ -128,5 +129,5 @@ public interface Stage {
      * @param sourceStageName the source stage name
      * @return a {@link Result}
      */
-    CompletionStage<Result> synchronize(String sourceEnvName, String sourceStageName);
+    CompletionStage<Result> synchronize(String sourceEnvName, String sourceStageName, Http.Request request);
 }

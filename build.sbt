@@ -20,23 +20,22 @@ import java.time.{ZoneId, ZonedDateTime}
 
 name := "artemis"
 
-val jacksonVersion = "2.9.2"
+val jacksonVersion = "2.10.5"
 
 lazy val root = (project in file(".")).settings(SbtCheckstyle.checkstyleSettings).enablePlugins(PlayJava, PlayEbean, SbtCheckstyle, SbtPgp, SbtNativePackager, JavaServerAppPackaging, SystemVPlugin)
 
-scalaVersion := "2.12.10"
+scalaVersion := "2.12.13"
 
 libraryDependencies ++= Seq(
   javaJdbc,
   javaWs,
   guice,
-  "cglib" % "cglib" % "3.2.4",
-  "com.arpnetworking.build" % "build-resources" % "1.2.0",
-  "com.arpnetworking.commons" % "commons" % "1.13.2",
-  "com.arpnetworking.logback" % "logback-steno" % "1.18.0",
-  "com.arpnetworking.metrics.extras" % "jvm-extra" % "0.9.0",
-  "com.arpnetworking.metrics" % "metrics-client" % "0.10.0",
-  "com.arpnetworking.metrics.extras" % "apache-http-sink-extra" % "0.9.1",
+  "cglib" % "cglib" % "3.3.0",
+  "com.arpnetworking.build" % "build-resources" % "2.1.1",
+  "com.arpnetworking.commons" % "commons" % "1.20.0",
+  "com.arpnetworking.logback" % "logback-steno" % "1.18.5",
+  "com.arpnetworking.metrics.extras" % "jvm-extra" % "0.11.2",
+  "com.arpnetworking.metrics" % "metrics-client" % "0.11.3",
   "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % jacksonVersion,
   "com.fasterxml.jackson.datatype" % "jackson-datatype-guava" % jacksonVersion,
   "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8" % jacksonVersion,
@@ -44,22 +43,23 @@ libraryDependencies ++= Seq(
   "com.fasterxml.jackson.module" % "jackson-module-guice" % jacksonVersion,
   "com.google.code.findbugs" % "jsr305" % "3.0.2",
   "com.google.code.findbugs" % "annotations" % "3.0.1",
-  "com.google.guava" % "guava" % "19.0",
+  "com.google.guava" % "guava" % "30.1-jre",
   "com.h2database" % "h2" % "1.4.192",
   "com.hierynomus" % "sshj" % "0.23.0",
   "net.sf.oval" % "oval" % "1.86",
-  "org.apache.httpcomponents" % "httpclient" % "4.5.5",
-  "org.flywaydb" %% "flyway-play" % "4.0.0",
-  "org.postgresql" % "postgresql" % "9.4-1202-jdbc42",
+  "org.flywaydb" %% "flyway-play" % "7.2.0",
+  "org.postgresql" % "postgresql" % "42.2.18",
 
   // Webjars
   "org.webjars" % "bootstrap" % "3.3.7",
   "org.webjars" % "jquery" % "3.1.1",
   "org.webjars" % "knockout" % "3.4.0",
+  "org.webjars" %% "webjars-play" % "2.8.0-1",
 
   // Test dependencies
   "com.github.tomakehurst" % "wiremock-standalone" % "2.14.0" % "test",
   "org.mockito" % "mockito-core" % "1.10.19" % "test"
+
 )
 
 // Extract build resources
@@ -237,7 +237,7 @@ devSettings := Seq(("config.resource", "artemis-dev.conf"))
 javaOptions in Test += "-Dconfig.file=conf/application-base.conf"
 routesGenerator := InjectedRoutesGenerator
 
-resolvers += Resolver.mavenLocal
+//resolvers += Resolver.mavenLocal,
 
 // Export assets artifact
 packagedArtifacts := {

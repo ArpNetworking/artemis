@@ -13,7 +13,9 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *@
-@(stage: models.Stage, diff: models.DeploymentDiff)
+@import play.api.mvc.RequestHeader
+@import org.webjars.play.WebJarsUtil
+@(stage: models.Stage, diff: models.DeploymentDiff)(implicit request: RequestHeader, webJarsUtil: WebJarsUtil)
 @main("Deployment diff", true) {
     <h4>Diff</h4>
     <h5>@stage.getEnvironment.getName @stage.getName</h5>

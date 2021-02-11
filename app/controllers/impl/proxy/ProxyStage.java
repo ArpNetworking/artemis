@@ -20,6 +20,7 @@ import com.google.inject.name.Named;
 import controllers.ArtemisProxy;
 import controllers.Stage;
 import play.libs.ws.WSClient;
+import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
@@ -87,17 +88,17 @@ public class ProxyStage extends ArtemisProxy implements Stage {
     }
 
     @Override
-    public CompletionStage<Result> promote(final String sourceEnvName, final String sourceStageName) {
+    public CompletionStage<Result> promote(final String sourceEnvName, final String sourceStageName, final Http.Request request) {
         return proxy();
     }
 
     @Override
-    public CompletionStage<Result> synchronize(final String sourceEnvName, final String sourceStageName) {
+    public CompletionStage<Result> synchronize(final String sourceEnvName, final String sourceStageName, final Http.Request request) {
         return proxy();
     }
 
     @Override
-    public CompletionStage<Result> save(final String envName, final String stageName) {
+    public CompletionStage<Result> save(final String envName, final String stageName, final Http.Request request) {
         return proxy();
     }
 }

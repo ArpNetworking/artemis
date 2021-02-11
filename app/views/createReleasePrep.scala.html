@@ -13,7 +13,8 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *@
-@(environment: models.Environment, manifest: Manifest, nextVersion: String, scriptNonce: String)(implicit request: Http.Request)
+@import org.webjars.play.WebJarsUtil
+@(environment: models.Environment, manifest: Manifest, nextVersion: String, scriptNonce: String)(implicit request: Http.Request, webJarsUtil: WebJarsUtil)
 @main(environment.getName, true) {
     <h3>Create release of @environment.getName</h3>
     @helper.form(action = routes.Environment.createRelease(environment.getName), 'class -> "form-horizontal") {

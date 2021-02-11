@@ -13,7 +13,9 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *@
-@(environment: models.Environment, newStageForm: Form[forms.NewStage], configForm: Form[forms.ConfigForm], isPost: Boolean, scriptNonce: String)(implicit request: Http.Request, messages: play.i18n.Messages)
+@import org.webjars.play.WebJarsUtil
+@import views.html.helper.CSPNonce
+@(environment: models.Environment, newStageForm: Form[forms.NewStage], configForm: Form[forms.ConfigForm], isPost: Boolean)(implicit request: Http.Request, messages: play.i18n.Messages, webJarsUtil: WebJarsUtil)
 @main(environment.getName, true) {
     <div class="row">
         <div class="col-md-8">
@@ -101,7 +103,7 @@
     </div>
 }
 <script src="@routes.Assets.at("javascripts/environment.js")" type="text/javascript"></script>
-<script type="text/javascript" nonce="@scriptNonce">
+<script type="text/javascript" @{CSPNonce.attr}>
     $(Environment.init());
 </script>
 

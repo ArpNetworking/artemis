@@ -15,8 +15,6 @@
  */
 package controllers.impl.proxy;
 
-import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 import controllers.Admin;
 import controllers.ArtemisProxy;
 import play.libs.ws.WSClient;
@@ -24,6 +22,8 @@ import play.mvc.Result;
 
 import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
 
 /**
  * Administrative functions.

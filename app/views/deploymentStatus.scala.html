@@ -13,7 +13,9 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *@
-@(deployment: models.Deployment, stage: models.Stage)
+@import play.mvc.Http.RequestHeader
+@import org.webjars.play.WebJarsUtil
+@(deployment: models.Deployment, stage: models.Stage)(implicit request: RequestHeader, webJarsUtil: WebJarsUtil)
 @main("Deployment", true) {
     <h2>Deploying <a href="@routes.Stage.detail(stage.getEnvironment.getName, stage.getName)">@stage.getEnvironment.getName @stage.getName</a></h2>
 

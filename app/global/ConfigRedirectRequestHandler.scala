@@ -15,14 +15,18 @@
  */
 package global
 
-import java.util.Locale
-import javax.inject.Inject
+import org.slf4j
+import org.slf4j.LoggerFactory
 
+import java.util.Locale
+import javax.inject.{Inject, Provider}
 import play.Logger
+import play.api.OptionalDevContext
 import play.api.http._
 import play.api.mvc.request.RequestTarget
 import play.api.mvc.{Handler, RequestHeader}
 import play.api.routing.Router
+import play.core.WebCommands
 import play.core.j.{JavaHandler, JavaHandlerComponents}
 
 /**
@@ -30,13 +34,19 @@ import play.core.j.{JavaHandler, JavaHandlerComponents}
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
-class ConfigRedirectRequestHandler @Inject() (defaultRouter: Router,
+class ConfigRedirectRequestHandler @Inject() (webCommands: WebCommands,
+                                              optDevContext: OptionalDevContext,
+                                              router: Provider[Router],
                                               errorHandler: HttpErrorHandler,
                                               configuration: HttpConfiguration,
                                               filters: HttpFilters,
                                               components: JavaHandlerComponents,
                                               configRouter: config.Routes)
-  extends JavaCompatibleHttpRequestHandler(defaultRouter, errorHandler, configuration, filters, components) {
+
+//  extends JavaCompatibleHttpRequestHandler(defaultRouter, errorHandler, configuration, filters, components) {
+  extends JavaCompatibleHttpRequestHandler(webCommands, optDevContext, router, errorHandler, configuration, filters, components) {
+
+  val logger = LoggerFactory.getLogger(classOf[ConfigRedirectRequestHandler])
 
   override def routeRequest(request: RequestHeader): Option[Handler] = {
     val handler: Option[Handler] = if (request.host.toLowerCase(Locale.ENGLISH).startsWith("config")) {
@@ -53,6 +63,6 @@ class ConfigRedirectRequestHandler @Inject() (defaultRouter: Router,
   }
 
   def printRouter(router: Router): Unit = {
-    Logger.info(router.documentation.map(x => x._1 + " " + x._2).fold("")((x, y) => x + "\n" + y))
+    logger.info(router.documentation.map(x => x._1 + " " + x._2).fold("")((x, y) => x + "\n" + y))
   }
 }

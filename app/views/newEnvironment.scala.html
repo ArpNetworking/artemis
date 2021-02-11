@@ -15,7 +15,8 @@
 *@
 @import views.html.helper.FieldConstructor
 @import java.util
-@(form: Form[forms.NewEnvironment], orgs: List[Owner], envTypes: Collection[EnvironmentType])(implicit request: Http.Request, messages: play.i18n.Messages)
+@import org.webjars.play.WebJarsUtil
+@(form: Form[forms.NewEnvironment], orgs: List[Owner], envTypes: Collection[EnvironmentType])(implicit request: Http.RequestHeader, messages: play.i18n.Messages, webJarsUtil: WebJarsUtil)
 @implicitField = @{ FieldConstructor(toolstrapFieldConstructor.f) }
 @main("New Environment", true) {
     <h3>Create a new environment</h3>

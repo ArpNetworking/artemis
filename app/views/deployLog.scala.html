@@ -13,7 +13,10 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *@
-@(deployment: models.Deployment, scriptNonce: String)
+@import views.html.helper.CSPNonce
+@import org.webjars.play.WebJarsUtil
+@import play.api.mvc.RequestHeader
+@(deployment: models.Deployment)(implicit request: RequestHeader, webJarsUtil: WebJarsUtil)
 
 @main("Deploy log", true) {
     <h2>Log</h2>
@@ -21,7 +24,7 @@
         <pre id="entries"></pre>
     </div>
 
-    <script type="text/javascript" nonce="@scriptNonce">
+    <script type="text/javascript" @{CSPNonce.attr}>
         var deploymentId = @deployment.getId;
     </script>
     <script src="@routes.Assets.at("javascripts/deployLog.js")" type="text/javascript"></script>

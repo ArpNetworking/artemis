@@ -13,7 +13,9 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *@
-@()
+@import org.webjars.play.WebJarsUtil
+@import play.api.mvc.RequestHeader
+@()(implicit request: RequestHeader, webJarsUtil: WebJarsUtil)
 @main("LoggedOut", false) {
     <div class="verticalalign-outer">
         <div class="verticalalign-middle">
