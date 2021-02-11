@@ -15,6 +15,7 @@
  */
 package controllers.impl;
 
+import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -35,10 +36,13 @@ import models.PackageVersion;
 import models.Stage;
 import models.UserMembership;
 import org.joda.time.DateTime;
+import org.webjars.play.WebJarsUtil;
 import play.Logger;
 import play.data.Form;
 import play.data.FormFactory;
+import play.i18n.MessagesApi;
 import play.mvc.Controller;
+import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
@@ -72,27 +76,27 @@ public class StandardEnvironment extends Controller implements Environment {
      * @param formFactory form factory to create forms
      */
     @Inject
-    public StandardEnvironment(final FormFactory formFactory, final Config config) {
+    public StandardEnvironment(final FormFactory formFactory, final Config config, final MessagesApi messagesApi, final WebJarsUtil webJarsUtil) {
         _formFactory = formFactory;
         _config = config;
+        _messagesApi = messagesApi;
+        _webJarsUtil = webJarsUtil;
     }
 
     @Override
-    public CompletionStage<Result> detail(final String envName) {
+    public CompletionStage<Result> detail(final String envName, final Http.Request request) {
         final models.Environment environment = models.Environment.getByName(envName);
         if (environment == null) {
             return CompletableFuture.completedFuture(notFound());
         } else {
             final Form<NewStage> newStageForm = NewStage.form(_formFactory);
             final Form<ConfigForm> configForm = ConfigForm.form(environment, _formFactory);
-            final String nonce = PageUtils.createNonce();
-            response().setHeader("Content-Security-Policy", String.format("script-src 'nonce-%s'", nonce));
-            return CompletableFuture.completedFuture(ok(views.html.environment.render(environment, newStageForm, configForm, false, nonce)));
+            return CompletableFuture.completedFuture(ok(views.html.environment.render(environment, newStageForm, configForm, false, request, _messagesApi.preferred(request), _webJarsUtil)));
         }
     }
 
     @Override
-    public CompletionStage<Result> newEnvironment(final String parentEnv) {
+    public CompletionStage<Result> newEnvironment(final String parentEnv, final Http.Request request) {
         Form<NewEnvironment> form = NewEnvironment.form(_formFactory);
         final models.Environment parent = models.Environment.getByName(parentEnv);
         if (parent != null) {
@@ -100,16 +104,16 @@ public class StandardEnvironment extends Controller implements Environment {
             env.setParent(parent.getId());
             form = form.fill(env);
         }
-        final List<Owner> owners = UserMembership.getOrgsForUser(request().attrs().get(Security.USERNAME));
+        final List<Owner> owners = UserMembership.getOrgsForUser(request.attrs().get(Security.USERNAME));
         final Set<String> enabledEnvironmentTypes = new HashSet<>(_config.getStringList("enabledEnvironmentTypes"));
         final List<EnvironmentType> envTypes = Arrays.stream(EnvironmentType.values())
                 .filter(environmentType -> enabledEnvironmentTypes.contains(environmentType.name().toLowerCase()))
                 .collect(Collectors.toList());
-        return CompletableFuture.completedFuture(ok(views.html.newEnvironment.render(form, owners, envTypes)));
+        return CompletableFuture.completedFuture(ok(views.html.newEnvironment.render(form, owners, envTypes, request, _messagesApi.preferred(request), _webJarsUtil)));
     }
 
     @Override
-    public CompletionStage<Result> prepareRelease(final String envName) {
+    public CompletionStage<Result> prepareRelease(final String envName, final Http.Request request) {
         final models.Environment environment = models.Environment.getByName(envName);
         if (environment == null) {
             return CompletableFuture.completedFuture(notFound());
@@ -123,10 +127,8 @@ public class StandardEnvironment extends Controller implements Environment {
             }
 
             final String nextVersion = incrementVersion(currentVersion);
-            final String nonce = PageUtils.createNonce();
-            response().setHeader("Content-Security-Policy", String.format("script-src 'nonce-%s'", nonce));
 
-            return CompletableFuture.completedFuture(ok(views.html.createReleasePrep.render(environment, manifest, nextVersion, nonce)));
+            return CompletableFuture.completedFuture(ok(views.html.createReleasePrep.render(environment, manifest, nextVersion, request, _webJarsUtil)));
         }
     }
 
@@ -159,17 +161,17 @@ public class StandardEnvironment extends Controller implements Environment {
     }
 
     @Override
-    public CompletionStage<Result> createRelease(final String envName) {
+    public CompletionStage<Result> createRelease(final String envName, final Http.Request request) {
         final models.Environment environment = models.Environment.getByName(envName);
         if (environment == null) {
             return CompletableFuture.completedFuture(notFound());
         }
         // Make sure the user is an owner of the env
-        if (!validateAuth(environment)) {
+        if (!validateAuth(environment, request)) {
             return CompletableFuture.completedFuture(unauthorized());
         }
 
-        final Map<String, String[]> formUrlEncoded = request().body().asFormUrlEncoded();
+        final Map<String, String[]> formUrlEncoded = request.body().asFormUrlEncoded();
 
         final String[] manifestVersion = formUrlEncoded.get("version");
         if (manifestVersion == null || manifestVersion.length > 1) {
@@ -196,7 +198,7 @@ public class StandardEnvironment extends Controller implements Environment {
         }
 
         // Check conflicts in package versions
-        final Manifest manifest = createManifest(pkgs);
+        final Manifest manifest = createManifest(pkgs, request);
         manifest.setEnvironment(environment);
         manifest.setVersion(manifestVersion[0]);
         try {
@@ -208,13 +210,13 @@ public class StandardEnvironment extends Controller implements Environment {
     }
 
     @Override
-    public CompletionStage<Result> create() {
+    public CompletionStage<Result> create(final Http.Request request) {
 
-        final Form<NewEnvironment> bound = NewEnvironment.form(_formFactory).bindFromRequest();
+        final Form<NewEnvironment> bound = NewEnvironment.form(_formFactory).bindFromRequest(request);
         if (bound.hasErrors()) {
-            final List<Owner> owners = UserMembership.getOrgsForUser(request().attrs().get(Security.USERNAME));
+            final List<Owner> owners = UserMembership.getOrgsForUser(request.attrs().get(Security.USERNAME));
             final List<EnvironmentType> envTypes = Arrays.asList(EnvironmentType.values());
-            return CompletableFuture.completedFuture(badRequest(views.html.newEnvironment.render(bound, owners, envTypes)));
+            return CompletableFuture.completedFuture(badRequest(views.html.newEnvironment.render(bound, owners, envTypes, request, _messagesApi.preferred(request), _webJarsUtil)));
         } else {
             try (Transaction transaction = Ebean.beginTransaction()) {
                 final models.Environment environment = new models.Environment();
@@ -234,7 +236,7 @@ public class StandardEnvironment extends Controller implements Environment {
                 environment.save();
 
                 final Manifest manifest = new Manifest();
-                manifest.setCreatedBy(request().attrs().get(Security.USERNAME));
+                manifest.setCreatedBy(request.attrs().get(Security.USERNAME));
                 manifest.setEnvironment(environment);
                 manifest.setVersion("0");
                 manifest.save();
@@ -262,51 +264,49 @@ public class StandardEnvironment extends Controller implements Environment {
     }
 
     @Override
-    public CompletionStage<Result> save(final String envName) {
+    public CompletionStage<Result> save(final String envName, final Http.Request request) {
         final models.Environment environment = models.Environment.getByName(envName);
         final Form<NewStage> newStageForm = NewStage.form(_formFactory);
-        Form<ConfigForm> configForm = ConfigForm.form(_formFactory).bindFromRequest();
+        Form<ConfigForm> configForm = ConfigForm.form(_formFactory).bindFromRequest(request);
         final Map<String, String> configData = configForm.rawData();
         final String config = configData.get("config");
         final Long version = Long.parseLong(configData.get("version"));
-        final String nonce = PageUtils.createNonce();
-        response().setHeader("Content-Security-Policy", String.format("script-src 'nonce-%s'", nonce));
         if (version != environment.getVersion()) {
             configForm = configForm.withError("VersionConflict", "There was a version conflict. Please try saving again.");
         }
 
         if (configForm.hasErrors()) {
             return CompletableFuture.completedFuture(
-                    badRequest(views.html.environment.render(environment, newStageForm, configForm, true, nonce)));
+                    badRequest(views.html.environment.render(environment, newStageForm, configForm, true, request, _messagesApi.preferred(request), _webJarsUtil)));
         }
         environment.setConfig(config);
         try {
             environment.save();
             return CompletableFuture.completedFuture(
-                    ok(views.html.environment.render(environment, newStageForm, configForm, true, nonce)));
+                    ok(views.html.environment.render(environment, newStageForm, configForm, true, request, _messagesApi.preferred(request), _webJarsUtil)));
         } catch (final PersistenceException e) {
             return CompletableFuture.completedFuture(
-                    badRequest(views.html.environment.render(environment, newStageForm, configForm, true, nonce)));
+                    badRequest(views.html.environment.render(environment, newStageForm, configForm, true, request, _messagesApi.preferred(request), _webJarsUtil)));
         }
     }
 
 
-    private boolean validateAuth(final models.Environment environment) {
-        final Set<Owner> userGroups = Sets.newHashSet(UserMembership.getOrgsForUser(request().attrs().get(Security.USERNAME)));
+    private boolean validateAuth(final models.Environment environment, final Http.Request request) {
+        final Set<Owner> userGroups = Sets.newHashSet(UserMembership.getOrgsForUser(request.attrs().get(Security.USERNAME)));
         if (!userGroups.contains(environment.getOwner())) {
-            Logger.warn(
-                    String.format(
-                            "Attempt at unauthorized deployment; environment=%s, owner=%s, user=%s, users_orgs=%s",
-                            environment.getName(),
-                            environment.getOwner().getOrgName(),
-                            request().attrs().get(Security.USERNAME),
-                            userGroups));
+            LOGGER.warn()
+                    .setMessage("Attempt at unauthorized deployment")
+                    .addData("environment", environment.getName())
+                    .addData("owner", environment.getOwner().getOrgName())
+                    .addData("user", request.attrs().get(Security.USERNAME))
+                    .addData("userGroups", userGroups)
+                    .log();
             return false;
         }
         return true;
     }
 
-    private Manifest createManifest(final Map<String, String> pkgs) {
+    private Manifest createManifest(final Map<String, String> pkgs, final Http.Request request) {
         final List<PackageVersion> newPackages = Lists.newArrayList();
         for (final Map.Entry<String, String> entry : pkgs.entrySet()) {
             final String pkg = entry.getKey();
@@ -330,11 +330,14 @@ public class StandardEnvironment extends Controller implements Environment {
         }
         final Manifest manifest = new Manifest();
         manifest.setPackages(newPackages);
-        manifest.setCreatedBy(request().attrs().get(Security.USERNAME));
+        manifest.setCreatedBy(request.attrs().get(Security.USERNAME));
         manifest.save();
         return manifest;
     }
 
     private final FormFactory _formFactory;
     private final Config _config;
+    private final MessagesApi _messagesApi;
+    private final WebJarsUtil _webJarsUtil;
+    private static final com.arpnetworking.steno.Logger LOGGER = LoggerFactory.getLogger(StandardEnvironment.class);
 }

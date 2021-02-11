@@ -48,42 +48,45 @@ public class ProxyStage extends ArtemisProxy implements Stage {
     }
 
     @Override
-    public CompletionStage<Result> detail(final String envName, final String stageName) {
+    public CompletionStage<Result> detail(final String envName, final String stageName, final Http.Request request) {
         return proxy();
     }
 
     @Override
-    public CompletionStage<Result> addHostclass(final String envName, final String stageName) {
+    public CompletionStage<Result> addHostclass(final String envName, final String stageName, final Http.Request request) {
         return proxy();
     }
 
     @Override
-    public CompletionStage<Result> removeHostclass(final String envName, final String stageName, final String hostclassName) {
+    public CompletionStage<Result> removeHostclass(final String envName, final String stageName, final String hostclassName,
+            final Http.Request request) {
         return proxy();
     }
 
     @Override
-    public CompletionStage<Result> prepareDeploy(final String envName, final String stageName) {
+    public CompletionStage<Result> prepareDeploy(final String envName, final String stageName, final Http.Request request) {
         return proxy();
     }
 
     @Override
-    public CompletionStage<Result> previewDeploy(final String envName, final String stageName) {
+    public CompletionStage<Result> previewDeploy(final String envName, final String stageName, final Http.Request request) {
         return proxy();
     }
 
     @Override
-    public CompletionStage<Result> confirmDeploy(final String envName, final String stageName, final long version, final long manifestId) {
+    public CompletionStage<Result> confirmDeploy(final String envName, final String stageName, final long version, final long manifestId,
+            final Http.Request request) {
         return proxy();
     }
 
     @Override
-    public CompletionStage<Result> prepareDeployManifest(final String envName, final String stageName, final long manifestId) {
+    public CompletionStage<Result> prepareDeployManifest(final String envName, final String stageName, final long manifestId,
+            final Http.Request request) {
         return proxy();
     }
 
     @Override
-    public CompletionStage<Result> create(final String envName) {
+    public CompletionStage<Result> create(final String envName, final Http.Request request) {
         return proxy();
     }
 

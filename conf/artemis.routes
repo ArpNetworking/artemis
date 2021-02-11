@@ -21,38 +21,38 @@ GET         /logout                                                           co
 GET         /loggedout                                                        controllers.LoggedOut.index()
 
 # Environment
-GET         /environment/new                                                  controllers.Environment.newEnvironment(parent ?= null)
-GET         /environment/:envName/stage/:stageName                            controllers.Stage.detail(envName, stageName)
+GET         /environment/new                                                  controllers.Environment.newEnvironment(parent ?= null, request: Request)
+GET         /environment/:envName/stage/:stageName                            controllers.Stage.detail(envName, stageName, request: Request)
 POST        /environment/:envName/stage/:stageName                            controllers.Stage.save(envName, stageName, request: Request)
-POST        /environment/:envName/stage/:stageName/addHostClass               controllers.Stage.addHostclass(envName, stageName)
-POST        /environment/:envName/stage/:stageName/removeHostClass/:hc        controllers.Stage.removeHostclass(envName, stageName, hc)
+POST        /environment/:envName/stage/:stageName/addHostClass               controllers.Stage.addHostclass(envName, stageName, request: Request)
+POST        /environment/:envName/stage/:stageName/removeHostClass/:hc        controllers.Stage.removeHostclass(envName, stageName, hc, request: Request)
 POST        /environment/:envName/stage                                       controllers.Stage.create(envName, request: Request)
-GET         /environment/:name                                                controllers.Environment.detail(name)
-POST        /environment/create                                               controllers.Environment.create()
-GET         /environment/:envName/release/create                              controllers.Environment.prepareRelease(envName)
-POST        /environment/:envName/release/create                              controllers.Environment.createRelease(envName)
+GET         /environment/:name                                                controllers.Environment.detail(name, request: Request)
+POST        /environment/create                                               controllers.Environment.create(request: Request)
+GET         /environment/:envName/release/create                              controllers.Environment.prepareRelease(envName, request: Request)
+POST        /environment/:envName/release/create                              controllers.Environment.createRelease(envName, request: Request)
 POST        /environment/:envName/stage/:stageName/promote                    controllers.Stage.promote(envName, stageName, request: Request)
 POST        /environment/:envName/stage/:stageName/synchronize                controllers.Stage.synchronize(envName, stageName, request: Request)
-POST         /environment/:name                                               controllers.Environment.save(name)
+POST         /environment/:name                                               controllers.Environment.save(name, request: Request)
 
 # Hocon
 POST        /hocon/validate                                                   controllers.impl.proxy.api.Hocon.isValid(request: Request)
 POST        /hocon/viewCombinedHocon                                          controllers.impl.proxy.api.Hocon.viewCombinedHocon(request: Request)
 
 # Hostclass
-GET         /hostclass/new                                                    controllers.Hostclass.newHostclass(parent ?= null)
-POST        /hostclass/create                                                 controllers.Hostclass.create()
-GET         /hostclass/:name                                                  controllers.Hostclass.detail(name)
-POST        /hostclass/:hostclassName/addHost                                 controllers.Hostclass.addHost(hostclassName)
+GET         /hostclass/new                                                    controllers.Hostclass.newHostclass(parent ?= null, request: Request)
+POST        /hostclass/create                                                 controllers.Hostclass.create(request: Request)
+GET         /hostclass/:name                                                  controllers.Hostclass.detail(name, request: Request)
+POST        /hostclass/:hostclassName/addHost                                 controllers.Hostclass.addHost(hostclassName, request: Request)
 
 # Bundle
 GET         /bundle/new                                                       controllers.Bundle.newBundle()
 
 # Deployment
-GET         /deploy/:envName/stage/:stageName                                 controllers.Stage.prepareDeploy(envName, stageName)
-GET         /deploy/:envName/stage/:stageName/:manifestId                     controllers.Stage.prepareDeployManifest(envName, stageName, manifestId: Long)
-POST        /deploy/:envName/stage/:stageName/preview                         controllers.Stage.previewDeploy(envName, stageName)
-POST        /deploy/:envName/stage/:stageName/confirm                         controllers.Stage.confirmDeploy(envName, stageName, version: Long, manifestId: Long)
+GET         /deploy/:envName/stage/:stageName                                 controllers.Stage.prepareDeploy(envName, stageName, request: Request)
+GET         /deploy/:envName/stage/:stageName/:manifestId                     controllers.Stage.prepareDeployManifest(envName, stageName, manifestId: Long, request: Request)
+POST        /deploy/:envName/stage/:stageName/preview                         controllers.Stage.previewDeploy(envName, stageName, request: Request)
+POST        /deploy/:envName/stage/:stageName/confirm                         controllers.Stage.confirmDeploy(envName, stageName, version: Long, manifestId: Long, request: Request)
 GET         /deploy/:id/details                                               controllers.Deployment.detail(id: Long)
 GET         /deploy/:id/log                                                   controllers.Deployment.log(id: Long)
 GET         /deploy/:id/diff                                                  controllers.Deployment.diff(id: Long)

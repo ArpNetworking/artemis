@@ -14,7 +14,8 @@
 * limitations under the License.
 *@
 @import org.webjars.play.WebJarsUtil
-@(environment: models.Environment, manifest: Manifest, nextVersion: String, scriptNonce: String)(implicit request: Http.Request, webJarsUtil: WebJarsUtil)
+@import views.html.helper.CSPNonce
+@(environment: models.Environment, manifest: Manifest, nextVersion: String)(implicit request: Http.Request, webJarsUtil: WebJarsUtil)
 @main(environment.getName, true) {
     <h3>Create release of @environment.getName</h3>
     @helper.form(action = routes.Environment.createRelease(environment.getName), 'class -> "form-horizontal") {
@@ -51,7 +52,7 @@
             <a href="#" data-bind="click: $parent.removePackage"><span class="btn btn-danger btn-sm">Remove</span></a>
         </div>
     </script>
-    <script type="text/javascript" nonce="@scriptNonce">
+    <script type="text/javascript" @{CSPNonce.attr}>
         @views.html.editReleasePackagesJs(manifest)
     </script>
 }

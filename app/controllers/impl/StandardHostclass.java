@@ -22,9 +22,12 @@ import forms.NewHostclass;
 import io.ebean.Ebean;
 import io.ebean.Transaction;
 import models.Host;
+import org.webjars.play.WebJarsUtil;
 import play.data.Form;
 import play.data.FormFactory;
+import play.i18n.MessagesApi;
 import play.mvc.Controller;
+import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
@@ -49,22 +52,24 @@ public class StandardHostclass extends Controller implements Hostclass {
      * @param formFactory form factory to create forms
      */
     @Inject
-    public StandardHostclass(final FormFactory formFactory) {
+    public StandardHostclass(final FormFactory formFactory, final MessagesApi messagesApi, final WebJarsUtil webJarsUtil) {
         _formFactory = formFactory;
+        _messagesApi = messagesApi;
+        _webJarsUtil = webJarsUtil;
     }
 
     @Override
-    public CompletionStage<Result> detail(final String name) {
+    public CompletionStage<Result> detail(final String name, final Http.Request request) {
         final models.Hostclass hostclass = models.Hostclass.getByName(name);
         if (hostclass == null) {
             return CompletableFuture.completedFuture(notFound());
         } else {
-            return CompletableFuture.completedFuture(ok(views.html.hostclass.render(hostclass, AddHostToHostclass.form(_formFactory))));
+            return CompletableFuture.completedFuture(ok(views.html.hostclass.render(hostclass, AddHostToHostclass.form(_formFactory), request, _webJarsUtil)));
         }
     }
 
     @Override
-    public CompletionStage<Result> newHostclass(final String parentHostclass) {
+    public CompletionStage<Result> newHostclass(final String parentHostclass, final Http.Request request) {
         Form<NewHostclass> form = NewHostclass.form(_formFactory);
         final models.Hostclass parent = models.Hostclass.getByName(parentHostclass);
         if (parent != null) {
@@ -72,18 +77,18 @@ public class StandardHostclass extends Controller implements Hostclass {
             hostclass.setParent(parent.getId());
             form = form.fill(hostclass);
         }
-        return CompletableFuture.completedFuture(ok(views.html.newHostclass.render(form)));
+        return CompletableFuture.completedFuture(ok(views.html.newHostclass.render(form, request, _messagesApi.preferred(request), _webJarsUtil)));
     }
 
     @Override
-    public CompletionStage<Result> addHost(final String hostclassName) {
-        final Form<AddHostToHostclass> bound = AddHostToHostclass.form(_formFactory).bindFromRequest();
+    public CompletionStage<Result> addHost(final String hostclassName, final Http.Request request) {
+        final Form<AddHostToHostclass> bound = AddHostToHostclass.form(_formFactory).bindFromRequest(request);
         final models.Hostclass hostclass = models.Hostclass.getByName(hostclassName);
         if (hostclass == null) {
             return CompletableFuture.completedFuture(notFound());
         }
         if (bound.hasErrors()) {
-            return CompletableFuture.completedFuture(badRequest(views.html.hostclass.render(hostclass, bound)));
+            return CompletableFuture.completedFuture(badRequest(views.html.hostclass.render(hostclass, bound, request, _webJarsUtil)));
         } else {
             final AddHostToHostclass addObject = bound.get();
             models.Host host = models.Host.getByName(addObject.getHost());
@@ -94,15 +99,15 @@ public class StandardHostclass extends Controller implements Hostclass {
             // TODO(vkoskela): Attempting to move a host should generate a warning. [MAI-?]
             host.setHostclass(hostclass);
             host.save();
-            return CompletableFuture.completedFuture(ok(views.html.hostclass.render(hostclass, AddHostToHostclass.form(_formFactory))));
+            return CompletableFuture.completedFuture(ok(views.html.hostclass.render(hostclass, AddHostToHostclass.form(_formFactory), request, _webJarsUtil)));
         }
     }
 
     @Override
-    public CompletionStage<Result> create() {
-        final Form<NewHostclass> bound = NewHostclass.form(_formFactory).bindFromRequest();
+    public CompletionStage<Result> create(final Http.Request request) {
+        final Form<NewHostclass> bound = NewHostclass.form(_formFactory).bindFromRequest(request);
         if (bound.hasErrors()) {
-            return CompletableFuture.completedFuture(badRequest(views.html.newHostclass.render(bound)));
+            return CompletableFuture.completedFuture(badRequest(views.html.newHostclass.render(bound, request, _messagesApi.preferred(request), _webJarsUtil)));
         } else {
             try (Transaction transaction = Ebean.beginTransaction()) {
                 final models.Hostclass hostclass = new models.Hostclass();
@@ -130,4 +135,6 @@ public class StandardHostclass extends Controller implements Hostclass {
     }
 
     private final FormFactory _formFactory;
+    private final MessagesApi _messagesApi;
+    private final WebJarsUtil _webJarsUtil;
 }

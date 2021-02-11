@@ -15,6 +15,7 @@
  */
 package controllers;
 
+import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
@@ -32,46 +33,52 @@ public interface Environment {
      * Shows an environment detail page.
      *
      * @param name the environment name
+     * @param request the HTTP request
      * @return a {@link Result}
      */
-    CompletionStage<Result> detail(String name);
+    CompletionStage<Result> detail(String name, Http.Request request);
 
     /**
      * Creates a new environment.
      *
      * @param parentEnv the parent environment
+     * @param request the HTTP request
      * @return a {@link Result}
      */
-    CompletionStage<Result> newEnvironment(String parentEnv);
+    CompletionStage<Result> newEnvironment(String parentEnv, Http.Request request);
 
     /**
      * Create an environment page.
      *
+     * @param request the HTTP request
      * @return a {@link Result}
      */
-    CompletionStage<Result> create();
+    CompletionStage<Result> create(Http.Request request);
 
     /**
      * Save changes to an environment.
      *
      * @param envName the environment name
+     * @param request the HTTP request
      * @return a {@link Result}
      */
-    CompletionStage<Result> save(String envName);
+    CompletionStage<Result> save(String envName, Http.Request request);
 
     /**
      * Create a new release.
      *
      * @param envName the environment name
+     * @param request the HTTP request
      * @return a {@link Result}
      */
-    CompletionStage<Result> createRelease(String envName);
+    CompletionStage<Result> createRelease(String envName, Http.Request request);
 
     /**
      * Prepare a release.
      *
      * @param envName the environment name
+     * @param request the HTTP request
      * @return a {@link Result}
      */
-    CompletionStage<Result> prepareRelease(String envName);
+    CompletionStage<Result> prepareRelease(String envName, Http.Request request);
 }

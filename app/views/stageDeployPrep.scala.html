@@ -14,7 +14,8 @@
 * limitations under the License.
 *@
 @import org.webjars.play.WebJarsUtil
-@(environment: models.Environment, stage: models.Stage, manifestHistory: ManifestHistory, form: Form[forms.DeployManifest], manifests: List[Manifest], scriptNonce: String)(implicit request: Http.RequestHeader, messages: play.i18n.Messages, webJarsUtil: WebJarsUtil)
+@import views.html.helper.CSPNonce
+@(environment: models.Environment, stage: models.Stage, manifestHistory: ManifestHistory, form: Form[forms.DeployManifest], manifests: List[Manifest])(implicit request: Http.RequestHeader, messages: play.i18n.Messages, webJarsUtil: WebJarsUtil)
 @import views.html.helper.FieldConstructor
 @implicitField = @{ FieldConstructor(toolstrapFieldConstructor.f) }
 @main(environment.getName, true) {
@@ -47,7 +48,7 @@
             </div>
         </div>
     }
-    <script type="text/javascript" nonce="@scriptNonce">
+    <script type="text/javascript" @{CSPNonce.attr}>
         @views.html.editStagePackagesJs(manifestHistory.getManifest)
     </script>
 }
