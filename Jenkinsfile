@@ -35,7 +35,7 @@ pipeline {
             usernamePassword(credentialsId: 'jenkins-ossrh', usernameVariable: 'OSSRH_USER', passwordVariable: 'OSSRH_PASS'),
             string(credentialsId: 'jenkins-gpg', variable: 'GPG_PASS')]) {
           withMaven {
-            sh "./jdk-wrapper.sh ./sbt $(target)"
+            sh "./jdk-wrapper.sh ./sbt ${target}"
           }
         }
       }
