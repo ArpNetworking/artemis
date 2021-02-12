@@ -18,6 +18,7 @@ package controllers.impl.proxy;
 import controllers.Admin;
 import controllers.ArtemisProxy;
 import play.libs.ws.WSClient;
+import play.mvc.Http;
 import play.mvc.Result;
 
 import java.util.concurrent.CompletionStage;
@@ -44,12 +45,12 @@ public class ProxyAdmin extends ArtemisProxy implements Admin {
     }
 
     @Override
-    public CompletionStage<Result> index() {
-        return proxy();
+    public CompletionStage<Result> index(final Http.Request request) {
+        return proxy(request);
     }
 
     @Override
-    public CompletionStage<Result> refreshPackages() {
-        return proxy();
+    public CompletionStage<Result> refreshPackages(final Http.Request request) {
+        return proxy(request);
     }
 }

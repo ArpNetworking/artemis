@@ -49,59 +49,59 @@ public class ProxyStage extends ArtemisProxy implements Stage {
 
     @Override
     public CompletionStage<Result> detail(final String envName, final String stageName, final Http.Request request) {
-        return proxy();
+        return proxy(request);
     }
 
     @Override
     public CompletionStage<Result> addHostclass(final String envName, final String stageName, final Http.Request request) {
-        return proxy();
+        return proxy(request);
     }
 
     @Override
     public CompletionStage<Result> removeHostclass(final String envName, final String stageName, final String hostclassName,
             final Http.Request request) {
-        return proxy();
+        return proxy(request);
     }
 
     @Override
     public CompletionStage<Result> prepareDeploy(final String envName, final String stageName, final Http.Request request) {
-        return proxy();
+        return proxy(request);
     }
 
     @Override
     public CompletionStage<Result> previewDeploy(final String envName, final String stageName, final Http.Request request) {
-        return proxy();
+        return proxy(request);
     }
 
     @Override
     public CompletionStage<Result> confirmDeploy(final String envName, final String stageName, final long version, final long manifestId,
             final Http.Request request) {
-        return proxy();
+        return proxy(request);
     }
 
     @Override
     public CompletionStage<Result> prepareDeployManifest(final String envName, final String stageName, final long manifestId,
             final Http.Request request) {
-        return proxy();
+        return proxy(request);
     }
 
     @Override
     public CompletionStage<Result> create(final String envName, final Http.Request request) {
-        return proxy();
+        return proxy(request);
     }
 
     @Override
     public CompletionStage<Result> promote(final String sourceEnvName, final String sourceStageName, final Http.Request request) {
-        return proxy();
+        return proxy(request);
     }
 
     @Override
     public CompletionStage<Result> synchronize(final String sourceEnvName, final String sourceStageName, final Http.Request request) {
-        return proxy();
+        return proxy(request);
     }
 
     @Override
     public CompletionStage<Result> save(final String envName, final String stageName, final Http.Request request) {
-        return proxy();
+        return proxy(request);
     }
 }

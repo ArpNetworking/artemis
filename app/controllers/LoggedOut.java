@@ -15,7 +15,9 @@
  */
 package controllers;
 
+import org.webjars.play.WebJarsUtil;
 import play.mvc.Controller;
+import play.mvc.Http;
 import play.mvc.Result;
 
 import java.util.concurrent.CompletableFuture;
@@ -32,7 +34,8 @@ public class LoggedOut extends Controller {
      * Public constructor.
      */
     @Inject
-    public LoggedOut() {
+    public LoggedOut(final WebJarsUtil webJarsUtil) {
+        _webJarsUtil = webJarsUtil;
     }
 
     /**
@@ -40,7 +43,9 @@ public class LoggedOut extends Controller {
      *
      * @return an html response
      */
-    public CompletionStage<Result> index() {
-        return CompletableFuture.completedFuture(ok(views.html.loggedout.render()));
+    public CompletionStage<Result> index(final Http.Request request) {
+        return CompletableFuture.completedFuture(ok(views.html.loggedout.render(request, _webJarsUtil)));
     }
+
+    private WebJarsUtil _webJarsUtil;
 }

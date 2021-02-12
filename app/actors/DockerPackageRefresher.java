@@ -16,6 +16,7 @@
 package actors;
 
 import akka.actor.AbstractActor;
+import akka.pattern.Patterns;
 import akka.pattern.PatternsCS;
 import client.DockerPackageClient;
 import client.DockerPackageClient.PackageListResponse;
@@ -29,6 +30,7 @@ import models.Package;
 import models.PackageVersion;
 import scala.concurrent.duration.FiniteDuration;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
@@ -51,9 +53,9 @@ public class DockerPackageRefresher extends AbstractActor {
      */
     @Inject
     public DockerPackageRefresher(final DockerPackageClient dockerClient, @Named("DockerRegistryName") final String registryName) {
-        context().system().scheduler().schedule(
-                FiniteDuration.apply(3, TimeUnit.SECONDS),
-                FiniteDuration.apply(3, TimeUnit.HOURS),
+        context().system().scheduler().scheduleWithFixedDelay(
+                Duration.ofSeconds(3),
+                Duration.ofHours(3),
                 self(),
                 new RefreshPackagesMessage(),
                 context().dispatcher(),
@@ -92,7 +94,7 @@ public class DockerPackageRefresher extends AbstractActor {
                 _dockerPackageClient
                         .getAllPackages()
                         .thenApply(PackageListMessage::new);
-        PatternsCS.pipe(imagesListPromise, context().dispatcher()).to(self(), self());
+        Patterns.pipe(imagesListPromise, context().dispatcher()).to(self(), self());
     }
 
     private void persistImagesToPackageVersions(final Map<String, List<DockerPackageClient.ImageMetadata>> repoToImageMap) {

@@ -49,21 +49,21 @@ public class ProxyHostclass extends ArtemisProxy implements Hostclass {
 
     @Override
     public CompletionStage<Result> detail(final String name, final Http.Request request) {
-        return proxy();
+        return proxy(request);
     }
 
     @Override
     public CompletionStage<Result> newHostclass(final String parentHostclass, final Http.Request request) {
-        return proxy();
+        return proxy(request);
     }
 
     @Override
     public CompletionStage<Result> addHost(final String hostclassName, final Http.Request request) {
-        return proxy();
+        return proxy(request);
     }
 
     @Override
     public CompletionStage<Result> create(final Http.Request request) {
-        return proxy();
+        return proxy(request);
     }
 }

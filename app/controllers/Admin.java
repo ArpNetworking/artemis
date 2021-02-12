@@ -15,6 +15,7 @@
  */
 package controllers;
 
+import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
@@ -32,13 +33,15 @@ public interface Admin {
      * Renders the main application page.
      *
      * @return an http response
+     * @param request
      */
-    CompletionStage<Result> index();
+    CompletionStage<Result> index(final Http.Request request);
 
     /**
      * Starts a refresh of packages from various repositories.
      *
      * @return an http response
+     * @param request
      */
-    CompletionStage<Result> refreshPackages();
+    CompletionStage<Result> refreshPackages(final Http.Request request);
 }

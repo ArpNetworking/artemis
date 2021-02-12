@@ -66,7 +66,7 @@ public class DeployLogRelay extends AbstractActor {
         _subscriber = subscriber;
         context().watch(_subscriber);
         _deployment = Deployment.getById(deploymentId);
-        context().system().scheduler().schedule(
+        context().system().scheduler().scheduleWithFixedDelay(
                 FiniteDuration.apply(1, TimeUnit.SECONDS),
                 FiniteDuration.apply(3, TimeUnit.SECONDS),
                 self(),

@@ -15,6 +15,7 @@
  */
 package controllers;
 
+import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
@@ -32,6 +33,7 @@ public interface Application {
      * Main page.
      *
      * @return a Result
+     * @param request
      */
-    CompletionStage<Result> main();
+    CompletionStage<Result> main(Http.Request request);
 }

@@ -15,7 +15,7 @@
 *@
 @import views.html.helper.CSPNonce
 @import org.webjars.play.WebJarsUtil
-@import play.api.mvc.RequestHeader
+@import play.mvc.Http.RequestHeader
 @(deployment: models.Deployment)(implicit request: RequestHeader, webJarsUtil: WebJarsUtil)
 
 @main("Deploy log", true) {

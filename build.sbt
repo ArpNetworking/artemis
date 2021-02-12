@@ -47,6 +47,7 @@ libraryDependencies ++= Seq(
   "com.h2database" % "h2" % "1.4.192",
   "com.hierynomus" % "sshj" % "0.23.0",
   "net.sf.oval" % "oval" % "1.86",
+  "org.apache.httpcomponents" % "httpclient" % "4.5.13",
   "org.flywaydb" %% "flyway-play" % "7.2.0",
   "org.postgresql" % "postgresql" % "42.2.18",
 

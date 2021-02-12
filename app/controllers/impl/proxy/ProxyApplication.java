@@ -17,6 +17,7 @@ package controllers.impl.proxy;
 
 import controllers.ArtemisProxy;
 import play.libs.ws.WSClient;
+import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
@@ -46,7 +47,7 @@ public class ProxyApplication extends ArtemisProxy implements controllers.Applic
     }
 
     @Override
-    public CompletionStage<Result> main() {
-        return proxy();
+    public CompletionStage<Result> main(final Http.Request request) {
+        return proxy(request);
     }
 }

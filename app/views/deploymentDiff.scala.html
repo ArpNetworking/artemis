@@ -13,7 +13,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *@
-@import play.api.mvc.RequestHeader
+@import play.mvc.Http.RequestHeader
 @import org.webjars.play.WebJarsUtil
 @(stage: models.Stage, diff: models.DeploymentDiff)(implicit request: RequestHeader, webJarsUtil: WebJarsUtil)
 @main("Deployment diff", true) {

@@ -17,7 +17,9 @@ package controllers.impl;
 
 import com.google.inject.Singleton;
 import controllers.Admin;
+import org.webjars.play.WebJarsUtil;
 import play.mvc.Controller;
+import play.mvc.Http;
 import play.mvc.Result;
 
 import java.util.concurrent.CompletableFuture;
@@ -35,16 +37,19 @@ public class StandardAdmin extends Controller implements Admin {
      * Public constructor.
      */
     @Inject
-    public StandardAdmin() {
+    public StandardAdmin(final WebJarsUtil webJarsUtil) {
+        _webJarsUtil = webJarsUtil;
     }
 
     @Override
-    public CompletionStage<Result> index() {
-        return CompletableFuture.completedFuture(ok(views.html.admin.render()));
+    public CompletionStage<Result> index(final Http.Request request) {
+        return CompletableFuture.completedFuture(ok(views.html.admin.render(request, _webJarsUtil)));
     }
 
     @Override
-    public CompletionStage<Result> refreshPackages() {
-        return CompletableFuture.completedFuture(ok(views.html.admin.render()));
+    public CompletionStage<Result> refreshPackages(final Http.Request request) {
+        return CompletableFuture.completedFuture(ok(views.html.admin.render(request, _webJarsUtil)));
     }
+
+    private WebJarsUtil _webJarsUtil;
 }

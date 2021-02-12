@@ -20,8 +20,10 @@ import controllers.config.Proxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import play.libs.ws.WSClient;
+import play.mvc.Http;
 import play.mvc.Result;
 
+import java.net.http.HttpRequest;
 import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
 
@@ -47,8 +49,8 @@ public class ArtemisProxy extends Proxy {
      *
      * @return a {@link Result}
      */
-    public CompletionStage<Result> proxy() {
-        return super.proxy(request().uri());
+    public CompletionStage<Result> proxy(final Http.Request request) {
+        return super.proxy(request.uri(), request);
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ArtemisProxy.class);

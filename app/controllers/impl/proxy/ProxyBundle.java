@@ -18,6 +18,7 @@ package controllers.impl.proxy;
 import controllers.ArtemisProxy;
 import controllers.Bundle;
 import play.libs.ws.WSClient;
+import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
@@ -47,7 +48,7 @@ public class ProxyBundle extends ArtemisProxy implements Bundle {
     }
 
     @Override
-    public CompletionStage<Result> newBundle() {
-        return proxy();
+    public CompletionStage<Result> newBundle(final Http.Request request) {
+        return proxy(request);
     }
 }

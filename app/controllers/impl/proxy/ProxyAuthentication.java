@@ -18,6 +18,7 @@ package controllers.impl.proxy;
 import controllers.ArtemisProxy;
 import controllers.Authentication;
 import play.libs.ws.WSClient;
+import play.mvc.Http;
 import play.mvc.Result;
 
 import java.util.concurrent.CompletionStage;
@@ -44,17 +45,17 @@ public class ProxyAuthentication extends ArtemisProxy implements Authentication 
     }
 
     @Override
-    public CompletionStage<Result> auth(final String redirectUrl) {
-        return proxy();
+    public CompletionStage<Result> auth(final String redirectUrl, final Http.Request request) {
+        return proxy(request);
     }
 
     @Override
-    public CompletionStage<Result> finishAuth(final String code, final String state) {
-        return proxy();
+    public CompletionStage<Result> finishAuth(final String code, final String state, final Http.Request request) {
+        return proxy(request);
     }
 
     @Override
-    public CompletionStage<Result> logout() {
-        return proxy();
+    public CompletionStage<Result> logout(final Http.Request request) {
+        return proxy(request);
     }
 }

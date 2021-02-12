@@ -17,6 +17,7 @@ package actors;
 
 import akka.actor.AbstractActor;
 import akka.actor.Props;
+import akka.pattern.Patterns;
 import akka.pattern.PatternsCS;
 import client.HostProvider;
 import com.google.common.base.CharMatcher;
@@ -56,7 +57,7 @@ public class HostclassRefresher extends AbstractActor {
      * @return a new {@link Props}
      */
     public static Props props(final Config config, final HostProvider hostProvider, final HostClassifier hostClassifier) {
-        return Props.create(() -> new HostclassRefresher(config, hostProvider, hostClassifier));
+        return Props.create(HostclassRefresher.class, () -> new HostclassRefresher(config, hostProvider, hostClassifier));
     }
 
     /**
@@ -67,7 +68,7 @@ public class HostclassRefresher extends AbstractActor {
      */
     @Inject
     public HostclassRefresher(final Config config, final HostProvider hostProvider, final HostClassifier hostClassifier) {
-        context().system().scheduler().schedule(
+        context().system().scheduler().scheduleWithFixedDelay(
                 FiniteDuration.apply(3, TimeUnit.SECONDS),
                 FiniteDuration.apply(12, TimeUnit.HOURS),
                 self(),
@@ -85,7 +86,7 @@ public class HostclassRefresher extends AbstractActor {
                     final CompletionStage<HostclassListMessage> messagePromise = _hostProvider.getHosts()
                             .exceptionally(this::recoverHostclassListLookupFailure)
                             .thenApply(HostclassListMessage::new);
-                    PatternsCS.pipe(messagePromise, context().dispatcher()).to(self(), self());
+                    Patterns.pipe(messagePromise, context().dispatcher()).to(self(), self());
                 })
                 .match(HostclassListMessage.class, listMessage -> {
                     final Set<String> hosts = listMessage.getHosts();

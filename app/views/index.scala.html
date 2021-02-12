@@ -14,7 +14,7 @@
 * limitations under the License.
 *@
 @import org.webjars.play.WebJarsUtil
-@import play.api.mvc.RequestHeader
+@import play.mvc.Http.RequestHeader
 @(environments: List[models.Environment], bundles: List[models.Bundle], hostclasses: List[models.Hostclass])(implicit request: RequestHeader, webJarsUtil: WebJarsUtil)
 @main("Main", true) {
     <div class="row">

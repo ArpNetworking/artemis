@@ -49,32 +49,32 @@ public class ProxyEnvironment extends ArtemisProxy implements Environment {
 
     @Override
     public CompletionStage<Result> detail(final String name, final Http.Request request) {
-        return proxy();
+        return proxy(request);
     }
 
     @Override
     public CompletionStage<Result> newEnvironment(final String parentEnv, final Http.Request request) {
-        return proxy();
+        return proxy(request);
     }
 
 
     @Override
     public CompletionStage<Result> create(final Http.Request request) {
-        return proxy();
+        return proxy(request);
     }
 
     @Override
     public CompletionStage<Result> save(final String envName, final Http.Request request) {
-        return proxy();
+        return proxy(request);
     }
 
     @Override
     public CompletionStage<Result> createRelease(final String envName, final Http.Request request) {
-        return proxy();
+        return proxy(request);
     }
 
     @Override
     public CompletionStage<Result> prepareRelease(final String envName, final Http.Request request) {
-        return proxy();
+        return proxy(request);
     }
 }

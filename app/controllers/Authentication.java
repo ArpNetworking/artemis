@@ -15,6 +15,7 @@
  */
 package controllers;
 
+import play.mvc.Http;
 import play.mvc.Result;
 
 import java.util.concurrent.CompletionStage;
@@ -29,23 +30,25 @@ public interface Authentication {
      * Authenticate a client.  Redirects to github to do OAuth.
      *
      * @param redirectUrl URL to redirect back to when authentication is complete
+     * @param request
      * @return a {@link Result}
      */
-    CompletionStage<Result> auth(String redirectUrl);
+    CompletionStage<Result> auth(String redirectUrl, Http.Request request);
 
     /**
      * Finishes the authentication of a client.
      *
      * @param code code to use to get OAuth token
      * @param state the state
+     * @param request
      * @return a {@link Result}
      */
-    CompletionStage<Result> finishAuth(String code, String state);
+    CompletionStage<Result> finishAuth(String code, String state, Http.Request request);
 
     /**
      * Logs a user out.
      *
      * @return a {@link Result}
      */
-    CompletionStage<Result> logout();
+    CompletionStage<Result> logout(Http.Request request);
 }
