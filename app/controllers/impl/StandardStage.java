@@ -16,12 +16,11 @@
 package controllers.impl;
 
 import akka.actor.ActorRef;
-import akka.pattern.PatternsCS;
-import akka.util.Timeout;
+import akka.pattern.Patterns;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import com.groupon.deployment.FleetDeploymentCommands;
 import controllers.Stage;
 import forms.AddHostclassToStage;
@@ -41,16 +40,18 @@ import models.ManifestHistory;
 import models.Owner;
 import models.RollerDeploymentPrep;
 import models.UserMembership;
-import play.Logger;
+import org.webjars.play.WebJarsUtil;
 import play.data.Form;
 import play.data.FormFactory;
+import play.i18n.MessagesApi;
 import play.mvc.Controller;
+import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
-import utils.PageUtils;
 import utils.StageUtil;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -58,7 +59,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.TimeUnit;
+import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Singleton;
 import javax.persistence.PersistenceException;
 
@@ -70,6 +72,7 @@ import javax.persistence.PersistenceException;
 @Singleton
 @Security.Authenticated(AuthN.class)
 public class StandardStage extends Controller implements Stage {
+    private static final Logger LOGGER = LoggerFactory.getLogger(StandardStage.class);
     /**
      * Public constructor.
      *
@@ -77,13 +80,16 @@ public class StandardStage extends Controller implements Stage {
      * @param formFactory form factory to create forms
      */
     @Inject
-    public StandardStage(@Named("DeployManager") final ActorRef deploymentManager, final FormFactory formFactory) {
+    public StandardStage(@Named("DeployManager") final ActorRef deploymentManager, final FormFactory formFactory, final MessagesApi messagesApi, final
+            WebJarsUtil webJarsUtil) {
         _deploymentManager = deploymentManager;
         _formFactory = formFactory;
+        _messagesApi = messagesApi;
+        _webJarsUtil = webJarsUtil;
     }
 
     @Override
-    public CompletionStage<Result> detail(final String envName, final String stageName) {
+    public CompletionStage<Result> detail(final String envName, final String stageName, final Http.Request request) {
         final models.Stage stage = models.Stage.getByEnvironmentNameAndName(envName, stageName);
         if (stage == null) {
             return CompletableFuture.completedFuture(notFound());
@@ -92,8 +98,6 @@ public class StandardStage extends Controller implements Stage {
             final List<Deployment> stageDeployments = models.Deployment.getByStage(stage, 10, 0);
             final List<ManifestHistory> stageSnapshots = models.ManifestHistory.getByStage(stage, 10, 0);
             final ManifestHistory current = ManifestHistory.getCurrentForStage(stage);
-            final String nonce = PageUtils.createNonce();
-            response().setHeader("Content-Security-Policy", String.format("script-src 'nonce-%s'", nonce));
             return CompletableFuture.completedFuture(
                     ok(
                             views.html.stageDetail.render(
@@ -104,26 +108,28 @@ public class StandardStage extends Controller implements Stage {
                                     AddHostclassToStage.form(_formFactory),
                                     configForm,
                                     false,
-                                    nonce)));
+                                    request, _messagesApi.preferred(request), _webJarsUtil)));
         }
     }
 
     @Override
-    public CompletionStage<Result> addHostclass(final String envName, final String stageName) {
-        final Form<AddHostclassToStage> bound = AddHostclassToStage.form(_formFactory).bindFromRequest();
+    public CompletionStage<Result> addHostclass(final String envName, final String stageName, final Http.Request request) {
+        final Form<AddHostclassToStage> bound = AddHostclassToStage.form(_formFactory).bindFromRequest(request);
         final models.Stage stage = models.Stage.getByEnvironmentNameAndName(envName, stageName);
         if (stage == null) {
             return CompletableFuture.completedFuture(notFound());
         }
+        // Make sure the user is an owner of the env
+        if (!validateAuth(stage, request)) {
+            return CompletableFuture.completedFuture(unauthorized());
+        }
         final List<Deployment> stageDeployments = models.Deployment.getByStage(stage, 10, 0);
         final List<ManifestHistory> stageSnapshots = models.ManifestHistory.getByStage(stage, 10, 0);
         final ManifestHistory current = ManifestHistory.getCurrentForStage(stage);
-        final String nonce = PageUtils.createNonce();
-        response().setHeader("Content-Security-Policy", String.format("script-src 'nonce-%s'", nonce));
         if (bound.hasErrors()) {
             return CompletableFuture.completedFuture(
                     badRequest(views.html.stageDetail.render(
-                            stage, stageDeployments, stageSnapshots, current.getManifest(), bound, ConfigForm.form(_formFactory), false, nonce)));
+                            stage, stageDeployments, stageSnapshots, current.getManifest(), bound, ConfigForm.form(_formFactory), false, request, _messagesApi.preferred(request), _webJarsUtil)));
         } else {
             final AddHostclassToStage addObject = bound.get();
             Hostclass hostclass = Hostclass.getByName(addObject.getHostclass());
@@ -140,15 +146,20 @@ public class StandardStage extends Controller implements Stage {
             stage.save();
             return CompletableFuture.completedFuture(
                     ok(views.html.stageDetail.render(stage, stageDeployments, stageSnapshots, current.getManifest(),
-                            AddHostclassToStage.form(_formFactory), ConfigForm.form(_formFactory), false, nonce)));
+                            AddHostclassToStage.form(_formFactory), ConfigForm.form(_formFactory), false, request, _messagesApi.preferred(request), _webJarsUtil)));
         }
     }
 
     @Override
-    public CompletionStage<Result> removeHostclass(final String envName, final String stageName, final String hostclassName) {
+    public CompletionStage<Result> removeHostclass(final String envName, final String stageName, final String hostclassName,
+            final Http.Request request) {
         final models.Stage stage = models.Stage.getByEnvironmentNameAndName(envName, stageName);
         if (stage == null) {
             return CompletableFuture.completedFuture(notFound());
+        }
+        // Make sure the user is an owner of the env
+        if (!validateAuth(stage, request)) {
+            return CompletableFuture.completedFuture(unauthorized());
         }
         final Hostclass hostclass = Hostclass.getByName(hostclassName);
         if (hostclass == null) {
@@ -163,21 +174,20 @@ public class StandardStage extends Controller implements Stage {
         final List<Deployment> stageDeployments = models.Deployment.getByStage(stage, 10, 0);
         final List<ManifestHistory> stageSnapshots = models.ManifestHistory.getByStage(stage, 10, 0);
         final ManifestHistory current = ManifestHistory.getCurrentForStage(stage);
-        final String nonce = PageUtils.createNonce();
-        response().setHeader("Content-Security-Policy", String.format("script-src 'nonce-%s'", nonce));
         return CompletableFuture.completedFuture(
                 ok(views.html.stageDetail.render(stage, stageDeployments, stageSnapshots, current.getManifest(),
-                AddHostclassToStage.form(_formFactory), ConfigForm.form(_formFactory), false, nonce)));
+                AddHostclassToStage.form(_formFactory), ConfigForm.form(_formFactory), false, request, _messagesApi.preferred(request), _webJarsUtil)));
     }
 
     @Override
-    public CompletionStage<Result> prepareDeployManifest(final String envName, final String stageName, final long manifestId) {
+    public CompletionStage<Result> prepareDeployManifest(final String envName, final String stageName, final long manifestId,
+            final Http.Request request) {
         final models.Stage stage = models.Stage.getByEnvironmentNameAndName(envName, stageName);
         if (stage == null) {
             return CompletableFuture.completedFuture(notFound());
         }
         // Make sure the user is an owner of the env
-        if (!validateAuth(stage)) {
+        if (!validateAuth(stage, request)) {
             return CompletableFuture.completedFuture(unauthorized());
         }
 
@@ -189,17 +199,17 @@ public class StandardStage extends Controller implements Stage {
         final RollerDeploymentPrep deploymentPrep = new RollerDeploymentPrep();
         final DeploymentDescription description = deploymentPrep.getDeploymentDescription(stage, manifest);
         return CompletableFuture.completedFuture(
-                ok(views.html.stageDeployConfirm.render(stage, current, manifest, description, packageConflicts)));
+                ok(views.html.stageDeployConfirm.render(stage, current, manifest, description, packageConflicts, request, _webJarsUtil)));
     }
 
     @Override
-    public CompletionStage<Result> prepareDeploy(final String envName, final String stageName) {
+    public CompletionStage<Result> prepareDeploy(final String envName, final String stageName, final Http.Request request) {
         final models.Stage stage = models.Stage.getByEnvironmentNameAndName(envName, stageName);
         if (stage == null) {
             return CompletableFuture.completedFuture(notFound());
         }
         // Make sure the user is an owner of the env
-        if (!validateAuth(stage)) {
+        if (!validateAuth(stage, request)) {
             return CompletableFuture.completedFuture(unauthorized());
         }
         final ManifestHistory current = ManifestHistory.getCurrentForStage(stage);
@@ -207,10 +217,8 @@ public class StandardStage extends Controller implements Stage {
         deployManifest.setVersion(current.getId());
         deployManifest.setManifest(current.getManifest().getId());
         final Form<DeployManifest> form = DeployManifest.form(_formFactory).fill(deployManifest);
-        final String nonce = PageUtils.createNonce();
-        response().setHeader("Content-Security-Policy", String.format("script-src 'nonce-%s'", nonce));
         return CompletableFuture.completedFuture(
-                ok(views.html.stageDeployPrep.render(stage.getEnvironment(), stage, current, form, getDeployableManifests(stage), nonce)));
+                ok(views.html.stageDeployPrep.render(stage.getEnvironment(), stage, current, form, getDeployableManifests(stage), request, _messagesApi.preferred(request), _webJarsUtil)));
     }
 
     private List<Manifest> getDeployableManifests(final models.Stage stage) {
@@ -225,26 +233,24 @@ public class StandardStage extends Controller implements Stage {
     }
 
     @Override
-    public CompletionStage<Result> previewDeploy(final String envName, final String stageName) {
+    public CompletionStage<Result> previewDeploy(final String envName, final String stageName, final Http.Request request) {
         final models.Stage stage = models.Stage.getByEnvironmentNameAndName(envName, stageName);
         if (stage == null) {
             return CompletableFuture.completedFuture(notFound());
         }
         // Make sure the user is an owner of the env
-        if (!validateAuth(stage)) {
+        if (!validateAuth(stage, request)) {
             return CompletableFuture.completedFuture(unauthorized());
         }
 
-        final String nonce = PageUtils.createNonce();
-        response().setHeader("Content-Security-Policy", String.format("script-src 'nonce-%s'", nonce));
         // Check conflicts in package versions
-        final Form<DeployManifest> form = DeployManifest.form(_formFactory).bindFromRequest(request());
+        final Form<DeployManifest> form = DeployManifest.form(_formFactory).bindFromRequest(request);
         if (form.hasErrors()) {
             return CompletableFuture.completedFuture(badRequest(
                             views.html.stageDeployPrep.render(
                                     stage.getEnvironment(), stage,
                                     ManifestHistory.getCurrentForStage(stage), form, stage.getEnvironment()
-                                            .getManifests(), nonce)));
+                                            .getManifests(), request, _messagesApi.preferred(request), _webJarsUtil)));
         }
 
         final DeployManifest deployManifest = form.get();
@@ -255,7 +261,7 @@ public class StandardStage extends Controller implements Stage {
                             409, views.html.stageDeployPrep.render(
                                     stage.getEnvironment(), stage,
                                     ManifestHistory.getCurrentForStage(stage), form, stage.getEnvironment()
-                                            .getManifests(), nonce)));
+                                            .getManifests(), request, _messagesApi.preferred(request), _webJarsUtil)));
         }
 
 //        final Manifest manifest = Manifest.getVersion(stage.getEnvironment(), deployManifest.getManifest());
@@ -266,17 +272,17 @@ public class StandardStage extends Controller implements Stage {
         final DeploymentDescription description = deploymentPrep.getDeploymentDescription(stage, manifest);
         final ManifestHistory current = ManifestHistory.getCurrentForStage(stage);
         return CompletableFuture.completedFuture(
-                ok(views.html.stageDeployConfirm.render(stage, current, manifest, description, packageConflicts)));
+                ok(views.html.stageDeployConfirm.render(stage, current, manifest, description, packageConflicts, request, _webJarsUtil)));
     }
 
-    private boolean validateAuth(final models.Stage stage) {
-        final Set<Owner> userGroups = Sets.newHashSet(UserMembership.getOrgsForUser(request().attrs().get(Security.USERNAME)));
+    private boolean validateAuth(final models.Stage stage, final Http.Request request) {
+        final Set<Owner> userGroups = Sets.newHashSet(UserMembership.getOrgsForUser(request.attrs().get(Security.USERNAME)));
         if (!userGroups.contains(stage.getEnvironment().getOwner())) {
-            Logger.warn(String.format(
+            LOGGER.warn(String.format(
                     "Attempt at unauthorized deployment; environment=%s, owner=%s, user=%s, users_orgs=%s",
                     stage.getEnvironment().getName(),
                     stage.getEnvironment().getOwner().getOrgName(),
-                    request().attrs().get(Security.USERNAME),
+                    request.attrs().get(Security.USERNAME),
                     userGroups));
             return false;
         }
@@ -284,7 +290,8 @@ public class StandardStage extends Controller implements Stage {
     }
 
     @Override
-    public CompletionStage<Result> confirmDeploy(final String envName, final String stageName, final long version, final long manifestId) {
+    public CompletionStage<Result> confirmDeploy(final String envName, final String stageName, final long version, final long manifestId,
+            final Http.Request request) {
         final models.Stage stage = models.Stage.getByEnvironmentNameAndName(envName, stageName);
         if (stage == null) {
             return CompletableFuture.completedFuture(notFound());
@@ -293,7 +300,7 @@ public class StandardStage extends Controller implements Stage {
         if (manifest == null) {
             return CompletableFuture.completedFuture(notFound());
         }
-        if (!validateAuth(stage)) {
+        if (!validateAuth(stage, request)) {
             return CompletableFuture.completedFuture(unauthorized());
         }
         final ManifestHistory currentSnapshot = ManifestHistory.getCurrentForStage(stage);
@@ -306,10 +313,10 @@ public class StandardStage extends Controller implements Stage {
             return CompletableFuture.completedFuture(status(CONFLICT));
         }
 
-        final CompletionStage<Object> ask = PatternsCS.ask(
+        final CompletionStage<Object> ask = Patterns.ask(
                 _deploymentManager,
-                new FleetDeploymentCommands.DeployStage(stage, manifest, request().attrs().get(Security.USERNAME)),
-                Timeout.apply(30L, TimeUnit.SECONDS));
+                new FleetDeploymentCommands.DeployStage(stage, manifest, request.attrs().get(Security.USERNAME)),
+                Duration.ofSeconds(30));
 
         return ask.thenApply(
                 o -> {
@@ -317,22 +324,20 @@ public class StandardStage extends Controller implements Stage {
                         final Deployment deployment = (Deployment) o;
                         return redirect(controllers.routes.Deployment.detail(deployment.getId()));
                     }
-                    Logger.error("Expected Deployment response from deployment manager, got " + o);
+                    LOGGER.error("Expected Deployment response from deployment manager, got " + o);
                     return internalServerError();
                 });
     }
 
     @Override
-    public CompletionStage<Result> create(final String envName) {
-        final Form<NewStage> bound = NewStage.form(_formFactory).bindFromRequest();
+    public CompletionStage<Result> create(final String envName, final Http.Request request) {
+        final Form<NewStage> bound = NewStage.form(_formFactory).bindFromRequest(request);
         final models.Environment environment = models.Environment.getByName(envName);
         if (environment == null) {
             return CompletableFuture.completedFuture(notFound());
         }
         if (bound.hasErrors()) {
-            final String nonce = PageUtils.createNonce();
-            response().setHeader("Content-Security-Policy", String.format("script-src 'nonce-%s'", nonce));
-            return CompletableFuture.completedFuture(badRequest(views.html.environment.render(environment, bound, _formFactory.form(ConfigForm.class), false, nonce)));
+            return CompletableFuture.completedFuture(badRequest(views.html.environment.render(environment, bound, _formFactory.form(ConfigForm.class), false, request, _messagesApi.preferred(request), _webJarsUtil)));
         } else {
             try (Transaction transaction = Ebean.beginTransaction()) {
                 final NewStage newStageForm = bound.get();
@@ -342,7 +347,7 @@ public class StandardStage extends Controller implements Stage {
                 newStage.save();
 
                 final Manifest manifest = new Manifest();
-                manifest.setCreatedBy(request().attrs().get(Security.USERNAME));
+                manifest.setCreatedBy(request.attrs().get(Security.USERNAME));
                 manifest.setEnvironment(environment);
                 manifest.save();
 
@@ -354,9 +359,9 @@ public class StandardStage extends Controller implements Stage {
     }
 
     @Override
-    public CompletionStage<Result> save(final String envName, final String stageName) {
+    public CompletionStage<Result> save(final String envName, final String stageName, final Http.Request request) {
         final models.Stage stage = models.Stage.getByEnvironmentNameAndName(envName, stageName);
-        Form<ConfigForm> configForm = ConfigForm.form(_formFactory).bindFromRequest();
+        Form<ConfigForm> configForm = ConfigForm.form(_formFactory).bindFromRequest(request);
 
         final Map<String, String> configData = configForm.rawData();
         final String config = configData.get("config");
@@ -368,48 +373,45 @@ public class StandardStage extends Controller implements Stage {
         final List<Deployment> stageDeployments = models.Deployment.getByStage(stage, 10, 0);
         final List<ManifestHistory> stageSnapshots = models.ManifestHistory.getByStage(stage, 10, 0);
         final ManifestHistory current = ManifestHistory.getCurrentForStage(stage);
-        final String nonce = PageUtils.createNonce();
-        response().setHeader("Content-Security-Policy", String.format("script-src 'nonce-%s'", nonce));
 
         if (configForm.hasErrors()) {
             return CompletableFuture.completedFuture(
                     badRequest(views.html.stageDetail.render(stage, stageDeployments, stageSnapshots, current.getManifest(),
-                            AddHostclassToStage.form(_formFactory), configForm, true, nonce)));
+                            AddHostclassToStage.form(_formFactory), configForm, true, request, _messagesApi.preferred(request), _webJarsUtil)));
         }
         stage.setConfig(config);
         try {
             stage.save();
             return CompletableFuture.completedFuture(
                     ok(views.html.stageDetail.render(stage, stageDeployments, stageSnapshots, current.getManifest(),
-                            AddHostclassToStage.form(_formFactory), configForm, true, nonce)));
+                            AddHostclassToStage.form(_formFactory), configForm, true, request, _messagesApi.preferred(request), _webJarsUtil)));
         } catch (final PersistenceException e) {
             return CompletableFuture.completedFuture(
                     badRequest(views.html.stageDetail.render(stage, stageDeployments, stageSnapshots, current.getManifest(),
-                            AddHostclassToStage.form(_formFactory), configForm, true, nonce)));
+                            AddHostclassToStage.form(_formFactory), configForm, true, request, _messagesApi.preferred(request), _webJarsUtil)));
         }
 
 
     }
 
     @Override
-    public CompletionStage<Result> promote(final String sourceEnvName, final String sourceStageName) {
-        final Form<CopyStage> bound = CopyStage.form(_formFactory).bindFromRequest();
+    public CompletionStage<Result> promote(final String sourceEnvName, final String sourceStageName, final Http.Request request) {
+        final Form<CopyStage> bound = CopyStage.form(_formFactory).bindFromRequest(request);
         final models.Stage sourceStage = models.Stage.getByEnvironmentNameAndName(sourceEnvName, sourceStageName);
         final models.Stage destStage = models.Stage.getByEnvironmentNameAndName(bound.get().getEnvName(), bound.get().getStageName());
-        return copy(sourceStage, destStage);
+        return copy(sourceStage, destStage, request);
     }
 
     @Override
-    public CompletionStage<Result> synchronize(final String sourceEnvName, final String sourceStageName) {
-        final Form<CopyStage> bound = CopyStage.form(_formFactory).bindFromRequest();
+    public CompletionStage<Result> synchronize(final String sourceEnvName, final String sourceStageName, final Http.Request request) {
+        final Form<CopyStage> bound = CopyStage.form(_formFactory).bindFromRequest(request);
         final models.Stage sourceStage = models.Stage.getByEnvironmentNameAndName(bound.get().getEnvName(), bound.get().getStageName());
         final models.Stage destStage = models.Stage.getByEnvironmentNameAndName(sourceEnvName, sourceStageName);
-        return copy(sourceStage, destStage);
+        return copy(sourceStage, destStage, request);
     }
 
-    private CompletionStage<Result> copy(final models.Stage sourceStage, final models.Stage destStage) {
-        final String nonce = PageUtils.createNonce();
-        response().setHeader("Content-Security-Policy", String.format("script-src 'nonce-%s'", nonce));
+    private CompletionStage<Result> copy(final models.Stage sourceStage, final models.Stage destStage, final Http.Request request) {
+        Result t = new Result(0);
         if (sourceStage == null || destStage == null) {
             return CompletableFuture.completedFuture(notFound());
         }
@@ -428,10 +430,12 @@ public class StandardStage extends Controller implements Stage {
             final RollerDeploymentPrep deploymentPrep = new RollerDeploymentPrep();
             final DeploymentDescription description = deploymentPrep.getDeploymentDescription(destStage, manifestToCopy);
             return CompletableFuture.completedFuture(
-                    ok(views.html.stageDeployConfirm.render(destStage, currentOnDest, manifestToCopy, description, packageConflicts)));
+                    ok(views.html.stageDeployConfirm.render(destStage, currentOnDest, manifestToCopy, description, packageConflicts, request, _webJarsUtil)));
         }
     }
 
     private final ActorRef _deploymentManager;
     private final FormFactory _formFactory;
+    private MessagesApi _messagesApi;
+    private WebJarsUtil _webJarsUtil;
 }

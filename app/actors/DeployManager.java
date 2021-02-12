@@ -17,6 +17,7 @@ package actors;
 
 import akka.actor.AbstractActor;
 import akka.actor.Props;
+import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.groupon.deployment.FleetDeploymentCommands;
@@ -31,13 +32,11 @@ import models.Manifest;
 import models.ManifestHistory;
 import models.Stage;
 import org.joda.time.DateTime;
-import play.Logger;
-import scala.concurrent.duration.FiniteDuration;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.time.Duration;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import javax.inject.Singleton;
 
 /**
@@ -55,9 +54,9 @@ public class DeployManager extends AbstractActor {
     @Inject
     public DeployManager(final FleetDeploymentFactory fleetDeploymentFactory) {
         _fleetDeploymentFactory = fleetDeploymentFactory;
-        context().system().scheduler().schedule(
-                FiniteDuration.apply(3, TimeUnit.SECONDS),
-                FiniteDuration.apply(30, TimeUnit.SECONDS),
+        context().system().scheduler().scheduleWithFixedDelay(
+                Duration.ofSeconds(3),
+                Duration.ofSeconds(30),
                 self(),
                 new DeploymentSweep(), context().dispatcher(), self());
     }
@@ -73,15 +72,15 @@ public class DeployManager extends AbstractActor {
     private void sweepForStuckDeployments() {
         final Deployment stuckDeployment = Deployment.getAndLockStuckDeployment();
         if (stuckDeployment != null) {
-            Logger.info(String.format("Found stuck deployment, resuming; id=%d", stuckDeployment.getId()));
+            LOGGER.info(String.format("Found stuck deployment, resuming; id=%d", stuckDeployment.getId()));
             startDeployment(stuckDeployment);
         } else {
-            Logger.info("Found no stuck deployments");
+            LOGGER.info("Found no stuck deployments");
         }
     }
 
     private void deployStage(final FleetDeploymentCommands.DeployStage deployStageMessage) {
-        Logger.info("DeployManager starting a fleet deployment");
+        LOGGER.info("DeployManager starting a fleet deployment");
         // TODO(barp): make sure the stage is locked [Artemis-?]
         // TODO(barp): try grabbing the deployment lock [Artemis-?]
         // TODO(barp): lookup any existing child actor deploying that stage [Artemis-?]
@@ -129,6 +128,7 @@ public class DeployManager extends AbstractActor {
     }
 
     private final FleetDeploymentFactory _fleetDeploymentFactory;
+    private static final com.arpnetworking.steno.Logger LOGGER = LoggerFactory.getLogger(DeployManager.class);
 
     private static final class DeploymentSweep {}
 }

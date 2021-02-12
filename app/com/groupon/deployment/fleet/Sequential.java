@@ -20,6 +20,7 @@ import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
 import client.DeploymentClientFactory;
+import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Queues;
 import com.google.inject.assistedinject.Assisted;
@@ -80,12 +81,12 @@ public class Sequential extends AbstractActor {
         }
         // If this host no longer owns the deployment, die
         if (!myName.equals(_deployment.getDeploymentOwner())) {
-            Logger.warn(String.format(
+            LOGGER.warn(String.format(
                     "Current server does not own the deployment, aborting deploy on this server; owner=%s",
                     _deployment.getDeploymentOwner()));
             self().tell(PoisonPill.getInstance(), self());
         }
-        Logger.info("Sequential fleet deployment actor started up");
+        LOGGER.info("Sequential fleet deployment actor started up");
 
         final List<HostDeployment> hosts = Lists.newArrayList();
         deployment.getHostStates().forEach(
@@ -126,7 +127,7 @@ public class Sequential extends AbstractActor {
                     // Only update if the host is the currently deploying host
                     _deployment.heartbeat();
                     if (!_current.getHost().getName().equals(succeeded.getHost().getName())) {
-                        Logger.warn(String.format(
+                        LOGGER.warn(String.format(
                                 "Received a host deployment succeeded message from unexpected host; expected=%s, actual=%s",
                                 _current.getHost().getName(),
                                 succeeded.getHost().getName()));
@@ -141,7 +142,7 @@ public class Sequential extends AbstractActor {
                 .match(HostDeploymentNotifications.DeploymentStarted.class, started -> {
                     _deployment.heartbeat();
                     if (!_current.getHost().getName().equals(started.getHost().getName())) {
-                        Logger.warn(String.format(
+                        LOGGER.warn(String.format(
                                 "Received a host deployment started message from unexpected host; expected=%s, actual=%s",
                                 _current.getHost().getName(),
                                 started.getHost().getName()));
@@ -159,7 +160,7 @@ public class Sequential extends AbstractActor {
     private void processHostDeploymentFailedMessage(final HostDeploymentNotifications.DeploymentFailed failed) {
         _deployment.heartbeat();
         if (!_current.getHost().getName().equals(failed.getHost().getName())) {
-            Logger.warn(String.format(
+            LOGGER.warn(String.format(
                     "Received a host deployment failed message from unexpected host; expected=%s, actual=%s",
                     _current.getHost().getName(),
                     failed.getHost().getName()));
@@ -192,7 +193,7 @@ public class Sequential extends AbstractActor {
             }
             // If the host is ourselves, then set the owner to null and wait for someone else to take over
             if (myName.equals(_current.getHost().getName())) {
-                Logger.info("Found myself as the deploy target. Turning over control.");
+                LOGGER.info("Found myself as the deploy target. Turning over control.");
                 _deployment.refresh();
                 _deployment.setDeploymentOwner(null);
                 _deployment.save();
@@ -275,4 +276,5 @@ public class Sequential extends AbstractActor {
     private final DeploymentClientFactory _dcf;
     private final SshSessionFactory _sshFactory;
     private final Deployment _deployment;
+    private static final com.arpnetworking.steno.Logger LOGGER = LoggerFactory.getLogger(Sequential.class);
 }

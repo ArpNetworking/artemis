@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2015 Groupon.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,6 +15,7 @@
  */
 package controllers;
 
+import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
@@ -33,18 +34,20 @@ public interface Stage {
      *
      * @param envName the environment name
      * @param stageName the stage name
+     * @param request the HTTP request
      * @return a {@link Result}
      */
-    CompletionStage<Result> detail(String envName, String stageName);
+    CompletionStage<Result> detail(String envName, String stageName, Http.Request request);
 
     /**
      * Add a hostclass to a stage.
      *
      * @param envName the environment name
      * @param stageName the stage name
+     * @param request the HTTP request
      * @return a {@link Result}
      */
-    CompletionStage<Result> addHostclass(String envName, String stageName);
+    CompletionStage<Result> addHostclass(String envName, String stageName, Http.Request request);
 
     /**
      * Remove a hostclass from a stage.
@@ -52,18 +55,20 @@ public interface Stage {
      * @param envName the environment name
      * @param stageName the stage name
      * @param hostclassName the name of the hostclass to add
+     * @param request the HTTP request
      * @return a {@link Result}
      */
-    CompletionStage<Result> removeHostclass(String envName, String stageName, String hostclassName);
+    CompletionStage<Result> removeHostclass(String envName, String stageName, String hostclassName, Http.Request request);
 
     /**
      * Prepare a deployment.
      *
      * @param envName the environment name
      * @param stageName the stage name
+     * @param request the HTTP request
      * @return a {@link Result}
      */
-    CompletionStage<Result> prepareDeploy(String envName, String stageName);
+    CompletionStage<Result> prepareDeploy(String envName, String stageName, Http.Request request);
 
     /**
      * Prepare a deployment.
@@ -71,18 +76,20 @@ public interface Stage {
      * @param envName the environment name
      * @param stageName the stage name
      * @param manifestId the manifest
+     * @param request the HTTP request
      * @return a {@link Result}
      */
-    CompletionStage<Result> prepareDeployManifest(String envName, String stageName, long manifestId);
+    CompletionStage<Result> prepareDeployManifest(String envName, String stageName, long manifestId, Http.Request request);
 
     /**
      * Preview a deployment.
      *
      * @param envName the environment name
      * @param stageName the stage name
+     * @param request the HTTP request
      * @return a {@link Result}
      */
-    CompletionStage<Result> previewDeploy(String envName, String stageName);
+    CompletionStage<Result> previewDeploy(String envName, String stageName, Http.Request request);
 
     /**
      * Confirm a deployment.
@@ -91,42 +98,48 @@ public interface Stage {
      * @param stageName the stage name
      * @param version a version string to prevent races
      * @param manifestId the manifest to deploy
+     * @param request the HTTP request
      * @return a {@link Result}
      */
-    CompletionStage<Result> confirmDeploy(String envName, String stageName, long version, long manifestId);
+    CompletionStage<Result> confirmDeploy(String envName, String stageName, long version, long manifestId,
+            final Http.Request request);
 
     /**
      * Create a stage.
      *
      * @param envName the environment name
+     * @param request the HTTP request
      * @return a {@link Result}
      */
-    CompletionStage<Result> create(String envName);
+    CompletionStage<Result> create(String envName, Http.Request request);
 
     /**
      * Update stage config.
      *
      * @param envName the environment name
      * @param stageName the stage name
+     * @param request the HTTP request
      * @return a {@link Result}
      */
-    CompletionStage<Result> save(String envName, String stageName);
+    CompletionStage<Result> save(String envName, String stageName, Http.Request request);
 
     /**
      * Promote a stage to another.
      *
      * @param sourceEnvName the source environment name
      * @param sourceStageName the source stage name
+     * @param request the HTTP request
      * @return a {@link Result}
      */
-    CompletionStage<Result> promote(String sourceEnvName, String sourceStageName);
+    CompletionStage<Result> promote(String sourceEnvName, String sourceStageName, Http.Request request);
 
     /**
      * Synchronize this stage from another.
      *
      * @param sourceEnvName the source environment name
      * @param sourceStageName the source stage name
+     * @param request the HTTP request
      * @return a {@link Result}
      */
-    CompletionStage<Result> synchronize(String sourceEnvName, String sourceStageName);
+    CompletionStage<Result> synchronize(String sourceEnvName, String sourceStageName, Http.Request request);
 }

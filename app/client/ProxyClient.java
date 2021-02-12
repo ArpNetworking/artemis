@@ -70,7 +70,7 @@ public class ProxyClient extends ClientBase {
 
         builder.setUrl(uri.toString());
         builder.setMethod(request.method());
-        for (final Map.Entry<String, List<String>> entry : request.getHeaders().toMap().entrySet()) {
+        for (final Map.Entry<String, List<String>> entry : request.getHeaders().asMap().entrySet()) {
             for (final String val : entry.getValue()) {
                 builder.setHeader(entry.getKey(), val);
             }

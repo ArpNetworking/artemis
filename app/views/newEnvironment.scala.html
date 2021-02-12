@@ -15,7 +15,8 @@
 *@
 @import views.html.helper.FieldConstructor
 @import java.util
-@(form: Form[forms.NewEnvironment], orgs: List[Owner], envTypes: Collection[EnvironmentType])
+@import org.webjars.play.WebJarsUtil
+@(form: Form[forms.NewEnvironment], orgs: List[Owner], envTypes: Collection[EnvironmentType])(implicit request: Http.RequestHeader, messages: play.i18n.Messages, webJarsUtil: WebJarsUtil)
 @implicitField = @{ FieldConstructor(toolstrapFieldConstructor.f) }
 @main("New Environment", true) {
     <h3>Create a new environment</h3>
@@ -45,8 +46,8 @@
             } else {
                 <input type="hidden" value="@envTypes.head.name" name="envType">
             }
-            @if(form("parent").getValue.isPresent) {
-                <input type="hidden" name="parent" value="@form("parent").getValue.get">
+            @if(form("parent").value.isPresent) {
+                <input type="hidden" name="parent" value="@form("parent").value.get">
             }
             <input type="submit" name="submit" class="btn btn-primary" value="Add">
         }

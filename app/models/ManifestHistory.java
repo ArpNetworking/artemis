@@ -102,7 +102,7 @@ public class ManifestHistory extends Model {
     @Nullable
     public static ManifestHistory getCurrentForStage(final Stage stage) {
         //TODO(barp): why is this locking? [Artemis-?]
-        return Ebean.createQuery(ManifestHistory.class).setForUpdate(true).where().eq("stage", stage).isNull("finish").findOne();
+        return Ebean.createQuery(ManifestHistory.class).forUpdate().where().eq("stage", stage).isNull("finish").findOne();
     }
 
     /**

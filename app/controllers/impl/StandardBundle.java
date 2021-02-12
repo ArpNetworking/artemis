@@ -17,6 +17,7 @@ package controllers.impl;
 
 import controllers.Bundle;
 import play.mvc.Controller;
+import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
@@ -42,7 +43,7 @@ public class StandardBundle extends Controller implements Bundle {
     }
 
     @Override
-    public CompletionStage<Result> newBundle() {
+    public CompletionStage<Result> newBundle(final Http.Request request) {
         /*
         Form<NewEnvironment> form = NewEnvironment.form();
         final models.Environment parent = models.Environment.getByName(parentEnv);

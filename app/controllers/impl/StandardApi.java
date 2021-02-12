@@ -18,11 +18,14 @@ package controllers.impl;
 import actors.DeployLogRelay;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import akka.pattern.Patterns;
 import akka.pattern.PatternsCS;
 import akka.stream.OverflowStrategy;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
 import akka.util.Timeout;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -38,14 +41,16 @@ import models.ManifestHistory;
 import models.Package;
 import models.PackageVersion;
 import models.Stage;
-import play.Logger;
 import play.libs.Json;
 import play.mvc.Controller;
+import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Results;
 
+import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
@@ -73,7 +78,7 @@ public class StandardApi extends Controller implements Api {
     }
 
     @Override
-    public CompletionStage<Result> hostclassSearch(final String query) {
+    public CompletionStage<Result> hostclassSearch(final String query, final Http.Request request) {
         final ObjectNode node = Json.newObject();
         final List<models.Hostclass> hostclasses = models.Hostclass.searchByPartialName(query, 10);
         final ArrayNode resultsArray = node.putArray("results");
@@ -84,7 +89,7 @@ public class StandardApi extends Controller implements Api {
     }
 
     @Override
-    public CompletionStage<Result> packageSearch(final String query) {
+    public CompletionStage<Result> packageSearch(final String query, final Http.Request request) {
         final ObjectNode node = Json.newObject();
         final List<models.Package> packages = models.Package.searchByPartialName(query, 10);
         final ArrayNode resultsArray = node.putArray("results");
@@ -95,7 +100,7 @@ public class StandardApi extends Controller implements Api {
     }
 
     @Override
-    public CompletionStage<Result> environmentSearch(final String query) {
+    public CompletionStage<Result> environmentSearch(final String query, final Http.Request request) {
         final ObjectNode node = Json.newObject();
         final List<Environment> environments = Environment.searchByPartialName(query, 10);
         final ArrayNode resultsArray = node.putArray("results");
@@ -106,7 +111,7 @@ public class StandardApi extends Controller implements Api {
     }
 
     @Override
-    public CompletionStage<Result> getStages(final String envName) {
+    public CompletionStage<Result> getStages(final String envName, final Http.Request request) {
         final Environment environment = Environment.getByName(envName);
         if (environment == null) {
             return CompletableFuture.completedFuture(notFound());
@@ -122,14 +127,15 @@ public class StandardApi extends Controller implements Api {
 
     //TODO(barp): Authenticate this [Artemis-?]
     @Override
-    public CompletionStage<Result> updateStagePackageVersions(final String envName, final String stageName) {
+    public CompletionStage<Result> updateStagePackageVersions(final String envName, final String stageName,
+            final Http.Request request) {
         final models.Stage stage = models.Stage.getByEnvironmentNameAndName(envName, stageName);
         if (stage == null) {
             return CompletableFuture.completedFuture(notFound());
         }
 
         final List<models.PackageVersion> versions = Lists.newArrayList();
-        final JsonNode requestJson = request().body().asJson();
+        final JsonNode requestJson = request.body().asJson();
         if (requestJson == null) {
             return CompletableFuture.completedFuture(badRequest());
         }
@@ -151,10 +157,10 @@ public class StandardApi extends Controller implements Api {
         newManifest.getPackages().addAll(newPackages.values());
         newManifest.save();
 
-        final CompletionStage<Object> ask = PatternsCS.ask(
+        final CompletionStage<Object> ask = Patterns.ask(
                 _deploymentManager,
                 new FleetDeploymentCommands.DeployStage(stage, newManifest, "api"),
-                Timeout.apply(30L, TimeUnit.SECONDS));
+                Duration.ofSeconds(30));
 
         return ask.thenApply(
                 o -> {
@@ -162,7 +168,7 @@ public class StandardApi extends Controller implements Api {
                         final Deployment deployment = (Deployment) o;
                         return ok(JsonNodeFactory.instance.objectNode().put("deployId", deployment.getId()));
                     }
-                    Logger.error("Expected Deployment response from deployment manager, got " + o);
+                    LOGGER.error("Expected Deployment response from deployment manager, got " + o);
                     return internalServerError();
                 });
     }
@@ -186,7 +192,7 @@ public class StandardApi extends Controller implements Api {
     }
 
     @Override
-    public CompletionStage<Result> getReleasePreview(final String envName, final String version) {
+    public CompletionStage<Result> getReleasePreview(final String envName, final String version, final Http.Request request) {
         final Environment environment = Environment.getByName(envName);
         if (environment == null) {
             return CompletableFuture.completedFuture(notFound());
@@ -209,16 +215,14 @@ public class StandardApi extends Controller implements Api {
     }
 
     @Override
-    public CompletionStage<Result> deploymentLog(final long deploymentId) {
+    public CompletionStage<Result> deploymentLog(final long deploymentId, final Http.Request request) {
         final Deployment deployment = Deployment.getById(deploymentId);
         if (deployment == null) {
             return CompletableFuture.completedFuture(notFound());
         }
 
-        final Source<ByteString, ?> source = Source.<String>actorRef(1024, OverflowStrategy.dropTail())
-                .map(string -> {
-                    return ByteString.fromString(string);
-                })
+        final Source<ByteString, ?> source = Source.<String>actorRef((e) -> Optional.empty(), (e) -> Optional.empty(), 1024, OverflowStrategy.dropTail())
+                .map(ByteString::fromString)
                 .mapMaterializedValue(outRef -> {
                     final ActorRef relayActor = _actorSystem.actorOf(DeployLogRelay.props(outRef, deploymentId));
                     relayActor.tell(outRef, ActorRef.noSender());
@@ -229,4 +233,5 @@ public class StandardApi extends Controller implements Api {
 
     private final ActorRef _deploymentManager;
     private final ActorSystem _actorSystem;
+    private static final Logger LOGGER = LoggerFactory.getLogger(StandardApi.class);
 }

@@ -18,6 +18,7 @@ package controllers.impl.proxy;
 import controllers.ArtemisProxy;
 import controllers.Hostclass;
 import play.libs.ws.WSClient;
+import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
@@ -47,22 +48,22 @@ public class ProxyHostclass extends ArtemisProxy implements Hostclass {
     }
 
     @Override
-    public CompletionStage<Result> detail(final String name) {
-        return proxy();
+    public CompletionStage<Result> detail(final String name, final Http.Request request) {
+        return proxy(request);
     }
 
     @Override
-    public CompletionStage<Result> newHostclass(final String parentHostclass) {
-        return proxy();
+    public CompletionStage<Result> newHostclass(final String parentHostclass, final Http.Request request) {
+        return proxy(request);
     }
 
     @Override
-    public CompletionStage<Result> addHost(final String hostclassName) {
-        return proxy();
+    public CompletionStage<Result> addHost(final String hostclassName, final Http.Request request) {
+        return proxy(request);
     }
 
     @Override
-    public CompletionStage<Result> create() {
-        return proxy();
+    public CompletionStage<Result> create(final Http.Request request) {
+        return proxy(request);
     }
 }

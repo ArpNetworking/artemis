@@ -15,4 +15,4 @@
 
 GET         /host/:hostname                    @controllers.config.Config.host(hostname)
 GET         /hostclass/:hostclass              @controllers.config.Config.hostclass(hostclass)
-GET         /*path                             @controllers.config.Config.proxy(path)
+GET         /*path                             @controllers.config.Config.proxy(path, request: Request)

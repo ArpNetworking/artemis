@@ -15,6 +15,7 @@
  */
 package controllers;
 
+import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
@@ -32,23 +33,26 @@ public interface Deployment {
      * Shows a deployment detail page.
      *
      * @param deploymentId the deployment id
+     * @param request the HTTP request
      * @return a {@link Result}
      */
-    CompletionStage<Result> detail(long deploymentId);
+    CompletionStage<Result> detail(long deploymentId, Http.Request request);
 
     /**
      * Shows a deployment log page.
      *
      * @param deploymentId the deployment id
+     * @param request the HTTP request
      * @return a {@link Result}
      */
-    CompletionStage<Result> log(long deploymentId);
+    CompletionStage<Result> log(long deploymentId, Http.Request request);
 
     /**
      * Shows a deployment diff page.
      *
      * @param deploymentId the deployment id
+     * @param request the HTTP request
      * @return a {@link Result}
      */
-    CompletionStage<Result> diff(long deploymentId);
+    CompletionStage<Result> diff(long deploymentId, Http.Request request);
 }

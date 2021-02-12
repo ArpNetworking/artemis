@@ -31,6 +31,7 @@ import play.mvc.Result;
 import play.mvc.Security;
 
 import java.util.List;
+import java.util.Optional;
 import javax.inject.Inject;
 import javax.persistence.PersistenceException;
 
@@ -54,26 +55,26 @@ public class AuthN extends Security.Authenticator {
     }
 
     @Override
-    public String getUsername(final Http.Context ctx) {
+    public Optional<String> getUsername(final Http.Request request) {
         final boolean useDefaultLogin = _application.isDev() && _configuration.getBoolean("auth.useDefaultLogin");
-        if (ctx.session().containsKey("auth-id")) {
+        if (request.session().data().containsKey("auth-id")) {
             LOGGER.debug("Found auth id in session cookie");
-            final String authId = ctx.session().get("auth-id");
+            final String authId = request.session().data().get("auth-id");
             if (TOKEN_CACHE.getIfPresent(authId) != null) {
-                return authId;
+                return Optional.of(authId);
             } else {
                 final Authentication authentication = Authentication.findByUserName(authId);
                 if (authentication != null) {
                     TOKEN_CACHE.put(authId, authentication.getToken());
-                    return authId;
+                    return Optional.of(authId);
                 } else if (useDefaultLogin) {
                     // Dev mode, we dont need a token for the user
                     // If the user has an existing group, then we can assume the database wasn't just reset
                     if (getOrganizations(authId).size() == 0) {
                         LOGGER.debug(String.format("Did not find orgs for user=%s, storing the defaults", authId));
-                        initializeAuthenticatedSession(ctx, authId, _configuration.getStringList("dev.defaultGroups"));
+                        initializeAuthenticatedSession(request, authId, _configuration.getStringList("dev.defaultGroups"));
                     }
-                    return authId;
+                    return Optional.of(authId);
                 } else {
                     LOGGER.debug("Did not find authentication in database, sending user through auth flow");
                 }
@@ -81,26 +82,26 @@ public class AuthN extends Security.Authenticator {
         } else if (useDefaultLogin) {
             LOGGER.debug("Did not find auth id in sesion cookie, using defaults");
             final String userName = _configuration.getString("dev.defaultUser");
-            initializeAuthenticatedSession(ctx, userName, _configuration.getStringList("dev.defaultGroups"));
-            return userName;
+            initializeAuthenticatedSession(request, userName, _configuration.getStringList("dev.defaultGroups"));
+            return Optional.of(userName);
         }
 
-        return null;
+        return Optional.empty();
     }
 
     @Override
-    public Result onUnauthorized(final Http.Context ctx) {
-        return redirect(controllers.routes.Authentication.auth(ctx.request().uri()));
+    public Result onUnauthorized(final Http.Request request) {
+        return redirect(controllers.routes.Authentication.auth(request.uri()));
     }
 
     /**
      * Starts a session and sets the session cookies.
      *
-     * @param ctx play request context
+     * @param request play request context
      * @param userName the user name
      * @param organizations the list of organizations the user is a part of
      */
-    public static void initializeAuthenticatedSession(final Http.Context ctx, final String userName, final List<String> organizations) {
+    public static void initializeAuthenticatedSession(final Http.Request request, final String userName, final List<String> organizations) {
         final List<Owner> orgList = Lists.newArrayList();
         for (final String organization : organizations) {
             Owner org = Owner.getByName(organization);
@@ -129,7 +130,7 @@ public class AuthN extends Security.Authenticator {
             }
         }
         USER_ORGS.put(userName, orgList);
-        ctx.session().put("auth-id", userName);
+        request.session().adding("auth-id", userName);
         LOGGER.info("added user " + userName + " to session.");
     }
 
@@ -155,8 +156,8 @@ public class AuthN extends Security.Authenticator {
      *
      * @param ctx the play request context
      */
-    public static void logout(final Http.Context ctx) {
-        ctx.session().clear();
+    public static void logout(final Http.Request ctx) {
+        ctx.session().data().clear();
     }
 
     /**

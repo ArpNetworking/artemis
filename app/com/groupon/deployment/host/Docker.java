@@ -17,8 +17,6 @@ package com.groupon.deployment.host;
 
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
-import akka.dispatch.Futures;
-import akka.dispatch.OnComplete;
 import client.DockerDeploymentClient;
 import client.DockerDeploymentClient.ContainerDescription;
 import client.docker.PortMapping;
@@ -35,15 +33,14 @@ import models.Host;
 import models.Manifest;
 import models.PackageVersion;
 import models.Stage;
-import scala.compat.java8.JFunction;
-import scala.compat.java8.JFunction1;
-import scala.concurrent.ExecutionContext;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -61,7 +58,7 @@ public class Docker extends AbstractActor {
      * @param futuresContext a context to run futures in
      */
     @AssistedInject
-    public Docker(@Assisted final DockerDeploymentClient deploymentClient, final ExecutionContext futuresContext) {
+    public Docker(@Assisted final DockerDeploymentClient deploymentClient, final Executor futuresContext) {
         _deploymentClient = deploymentClient;
         _futuresContext = futuresContext;
     }
@@ -92,8 +89,15 @@ public class Docker extends AbstractActor {
 
         // TODO(mhayter): andThen always runs in the provided _futuresContext, right? .map sometimes runs in the calling thread. [Artemis-?]
         final String environmentId = String.valueOf(stage.getEnvironment().getId());
-        Futures.future(_deploymentClient::getRunningContainers, _futuresContext)
-                .map(JFunction.func(containers -> {
+        final CompletableFuture<Void> containerDescriptions = CompletableFuture.supplyAsync(() -> {
+                    try {
+                        return _deploymentClient.getRunningContainers();
+                    } catch (DockerDeploymentClient.DockerDeploymentClientException e) {
+                        throw new RuntimeException(e);
+                    }
+                },
+                _futuresContext)
+                .thenApplyAsync(containers -> {
                     context().parent().tell(
                             new HostDeploymentNotifications.DeploymentLog(
                                     host,
@@ -105,14 +109,12 @@ public class Docker extends AbstractActor {
                                     "Looking for extraneous containers"),
                             self());
                     return findContainersForRemoval(manifest, containers, environmentId);
-                }), _futuresContext)
-                .map(JFunction.func(new RmContainersCb(logger)), _futuresContext)
-                .map(JFunction.func(new PullImagesCb(manifest, _deploymentClient, logger)), _futuresContext)
-                .map(JFunction.func(new GetPortsCb(manifest, _deploymentClient, logger)), _futuresContext)
-                .map(JFunction.func(new StartImagesCb(manifest, _deploymentClient, logger, environmentId)), _futuresContext)
-                .andThen(new OnComplete<Void>() {
-                    @Override
-                    public void onComplete(final Throwable failure, final Void success) throws Throwable {
+                })
+                .thenApplyAsync((containers) -> rmContainersCb(logger, containers, _deploymentClient), _futuresContext)
+//                .map(JFunction.func(new PullImagesCb(manifest, _deploymentClient, logger)), _futuresContext)
+                .thenApplyAsync((v) -> getPortsCb(manifest, _deploymentClient, logger), _futuresContext)
+                .thenApplyAsync((portsMap) -> startImagesCb(manifest, _deploymentClient, logger, environmentId, portsMap), _futuresContext)
+                .whenCompleteAsync((success, failure) -> {
                         if (failure == null) {
                             // Deploy success!
                             parent.tell(new HostDeploymentNotifications.DeploymentSucceeded(host), self());
@@ -120,8 +122,6 @@ public class Docker extends AbstractActor {
                             // Deploy failure!
                             parent.tell(new HostDeploymentNotifications.DeploymentFailed(host, failure), self());
                         }
-
-                    }
                 }, _futuresContext);
     }
 
@@ -150,7 +150,7 @@ public class Docker extends AbstractActor {
     }
 
     private final DockerDeploymentClient _deploymentClient;
-    private final ExecutionContext _futuresContext;
+    private final Executor _futuresContext;
     private Manifest _manifest;
 
     /**
@@ -183,145 +183,89 @@ public class Docker extends AbstractActor {
         }
     }
 
-    private static final class StartImagesCb implements JFunction1<Map<PackageVersion, List<PortMapping>>, Void> {
-        private StartImagesCb(
-                final Manifest manifest,
-                final DockerDeploymentClient client,
-                final LoggerToParent logger,
-                final String envId) {
-            _manifest = manifest;
-            _client = client;
-            _logger = logger;
-            _envId = envId;
-        }
-
-        @Override
-        public Void apply(final Map<PackageVersion, List<PortMapping>> packageToPortMap) {
-            // Start all the images from the manifest
-            for (final PackageVersion pkgVersion : _manifest.getPackages()) {
-                _logger.log("Starting container with image " + pkgVersion.getVersion());
-                // The docker ImageId is the 'version' in the manifest package list
-                final String imageId = pkgVersion.getVersion();
-                final DockerDeploymentClient.RunCommandBuilder runCommandBuilder = _client.createRunCommandBuilder(imageId);
-                // The container name MUST match CONTAINER_NAME_PATTERN
-                runCommandBuilder.setContainerName(CONTAINER_NAME_PREFIX + _envId);
-                for (final PortMapping portMapping : packageToPortMap.get(pkgVersion)) {
-                    runCommandBuilder.addPortMapping(portMapping);
-                }
-
-                try {
-                    runCommandBuilder.doRun();
-                } catch (final DockerDeploymentClient.DockerDeploymentClientException e) {
-                    throw new RuntimeException(e);
-                }
+    private static Void startImagesCb(
+            final Manifest manifest,
+            final DockerDeploymentClient client,
+            final LoggerToParent logger,
+            final String envId,
+            final Map<PackageVersion, List<PortMapping>> packageToPortMap) {
+        // Start all the images from the manifest
+        for (final PackageVersion pkgVersion : manifest.getPackages()) {
+            logger.log("Starting container with image " + pkgVersion.getVersion());
+            // The docker ImageId is the 'version' in the manifest package list
+            final String imageId = pkgVersion.getVersion();
+            final DockerDeploymentClient.RunCommandBuilder runCommandBuilder = client.createRunCommandBuilder(imageId);
+            // The container name MUST match CONTAINER_NAME_PATTERN
+            runCommandBuilder.setContainerName(CONTAINER_NAME_PREFIX + envId);
+            for (final PortMapping portMapping : packageToPortMap.get(pkgVersion)) {
+                runCommandBuilder.addPortMapping(portMapping);
             }
-            return null;
-        }
 
-
-
-        private final Manifest _manifest;
-        private final DockerDeploymentClient _client;
-        private final LoggerToParent _logger;
-        private final String _envId;
-        private static final long serialVersionUID = -8489088643825495311L;
-    }
-
-    private class RmContainersCb implements JFunction1<List<ContainerDescription>, Void> {
-        private final LoggerToParent _logger;
-
-        RmContainersCb(final LoggerToParent logger) {
-            _logger = logger;
-        }
-
-
-        @Override
-        public Void apply(final List<ContainerDescription> containers) {
             try {
-                for (final ContainerDescription c : containers) {
-                    _logger.log("Removing container " + c.getName());
-                    _deploymentClient.stopAndRemoveContainer(c.getId());
-                }
-            } catch (final DockerDeploymentClient.DockerDeploymentClientException e) {
-                throw new DockerDeployFailureException("Failed to remove extraneous running containers", e);
-            }
-            return null;
-        }
-
-        private static final long serialVersionUID = 3840905603195409063L;
-    }
-
-    private static final class GetPortsCb implements JFunction1<Void, Map<PackageVersion, List<PortMapping>>> {
-        private final Manifest _manifest;
-        private final DockerDeploymentClient _deploymentClient;
-        private final LoggerToParent _logger;
-
-        private GetPortsCb(final Manifest manifest, final DockerDeploymentClient deploymentClient, final LoggerToParent logger) {
-            _manifest = manifest;
-            _deploymentClient = deploymentClient;
-            _logger = logger;
-        }
-
-        @Override
-        public Map<PackageVersion, List<PortMapping>> apply(final Void v1) {
-            final List<String> imageReferences = new LinkedList<>();
-            final List<PackageVersion> packageVersions = _manifest.getPackages();
-            for (final PackageVersion packageVersion : packageVersions) {
-                imageReferences.add(packageVersion.getVersion());
-            }
-
-            final List<ImageInspection> inspections;
-            try {
-                inspections = _deploymentClient.inspectImages(imageReferences);
+                runCommandBuilder.doRun();
             } catch (final DockerDeploymentClient.DockerDeploymentClientException e) {
                 throw new RuntimeException(e);
             }
-
-            final Map<PackageVersion, List<PortMapping>> packageToPortsMap = Maps.newHashMapWithExpectedSize(packageVersions.size());
-
-            final Iterator<PackageVersion> packages = packageVersions.iterator();
-            for (final ImageInspection inspection : inspections) {
-                if (packages.hasNext()) {
-                    final PackageVersion packageVersion = packages.next();
-                    final Map<String, JsonNode> exposedPorts = inspection.getConfig().getExposedPorts();
-                    final List<PortMapping> portMappings = new ArrayList<>();
-                    for (final String portMapString : exposedPorts.keySet()) {
-                        final int port = DockerDeploymentClient.getPortFromExposedPortString(portMapString);
-                        /*
-                        Map the internal port to the external host port. Any port conflicts amongst the images will cause a failure
-                        during 'docker run'
-                        */
-                        portMappings.add(new PortMapping(port, port));
-                        _logger.log("Opening port " + port + " to container with image id " + packageVersion.getVersion());
-                    }
-
-                    packageToPortsMap.put(packageVersion, portMappings);
-                }
-            }
-
-            return packageToPortsMap;
         }
-
-        private static final long serialVersionUID = -1078768538853480646L;
+        return null;
     }
 
-    private static final class PullImagesCb implements JFunction1<Void, Void> {
-        private final Manifest _manifest;
-        private final DockerDeploymentClient _deploymentClient;
-        private final LoggerToParent _logger;
 
-        private PullImagesCb(final Manifest manifest, final DockerDeploymentClient deploymentClient, final LoggerToParent logger) {
-            _manifest = manifest;
-            _deploymentClient = deploymentClient;
-            _logger = logger;
+
+    private static Void rmContainersCb (final LoggerToParent logger, final List<ContainerDescription> containers, final DockerDeploymentClient deploymentClient) {
+        try {
+            for (final ContainerDescription c : containers) {
+                logger.log("Removing container " + c.getName());
+                deploymentClient.stopAndRemoveContainer(c.getId());
+            }
+        } catch (final DockerDeploymentClient.DockerDeploymentClientException e) {
+            throw new DockerDeployFailureException("Failed to remove extraneous running containers", e);
+        }
+        return null;
+    }
+
+
+    private static Map<PackageVersion, List<PortMapping>> getPortsCb(final Manifest manifest, final DockerDeploymentClient deploymentClient, final LoggerToParent logger) {
+        final List<String> imageReferences = new LinkedList<>();
+        final List<PackageVersion> packageVersions = manifest.getPackages();
+        for (final PackageVersion packageVersion : packageVersions) {
+            imageReferences.add(packageVersion.getVersion());
         }
 
-        @Override
-        public Void apply(final Void v1) {
-            return null;
+        final List<ImageInspection> inspections;
+        try {
+            inspections = deploymentClient.inspectImages(imageReferences);
+        } catch (final DockerDeploymentClient.DockerDeploymentClientException e) {
+            throw new RuntimeException(e);
         }
 
-        private static final long serialVersionUID = -5620630969091464926L;
+        final Map<PackageVersion, List<PortMapping>> packageToPortsMap = Maps.newHashMapWithExpectedSize(packageVersions.size());
+
+        final Iterator<PackageVersion> packages = packageVersions.iterator();
+        for (final ImageInspection inspection : inspections) {
+            if (packages.hasNext()) {
+                final PackageVersion packageVersion = packages.next();
+                final Map<String, JsonNode> exposedPorts = inspection.getConfig().getExposedPorts();
+                final List<PortMapping> portMappings = new ArrayList<>();
+                for (final String portMapString : exposedPorts.keySet()) {
+                    final int port = DockerDeploymentClient.getPortFromExposedPortString(portMapString);
+                    /*
+                    Map the internal port to the external host port. Any port conflicts amongst the images will cause a failure
+                    during 'docker run'
+                    */
+                    portMappings.add(new PortMapping(port, port));
+                    logger.log("Opening port " + port + " to container with image id " + packageVersion.getVersion());
+                }
+
+                packageToPortsMap.put(packageVersion, portMappings);
+            }
+        }
+
+        return packageToPortsMap;
+    }
+
+    private static Void pullImagesCb(final Manifest manifest, final DockerDeploymentClient deploymentClient, final LoggerToParent logger) {
+        return null;
     }
 
     private static final class LoggerToParent {

@@ -13,7 +13,9 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *@
-@(environments: List[models.Environment], bundles: List[models.Bundle], hostclasses: List[models.Hostclass])
+@import org.webjars.play.WebJarsUtil
+@import play.mvc.Http.RequestHeader
+@(environments: List[models.Environment], bundles: List[models.Bundle], hostclasses: List[models.Hostclass])(implicit request: RequestHeader, webJarsUtil: WebJarsUtil)
 @main("Main", true) {
     <div class="row">
         <img class="center" src="assets/images/logo_large.png"/>

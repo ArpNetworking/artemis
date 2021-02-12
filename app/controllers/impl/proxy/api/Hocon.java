@@ -28,6 +28,7 @@ import com.typesafe.config.ConfigRenderOptions;
 import com.typesafe.config.ConfigValue;
 import play.libs.Json;
 import play.mvc.Controller;
+import play.mvc.Http;
 import play.mvc.Result;
 import utils.NoIncluder;
 
@@ -64,8 +65,8 @@ public class Hocon extends Controller {
      *
      * @return an http response
      */
-    public CompletionStage<Result> isValid() {
-        final JsonNode postJson = request().body().asJson();
+    public CompletionStage<Result> isValid(Http.Request request) {
+        final JsonNode postJson = request.body().asJson();
         final String hoconText = postJson.get("hocon").asText();
         boolean isValid = true;
         final ConfigParseOptions parseOptions = ConfigParseOptions.defaults().setIncluder(new NoIncluder()).setAllowMissing(false);
@@ -111,8 +112,8 @@ public class Hocon extends Controller {
      *
      * @return an http response
      */
-    public CompletionStage<Result> viewCombinedHocon() {
-        final JsonNode postJson = request().body().asJson();
+    public CompletionStage<Result> viewCombinedHocon(Http.Request request) {
+        final JsonNode postJson = request.body().asJson();
         final String hoconText = postJson.get("hocon").asText();
         final String type = postJson.get("type").asText();
         final Long id = postJson.get("id").asLong();

@@ -17,6 +17,7 @@ package actors;
 
 import akka.actor.AbstractActor;
 import akka.actor.Props;
+import akka.pattern.Patterns;
 import akka.pattern.PatternsCS;
 import client.PackageProvider;
 import com.google.inject.Inject;
@@ -59,7 +60,7 @@ public class PackageRefresher extends AbstractActor {
      */
     @Inject
     public PackageRefresher(final PackageProvider packageClient) {
-        context().system().scheduler().schedule(
+        context().system().scheduler().scheduleWithFixedDelay(
                 FiniteDuration.apply(3, TimeUnit.SECONDS),
                 FiniteDuration.apply(2, TimeUnit.HOURS),
                 self(),
@@ -76,7 +77,7 @@ public class PackageRefresher extends AbstractActor {
                     final CompletionStage<PackageListMessage> messagePromise = _packageClient.getAllPackages().thenApply(
                             PackageListMessage::new
                     );
-                    PatternsCS.pipe(messagePromise, context().dispatcher()).to(self(), self());
+                    Patterns.pipe(messagePromise, context().dispatcher()).to(self(), self());
                 })
                 .match(PackageListMessage.class, packageListMessage -> {
                     final Map<String, List<PackageProvider.PackageVersionMetadata>> packages = packageListMessage

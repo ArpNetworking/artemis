@@ -13,11 +13,12 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *@
-@(environment: models.Environment, stage: models.Stage, manifestHistory: ManifestHistory, form: Form[forms.DeployManifest], manifests:
-List[Manifest], scriptNonce: String)
+@import org.webjars.play.WebJarsUtil
+@import views.html.helper.CSPNonce
+@(environment: models.Environment, stage: models.Stage, manifestHistory: ManifestHistory, form: Form[forms.DeployManifest], manifests: List[Manifest])(implicit request: Http.RequestHeader, messages: play.i18n.Messages, webJarsUtil: WebJarsUtil)
 @import views.html.helper.FieldConstructor
 @implicitField = @{ FieldConstructor(toolstrapFieldConstructor.f) }
-@main(environment.getName, true) {
+@main(environment.getName, loggedIn = true) {
     @helper.javascriptRouter("jsRoutes")(
         routes.javascript.Api.getReleasePreview
     )
@@ -28,9 +29,9 @@ List[Manifest], scriptNonce: String)
         <input type="hidden" name="version" value="@form.get.getVersion">
             <div class="row">
                 <div class="col-md-4">
-                @helper.select(form("manifest"), manifests.map(a => (a.getId.toString, a.getVersion)),
-                    '_label -> "Manifest",
-                    'class -> "form-control",
+                @helper.select(form("manifest"), options = manifests.map(a => (a.getId.toString, a.getVersion)).toList,
+                    Symbol("_label") -> "Manifest",
+                    Symbol("class") -> "form-control",
                     Symbol("data-bind") -> "value: manifestId")
                 </div>
             </div>
@@ -47,7 +48,7 @@ List[Manifest], scriptNonce: String)
             </div>
         </div>
     }
-    <script type="text/javascript" nonce="@scriptNonce">
+    <script type="text/javascript" @{CSPNonce.attr}>
         @views.html.editStagePackagesJs(manifestHistory.getManifest)
     </script>
 }

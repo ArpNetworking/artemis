@@ -173,7 +173,7 @@ public class Deployment extends Model {
         }
         try (Transaction transaction = Ebean.beginTransaction(TxIsolation.SERIALIZABLE)) {
             final Deployment deployment = Ebean.createQuery(Deployment.class)
-                    .setForUpdate(true)
+                    .forUpdate()
                     .where()
                     .isNull("finished")
                     .ne("state", DeploymentState.SUCCEEDED)
@@ -211,7 +211,7 @@ public class Deployment extends Model {
         try (Transaction transaction = Ebean.beginTransaction(TxIsolation.SERIALIZABLE)) {
             final String myName = InetAddress.getLocalHost().getCanonicalHostName();
             final Deployment toHeartbeat = Ebean.createQuery(Deployment.class)
-                    .setForUpdate(true)
+                    .forUpdate()
                     .where()
                     .eq("id", getId())
                     .findOne();

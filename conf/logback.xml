@@ -38,7 +38,7 @@
   </appender>
 
   <appender name="ArtemisAsync" class="ch.qos.logback.classic.AsyncAppender">
-    <appender-ref ref="MetricsPortalLogger"/>
+    <appender-ref ref="ArtemisLogger"/>
     <discardingThreshold>0</discardingThreshold>
     <queueSize>500</queueSize>
   </appender>
@@ -60,7 +60,7 @@
   <!--<logger name="org.avaje.ebean.SQL" level="TRACE"/>-->
   <root level="DEBUG">
     <appender-ref ref="STDOUT"/>
-    <appender-ref ref="STDOUT"/>
+    <appender-ref ref="ArtemisAsync"/>
   </root>
 
 </configuration>

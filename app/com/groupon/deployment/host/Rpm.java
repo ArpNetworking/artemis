@@ -16,6 +16,7 @@
 package com.groupon.deployment.host;
 
 import akka.actor.AbstractActor;
+import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -62,7 +63,10 @@ public class Rpm extends AbstractActor {
         _host = host;
         _deployment = deployment;
         _sshFactory = sshFactory;
-        Logger.info("Started rpm deployment actor for host " + host.getName());
+        LOGGER.info()
+                .setMessage("Started rpm deployment actor for host")
+                .addData("host", host.getName())
+                .log();
         context().parent().tell(new HostDeploymentNotifications.DeploymentStarted(host), self());
         self().tell("start", self());
     }
@@ -154,7 +158,7 @@ public class Rpm extends AbstractActor {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(command.getInputStream(), Charsets.UTF_8))) {
                 String line = reader.readLine();
                 while (line != null) {
-                    Logger.info("***" + line);
+                    LOGGER.info("***" + line);
                     context().parent().tell(new HostDeploymentNotifications.DeploymentLog(_host, line), self());
                     line = reader.readLine();
                 }
@@ -188,7 +192,7 @@ public class Rpm extends AbstractActor {
                         versions.put(name, version);
                     }
                 }
-                Logger.info("***" + line);
+                LOGGER.info("***" + line);
                 context().parent().tell(new HostDeploymentNotifications.DeploymentLog(_host, line), self());
                 line = reader.readLine();
             }
@@ -206,4 +210,5 @@ public class Rpm extends AbstractActor {
     private final Deployment _deployment;
     private final SshSessionFactory _sshFactory;
     private static final RpmVersionComparator RPM_VERSION_COMPARATOR = new RpmVersionComparator();
+    private static final com.arpnetworking.steno.Logger LOGGER = LoggerFactory.getLogger(Rpm.class);
 }

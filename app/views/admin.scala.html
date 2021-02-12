@@ -13,7 +13,9 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *@
-@()
+@import org.webjars.play.WebJarsUtil
+@import play.mvc.Http.RequestHeader
+@()(implicit request: RequestHeader, webJarsUtil: WebJarsUtil)
 @main("Admin", true) {
     <div><a href="/admin/refreshPackages">Refresh Packages</a></div>
 }

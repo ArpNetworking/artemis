@@ -15,6 +15,7 @@
  */
 package controllers;
 
+import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
@@ -32,6 +33,7 @@ public interface Bundle {
      * Creates a new bundle.
      *
      * @return a {@link Result}
+     * @param request
      */
-    CompletionStage<Result> newBundle();
+    CompletionStage<Result> newBundle(Http.Request request);
 }

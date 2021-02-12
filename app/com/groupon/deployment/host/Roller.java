@@ -16,6 +16,7 @@
 package com.groupon.deployment.host;
 
 import akka.actor.AbstractActor;
+import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.base.Charsets;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.AssistedInject;
@@ -53,7 +54,10 @@ public class Roller extends AbstractActor {
         _host = host;
         _sshFactory = sshFactory;
         _config = config;
-        Logger.info("Started roller deployment actor for host " + host.getName());
+        LOGGER.info()
+                .setMessage("Started roller deployment actor for host")
+                .addData("host", host.getName())
+                .log();
         context().parent().tell(new HostDeploymentNotifications.DeploymentStarted(host), self());
         self().tell("start", self());
     }
@@ -109,7 +113,7 @@ public class Roller extends AbstractActor {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(command.getInputStream(), Charsets.UTF_8))) {
             String line = reader.readLine();
             while (line != null) {
-                Logger.info("***" + line);
+                LOGGER.info("***" + line);
                 context().parent().tell(new HostDeploymentNotifications.DeploymentLog(_host, line), self());
                 line = reader.readLine();
             }
@@ -123,4 +127,5 @@ public class Roller extends AbstractActor {
     private final Host _host;
     private final SshSessionFactory _sshFactory;
     private final Config _config;
+    private static final com.arpnetworking.steno.Logger LOGGER = LoggerFactory.getLogger(Roller.class);
 }

@@ -18,14 +18,16 @@ package controllers.impl;
 import controllers.Deployment;
 import models.DeploymentDiff;
 import models.ManifestHistory;
+import org.webjars.play.WebJarsUtil;
 import play.mvc.Controller;
+import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
-import utils.PageUtils;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import javax.inject.Inject;
 import javax.inject.Singleton;
 
 /**
@@ -36,31 +38,34 @@ import javax.inject.Singleton;
 @Singleton
 @Security.Authenticated(AuthN.class)
 public class StandardDeployment extends Controller implements Deployment {
+    @Inject
+    public StandardDeployment(final WebJarsUtil webJarsUtil) {
+        _webJarsUtil = webJarsUtil;
+    }
+
     @Override
-    public CompletionStage<Result> detail(final long deploymentId) {
+    public CompletionStage<Result> detail(final long deploymentId, final Http.Request request) {
         final models.Deployment deployment = models.Deployment.getById(deploymentId);
         if (deployment == null) {
             return CompletableFuture.completedFuture(notFound());
         }
 
         return CompletableFuture.completedFuture(
-                ok(views.html.deploymentStatus.render(deployment, deployment.getManifestHistory().getStage())));
+                ok(views.html.deploymentStatus.render(deployment, deployment.getManifestHistory().getStage(), request, _webJarsUtil)));
     }
 
     @Override
-    public CompletionStage<Result> log(final long deploymentId) {
+    public CompletionStage<Result> log(final long deploymentId, final Http.Request request) {
         final models.Deployment deployment = models.Deployment.getById(deploymentId);
         if (deployment == null) {
             return CompletableFuture.completedFuture(notFound());
         }
 
-        final String nonce = PageUtils.createNonce();
-        response().setHeader("Content-Security-Policy", String.format("script-src 'nonce-%s'", nonce));
-        return CompletableFuture.completedFuture(ok(views.html.deployLog.render(deployment, nonce)));
+        return CompletableFuture.completedFuture(ok(views.html.deployLog.render(deployment, request, _webJarsUtil)));
     }
 
     @Override
-    public CompletionStage<Result> diff(final long deploymentId) {
+    public CompletionStage<Result> diff(final long deploymentId, final Http.Request request) {
         final models.Deployment deployment = models.Deployment.getById(deploymentId);
         if (deployment == null) {
             return CompletableFuture.completedFuture(notFound());
@@ -68,6 +73,8 @@ public class StandardDeployment extends Controller implements Deployment {
         final ManifestHistory current = deployment.getManifestHistory();
         final ManifestHistory previous = current.getPrevious();
         final DeploymentDiff diff = new DeploymentDiff(previous.getManifest(), current.getManifest());
-        return CompletableFuture.completedFuture(ok(views.html.deploymentDiff.render(deployment.getManifestHistory().getStage(), diff)));
+        return CompletableFuture.completedFuture(ok(views.html.deploymentDiff.render(deployment.getManifestHistory().getStage(), diff, request, _webJarsUtil)));
     }
+
+    private WebJarsUtil _webJarsUtil;
 }

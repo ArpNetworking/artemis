@@ -22,7 +22,9 @@ import models.Hostclass;
 import models.Owner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.webjars.play.WebJarsUtil;
 import play.mvc.Controller;
+import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
@@ -47,17 +49,20 @@ public class StandardApplication extends Controller implements controllers.Appli
      * Public constructor.
      */
     @Inject
-    public StandardApplication() {
+    public StandardApplication(final WebJarsUtil webJarsUtil) {
+        _webJarsUtil = webJarsUtil;
     }
 
     @Override
-    public CompletionStage<Result> main() {
-        final List<Owner> orgs = AuthN.getOrganizations(request().attrs().get(Security.USERNAME));
+    public CompletionStage<Result> main(final Http.Request request) {
+        final List<Owner> orgs = AuthN.getOrganizations(request.attrs().get(Security.USERNAME));
         final List<Environment> environments = Environment.getEnvironmentsForOrgs(orgs, 10);
         final List<Bundle> bundles = Lists.newArrayList();
         final List<Hostclass> hostclasses = Hostclass.getHostclassesForEnvironments(environments, 10);
-        return CompletableFuture.completedFuture(ok(views.html.index.render(environments, bundles, hostclasses)));
+        return CompletableFuture.completedFuture(ok(views.html.index.render(environments, bundles, hostclasses, request, _webJarsUtil)));
     }
+
+    private WebJarsUtil _webJarsUtil;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(StandardApplication.class);
 }

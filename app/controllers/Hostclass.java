@@ -15,6 +15,7 @@
  */
 package controllers;
 
+import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
@@ -32,30 +33,34 @@ public interface Hostclass {
      * Shows a hostclass detail page.
      *
      * @param name the hostclass name
+     * @param request the HTTP request
      * @return a {@link Result}
      */
-    CompletionStage<Result> detail(String name);
+    CompletionStage<Result> detail(String name, Http.Request request);
 
     /**
      * Creates a new hostclass.
      *
      * @param parentHostclass the parent hostclass name
+     * @param request the HTTP request
      * @return a {@link Result}
      */
-    CompletionStage<Result> newHostclass(String parentHostclass);
+    CompletionStage<Result> newHostclass(String parentHostclass, Http.Request request);
 
     /**
      * Add a host to a hostclass.
      *
      * @param hostclassName the hostclass name
+     * @param request the HTTP request
      * @return a {@link Result}
      */
-    CompletionStage<Result> addHost(String hostclassName);
+    CompletionStage<Result> addHost(String hostclassName, Http.Request request);
 
     /**
      * Shows the create hostclass page.
      *
      * @return a {@link Result}
+     * @param request the HTTP request
      */
-    CompletionStage<Result> create();
+    CompletionStage<Result> create(Http.Request request);
 }

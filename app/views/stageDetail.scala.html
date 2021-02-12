@@ -13,7 +13,10 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *@
-@(stage: models.Stage, deployments: List[models.Deployment], snapshots: List[models.ManifestHistory], currentManifest: models.Manifest, hcForm: Form[forms.AddHostclassToStage], configForm: Form[forms.ConfigForm], isPost: Boolean, scriptNonce: String)
+@import views.html.helper.CSPNonce
+@import play.mvc.Http.RequestHeader
+@import org.webjars.play.WebJarsUtil
+@(stage: models.Stage, deployments: List[models.Deployment], snapshots: List[models.ManifestHistory], currentManifest: models.Manifest, hcForm: Form[forms.AddHostclassToStage], configForm: Form[forms.ConfigForm], isPost: Boolean)(implicit request: RequestHeader, messages: play.i18n.Messages, webJarsUtil: WebJarsUtil)
 @main(stage.getEnvironment.getName + " " + stage.getName, true) {
     <div class="row">
         <div class="col-md-4 col-md-push-8 text-right">
@@ -105,7 +108,7 @@
                             <a class="icon-close"></a>
                             <p>Save Failed!</p>
                             <ul>
-                                @for(entry  <- configForm.allErrors) {
+                                @for(entry <- configForm.errors) {
                                     @for(message <- entry.messages) {
                                         <li>@message</li>
                                     }
@@ -296,7 +299,7 @@
         </div>
     </div>
 }
-<script src="@routes.Assets.at("javascripts/stage.js")" type="text/javascript"></script>
-<script type="text/javascript" nonce="@scriptNonce">
+<script src="@routes.Assets.at("javascripts/stage.js")" @{CSPNonce.attr} type="text/javascript"></script>
+<script type="text/javascript" @{CSPNonce.attr}>
     $(Stage.init());
 </script>

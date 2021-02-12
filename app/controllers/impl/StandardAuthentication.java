@@ -67,7 +67,7 @@ public class StandardAuthentication extends Controller implements Authentication
     }
 
     @Override
-    public CompletionStage<Result> auth(final String redirectUrl) {
+    public CompletionStage<Result> auth(final String redirectUrl, final Http.Request request) {
         final String baseURL = _config.getString("auth.ghe.baseURL");
         final String clientId = _config.getString("auth.ghe.clientId");
 
@@ -93,7 +93,7 @@ public class StandardAuthentication extends Controller implements Authentication
     }
 
     @Override
-    public CompletionStage<Result> finishAuth(final String code, final String state) {
+    public CompletionStage<Result> finishAuth(final String code, final String state, final Http.Request request) {
         final String baseURL = _config.getString("auth.ghe.baseURLApi");
         final String clientId = _config.getString("auth.ghe.clientId");
         final String clientSecret = _config.getString("auth.ghe.clientSecret");
@@ -133,7 +133,7 @@ public class StandardAuthentication extends Controller implements Authentication
                                     LOGGER.info(String.format("Found user name; name=%s", userName));
                                     return lookupUserOrgs(baseURL, accessToken).thenApplyAsync(orgs -> {
                                         LOGGER.info(String.format("Found orgs for user; user=%s, orgs=%s", userName, orgs));
-                                        AuthN.initializeAuthenticatedSession(ctx(), userName, orgs);
+                                        AuthN.initializeAuthenticatedSession(request, userName, orgs);
                                         AuthN.storeToken(userName, accessToken);
                                         return redirect(redirect);
                                     }, httpContext);
@@ -201,8 +201,8 @@ public class StandardAuthentication extends Controller implements Authentication
     }
 
     @Override
-    public CompletionStage<Result> logout() {
-        AuthN.logout(ctx());
+    public CompletionStage<Result> logout(final Http.Request request) {
+        AuthN.logout(request);
         return CompletableFuture.completedFuture(redirect("/loggedout"));
     }
 

@@ -18,6 +18,7 @@ package controllers.impl.proxy;
 import controllers.ArtemisProxy;
 import controllers.Deployment;
 import play.libs.ws.WSClient;
+import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Security;
 import utils.AuthN;
@@ -46,17 +47,17 @@ public class ProxyDeployment extends ArtemisProxy implements Deployment {
         super(baseURL, client);
     }
     @Override
-    public CompletionStage<Result> detail(final long deploymentId) {
-        return proxy();
+    public CompletionStage<Result> detail(final long deploymentId, final Http.Request request) {
+        return proxy(request);
     }
 
     @Override
-    public CompletionStage<Result> log(final long deploymentId) {
-        return proxy();
+    public CompletionStage<Result> log(final long deploymentId, final Http.Request request) {
+        return proxy(request);
     }
 
     @Override
-    public CompletionStage<Result> diff(final long deploymentId) {
-        return proxy();
+    public CompletionStage<Result> diff(final long deploymentId, final Http.Request request) {
+        return proxy(request);
     }
 }
