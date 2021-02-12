@@ -130,7 +130,7 @@ public class AuthN extends Security.Authenticator {
             }
         }
         USER_ORGS.put(userName, orgList);
-        request.session().data().put("auth-id", userName);
+        request.session().adding("auth-id", userName);
         LOGGER.info("added user " + userName + " to session.");
     }
 

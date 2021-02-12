@@ -20,13 +20,13 @@
 <html>
     <head>
         <title>@title</title>
-        @webJarsUtil.locate("lib/bootstrap/css/bootstrap.css").css(CSPNonce.attrMap)
+        @webJarsUtil.locate("css/bootstrap.css").css(CSPNonce.attrMap)
         <link rel="stylesheet" media="screen" @{CSPNonce.attr} href="@routes.Assets.at("stylesheets/main.css")">
         <link rel="stylesheet" media="screen" @{CSPNonce.attr} href="@routes.Assets.at("stylesheets/environment.css")">
-        @webJarsUtil.locate("lib/jquery/jquery.js").script(CSPNonce.attrMap)
-        @webJarsUtil.locate("lib/knockout/knockout.js").script(CSPNonce.attrMap)
+        @webJarsUtil.locate("jquery", "jquery.js").script(CSPNonce.attrMap)
+        @webJarsUtil.locate("knockout.js").script(CSPNonce.attrMap)
         <script src="@routes.Assets.at("javascripts/typeahead.bundle.js")" @{CSPNonce.attr} type="text/javascript"></script>
-        @webJarsUtil.locate("lib/bootstrap/js/bootstrap.js").script(CSPNonce.attrMap)
+        @webJarsUtil.locate("js/bootstrap.js").script(CSPNonce.attrMap)
         <script src="@routes.Assets.at("javascripts/kobindings.js")" @{CSPNonce.attr} type="text/javascript"></script>
     </head>
     <body>

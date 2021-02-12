@@ -36,6 +36,7 @@ libraryDependencies ++= Seq(
   "com.arpnetworking.commons" % "commons" % "1.20.0",
   "com.arpnetworking.logback" % "logback-steno" % "1.18.5",
   "com.arpnetworking.metrics.extras" % "jvm-extra" % "0.11.2",
+  "com.arpnetworking.metrics.extras" % "apache-http-sink-extra" % "0.11.2",
   "com.arpnetworking.metrics" % "metrics-client" % "0.11.3",
   "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % jacksonVersion,
   "com.fasterxml.jackson.datatype" % "jackson-datatype-guava" % jacksonVersion,
