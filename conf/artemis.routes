@@ -72,9 +72,12 @@ GET         /api/deployLog/:deployId                                          co
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file                                                     controllers.Assets.at(file)
 GET         /versionedAssets/*file                                            controllers.Assets.versioned(file)
+GET         /versionedAssets/*file                                            controllers.Assets.versioned(file)
 
 + nocsrf
 POST        /report-to                                                        controllers.CSPController.cspReport(request: Request)
+
+->          /webjars                                                          webjars.Routes
 
 # Config server proxying and wrapping
 ->          /roller/config                                                    config.Routes
