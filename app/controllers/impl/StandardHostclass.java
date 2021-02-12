@@ -22,6 +22,7 @@ import forms.NewHostclass;
 import io.ebean.Ebean;
 import io.ebean.Transaction;
 import models.Host;
+import org.h2.jdbc.JdbcSQLException;
 import org.webjars.play.WebJarsUtil;
 import play.data.Form;
 import play.data.FormFactory;
@@ -112,6 +113,10 @@ public class StandardHostclass extends Controller implements Hostclass {
             try (Transaction transaction = Ebean.beginTransaction()) {
                 final models.Hostclass hostclass = new models.Hostclass();
                 final NewHostclass newHostclass = bound.get();
+                final models.Hostclass existing = models.Hostclass.getByName(newHostclass.getName());
+                if (existing != null) {
+                    return CompletableFuture.completedFuture(redirect(controllers.routes.Hostclass.detail(existing.getName())));
+                }
                 hostclass.setName(newHostclass.getName());
                 final List<models.Host> hosts = Lists.newArrayList();
                 if (newHostclass.getHosts() != null) {
@@ -120,6 +125,7 @@ public class StandardHostclass extends Controller implements Hostclass {
                     }
                 }
                 hostclass.setHosts(hosts);
+
 
                 if (newHostclass.getParent() != null) {
                     final models.Hostclass parent = models.Hostclass.getById(newHostclass.getParent());

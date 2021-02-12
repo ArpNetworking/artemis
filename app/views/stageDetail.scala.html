@@ -299,7 +299,7 @@
         </div>
     </div>
 }
-<script src="@routes.Assets.at("javascripts/stage.js")" type="text/javascript"></script>
+<script src="@routes.Assets.at("javascripts/stage.js")" @{CSPNonce.attr} type="text/javascript"></script>
 <script type="text/javascript" @{CSPNonce.attr}>
     $(Stage.init());
 </script>

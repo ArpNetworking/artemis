@@ -102,7 +102,7 @@
         }
     </div>
 }
-<script src="@routes.Assets.at("javascripts/environment.js")" type="text/javascript"></script>
+<script src="@routes.Assets.at("javascripts/environment.js")"  @{CSPNonce.attr} type="text/javascript"></script>
 <script type="text/javascript" @{CSPNonce.attr}>
     $(Environment.init());
 </script>
