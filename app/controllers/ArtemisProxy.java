@@ -23,7 +23,6 @@ import play.libs.ws.WSClient;
 import play.mvc.Http;
 import play.mvc.Result;
 
-import java.net.http.HttpRequest;
 import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
 

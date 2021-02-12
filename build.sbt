@@ -24,7 +24,8 @@ val jacksonVersion = "2.10.5"
 
 lazy val root = (project in file(".")).settings(SbtCheckstyle.checkstyleSettings).enablePlugins(PlayJava, PlayEbean, SbtCheckstyle, SbtPgp, SbtNativePackager, JavaServerAppPackaging, SystemVPlugin)
 
-scalaVersion := "2.12.13"
+//scalaVersion := "2.12.13"
+scalaVersion := "2.13.4"
 
 libraryDependencies ++= Seq(
   javaJdbc,

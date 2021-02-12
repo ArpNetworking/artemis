@@ -17,7 +17,6 @@ package com.groupon.deployment.host;
 
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
-import akka.dispatch.OnComplete;
 import client.DockerDeploymentClient;
 import client.DockerDeploymentClient.ContainerDescription;
 import client.docker.PortMapping;
@@ -34,8 +33,6 @@ import models.Host;
 import models.Manifest;
 import models.PackageVersion;
 import models.Stage;
-import scala.compat.java8.JFunction;
-import scala.compat.java8.JFunction1;
 
 import java.util.ArrayList;
 import java.util.Iterator;
